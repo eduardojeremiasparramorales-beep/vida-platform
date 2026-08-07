@@ -11,20 +11,22 @@ const panel = express.Router();
 
 // Toda la API de campaÃ±a exige sesiÃ³n del tenant activo (auth.requireAuth se aplica
 // en index.js al montar este router; aquÃ­ solo lÃ³gica).
-function requireRol(...roles) {
-  return (req, res, next) => {
-    const r = req.session && req.session.rol;
-    if (roles.includes('admin') && r === 'admin') return next();
-    if (roles.includes(r)) return next();
-    return res.status(403).json({ error: 'sin_permiso', detalle: `se requiere uno de: ${roles.join(', ')}` });
-  };
+// Toda la API de campaña exige sesión del tenant activo (auth.requireAuth se aplica
+// en index.js al montar este router; aquí solo lógica). El rol de sesión es el del
+// CRM (admin/vendedor), mientras vendedores.rol guarda el rol de campaña — para
+// operar votantes basta cualquier sesión del tenant; config/equipo son de gerente/admin.
+function allowAny(req, res, next) { return next(); }
+function requireAdminCampana(req, res, next) {
+  const r = req.session && req.session.rol;
+  if (r === 'admin') return next();
+  return res.status(403).json({ error: 'sin_permiso', detalle: 'solo el gerente (admin) puede hacer esto' });
 }
 
 // Config de la vertical
 panel.get('/config', (req, res) => {
   res.json({ estados_voto: campana.getEstadosVoto(), roles_equipo: schema.ROLES_EQUIPO, info: campana.getInfoCampana(), vertical: 'campaÃ±a' });
 });
-panel.put('/config', requireRol('admin', 'gerente'), (req, res) => {
+panel.put('/config', requireAdminCampana, (req, res) => {
   try {
     if (req.body.estados_voto) campana.setEstadosVoto(req.body.estados_voto);
     if (req.body.info) campana.setInfoCampana(req.body.info);
@@ -53,7 +55,7 @@ panel.get('/votantes/:id', (req, res) => {
     res.json({ votante: v, referidos: campana.getReferidos(v.id) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-panel.post('/votantes', requireRol('admin', 'gerente', 'secretario', 'conductor', 'voluntariado'), (req, res) => {
+panel.post('/votantes', allowAny, (req, res) => {
   try {
     if (!req.body.nombre) return res.status(400).json({ error: 'nombre_requerido' });
     if (!req.body.assigned_to_id) req.body.assigned_to_id = req.session.vendedorId;
@@ -61,14 +63,14 @@ panel.post('/votantes', requireRol('admin', 'gerente', 'secretario', 'conductor'
     res.json({ ok: true, votante: v });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-panel.put('/votantes/:id', requireRol('admin', 'gerente', 'secretario', 'conductor', 'voluntariado'), (req, res) => {
+panel.put('/votantes/:id', allowAny, (req, res) => {
   try {
     const v = campana.updateVotante(req.params.id, req.body || {});
     if (!v) return res.status(404).json({ error: 'votante_no_existe' });
     res.json({ ok: true, votante: v });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-panel.post('/votantes/:id/estado', requireRol('admin', 'gerente', 'secretario', 'conductor', 'voluntariado'), (req, res) => {
+panel.post('/votantes/:id/estado', allowAny, (req, res) => {
   try {
     const { estado_voto, compromiso_nota } = req.body || {};
     if (!estado_voto) return res.status(400).json({ error: 'estado_voto_requerido' });
@@ -82,13 +84,13 @@ panel.get('/votantes/:id/referidos', (req, res) => {
   try { res.json({ referidos: campana.getReferidos(req.params.id) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
-panel.post('/votantes/:id/referidos', requireRol('admin', 'gerente', 'secretario', 'conductor', 'voluntariado'), (req, res) => {
+panel.post('/votantes/:id/referidos', allowAny, (req, res) => {
   try {
     const r = campana.addReferido(req.params.id, req.body || {});
     res.json({ ok: true, ...r });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-panel.post('/referidos/:id/estado', requireRol('admin', 'gerente', 'secretario'), (req, res) => {
+panel.post('/referidos/:id/estado', allowAny, (req, res) => {
   try {
     campana.setReferidoEstado(req.params.id, (req.body || {}).estado || 'registrado');
     res.json({ ok: true });
@@ -110,13 +112,13 @@ panel.get('/equipo', (req, res) => {
   try { res.json({ equipo: campana.getEquipo(), roles: schema.ROLES_EQUIPO }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
-panel.post('/equipo', requireRol('admin', 'gerente'), (req, res) => {
+panel.post('/equipo', requireAdminCampana, (req, res) => {
   try {
     const m = campana.crearMiembroEquipo(req.body || {});
     res.json({ ok: true, miembro: m });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-panel.post('/equipo/:id/rol', requireRol('admin', 'gerente'), (req, res) => {
+panel.post('/equipo/:id/rol', requireAdminCampana, (req, res) => {
   try {
     campana.setRolEquipo(req.params.id, (req.body || {}).rol || 'voluntariado');
     res.json({ ok: true });
@@ -153,3 +155,5 @@ publico.get('/:slug', (req, res) => {
 });
 
 module.exports = { panel, publico };
+
+
