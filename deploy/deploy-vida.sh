@@ -131,10 +131,6 @@ spcrm.duckdns.org {
     handle {
         reverse_proxy localhost:3000
     }
-    encode gzip {
-        except application/vnd.android.package-archive
-        except application/zip
-    }
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         X-Content-Type-Options "nosniff"
@@ -143,7 +139,7 @@ spcrm.duckdns.org {
     }
 }
 CADDYEOF
-sudo systemctl reload caddy 2>/dev/null || sudo systemctl start caddy 2>/dev/null || true
+sudo systemctl restart caddy 2>/dev/null || sudo systemctl start caddy 2>/dev/null || true
 ok "Caddy configurado"
 
 # 7. Resumen
