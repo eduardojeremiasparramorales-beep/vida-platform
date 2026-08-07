@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SP OS — Comparación iOS vs Producción</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #08080a; --bg-2: #0e0e12; --txt: #F5F2EB; --txt-2: #b8b3a8; --txt-3: #7a756b;
+    --gold: #C8A45A; --gold-2: #D4AF37; --green: #4E7B46;
+    --glass: rgba(42,38,30,.10); --glass-2: rgba(50,45,35,.16);
+    --glass-border: rgba(248,244,230,.14);
+    --glass-edge: inset 0 1px 0 rgba(255,255,255,.42), inset 0 -1px 0 rgba(255,255,255,.06), inset 1px 0 0 rgba(255,255,255,.08), inset -1px 0 0 rgba(255,255,255,.08);
+    --blur: saturate(1.7) blur(10px); --blur-sm: saturate(1.6) blur(10px);
+    --sh-1: 0 2px 12px rgba(0,0,0,.35); --sh-2: 0 8px 32px rgba(0,0,0,.45);
+    --spring: cubic-bezier(.4,0,0,1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--txt); min-height: 100vh; overflow-x: hidden; }
+  body::before { content:''; position:fixed; inset:0; z-index:0; opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+    pointer-events:none; }
+
+  /* ── Top bar ── */
+  .top { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 18px 24px; border-bottom: 1px solid rgba(200,164,90,.12); background: rgba(8,8,10,.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+  .top h1 { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 600; letter-spacing: .14em; color: var(--gold); }
+  .top .sep { width: 1px; height: 18px; background: rgba(200,164,90,.2); }
+  .top .sub { font-size: .8rem; color: var(--txt-2); letter-spacing: .04em; }
+
+  /* ── View tabs ── */
+  .tabs { display: flex; justify-content: center; gap: 6px; padding: 16px 20px 0; position: relative; z-index: 10; }
+  .tabs button { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px; padding: 9px 18px; font-size: .82rem; font-weight: 500; color: var(--txt-2); cursor: pointer; transition: all .25s var(--spring); letter-spacing: .02em; }
+  .tabs button:hover { border-color: rgba(200,164,90,.3); color: var(--txt); }
+  .tabs button.on { background: rgba(200,164,90,.14); border-color: rgba(200,164,90,.4); color: var(--gold); font-weight: 600; }
+
+  /* ── Arena ── */
+  .arena { display: flex; justify-content: center; gap: 40px; padding: 30px 20px 60px; flex-wrap: wrap; }
+
+  /* ── Phone frame ── */
+  .phone { position: relative; width: 340px; flex-shrink: 0; }
+  .phone__label { text-align: center; font-size: .75rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 12px; color: var(--txt-2); }
+  .phone__label b { color: var(--gold); }
+  .phone__frame { position: relative; width: 340px; height: 680px; border-radius: 44px; overflow: hidden; border: 2px solid rgba(248,244,230,.08); box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(248,244,230,.04); background: var(--bg); }
+  .phone__notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 130px; height: 32px; background: #000; border-radius: 0 0 20px 20px; z-index: 20; }
+  .phone__screen { position: relative; width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+
+  /* ── Aurora backgrounds ── */
+  .aurora { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+  .aurora span { position: absolute; border-radius: 50%; filter: blur(80px); }
+
+  /* ── PRODUCTION Login ── */
+  .prod-login .aurora span:nth-child(1) { width: 320px; height: 320px; top: -60px; left: -40px; background: rgba(255,255,255,.12); }
+  .prod-login .aurora span:nth-child(2) { width: 220px; height: 220px; top: 80px; right: -30px; background: rgba(212,175,55,.18); }
+  .prod-login .aurora span:nth-child(3) { width: 280px; height: 260px; bottom: 60px; left: 30px; background: rgba(78,123,70,.14); }
+  .prod-login .aurora span:nth-child(4) { width: 200px; height: 200px; bottom: -40px; right: 20px; background: rgba(212,175,55,.10); }
+  .prod-login .aurora span:nth-child(5) { width: 160px; height: 160px; top: 200px; left: 80px; background: rgba(212,175,55,.07); }
+
+  .prod-login .content { position: relative; z-index: 5; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 80px 28px 30px; text-align: center; gap: 22px; }
+  .prod-login .logo { width: 72px; height: 72px; border-radius: 18px; display: grid; place-items: center;
+    background: var(--glass-2); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px rgba(0,0,0,.3), 0 0 0 1px rgba(200,164,90,.2), 0 0 30px rgba(200,164,90,.08); }
+  .prod-login .logo svg { width: 36px; height: 36px; }
+  .prod-login .brand { font-family: 'Cinzel', serif; font-weight: 600; font-size: 1.1rem; letter-spacing: .14em;
+    background: linear-gradient(180deg, #F5F2EB, #C8A45A); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 40px rgba(200,164,90,.2); filter: drop-shadow(0 0 40px rgba(200,164,90,.15)); }
+  .prod-login .sub-line { font-family: 'Cormorant Garamond', serif; font-size: .85rem; color: var(--txt-2); letter-spacing: .1em; font-style: italic; }
+  .prod-login .sp-line { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: .35; }
+  .prod-login .input-group { width: 100%; display: flex; align-items: center; gap: 0;
+    background: rgba(42,38,30,.10); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    border: 1.5px solid var(--glass-border); border-radius: 12px; height: 52px; padding: 0 14px; }
+  .prod-login .prefix { font-size: .9rem; font-weight: 600; color: var(--gold); padding-right: 10px; border-right: 1px solid rgba(248,244,230,.1); margin-right: 10px; }
+  .prod-login .input-group input { flex: 1; background: none; border: none; outline: none; color: var(--txt); font-size: .95rem; font-family: inherit; letter-spacing: .04em; }
+  .prod-login .input-group input::placeholder { color: var(--txt-3); }
+  .prod-login .pin-dots { display: flex; gap: 12px; justify-content: center; }
+  .prod-login .pin-dot { width: 52px; height: 56px; border-radius: 12px; background: rgba(42,38,30,.10);
+    backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    border: 1.5px solid var(--glass-border); display: grid; place-items: center; transition: all .2s; }
+  .prod-login .pin-dot.filled { border-color: var(--gold); background: rgba(200,164,90,.08); }
+  .prod-login .pin-dot .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--gold); opacity: 0; transition: opacity .15s; }
+  .prod-login .pin-dot.filled .dot { opacity: 1; box-shadow: 0 0 10px rgba(200,164,90,.5); }
+  .prod-login .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 280px; }
+  .prod-login .key { height: 54px; border-radius: 12px; background: transparent; border: none; color: var(--txt); font-size: 1.35rem; font-weight: 500; cursor: pointer; transition: background .15s; font-family: inherit; }
+  .prod-login .key:active { background: rgba(248,244,230,.06); }
+  .prod-login .key.special { font-size: .8rem; color: var(--txt-2); font-weight: 500; }
+  .prod-login .key.gold { background: linear-gradient(160deg, #C8A45A, #A8862F); color: #0A0A0A; font-weight: 700; font-size: .85rem; }
+  .prod-login .key.gold:active { filter: brightness(.9); }
+  .prod-login .legal { font-size: .65rem; color: var(--txt-3); line-height: 1.5; margin-top: auto; padding: 0 10px; }
+
+  /* ── iOS Redesign Login ── */
+  .ios-login .aurora span:nth-child(1) { width: 280px; height: 280px; top: -80px; left: -60px; background: rgba(255,255,255,.15); }
+  .ios-login .aurora span:nth-child(2) { width: 200px; height: 200px; top: 60px; right: -40px; background: rgba(212,175,55,.22); }
+  .ios-login .aurora span:nth-child(3) { width: 240px; height: 220px; bottom: 80px; left: 20px; background: rgba(78,123,70,.16); }
+  .ios-login .aurora span:nth-child(4) { width: 180px; height: 180px; bottom: -20px; right: 40px; background: rgba(212,175,55,.10); }
+  .ios-login .aurora span:nth-child(5) { width: 140px; height: 140px; top: 220px; left: 100px; background: rgba(212,175,55,.07); }
+
+  .ios-login .content { position: relative; z-index: 5; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 80px 28px 30px; text-align: center; gap: 22px; }
+  .ios-login .logo { width: 72px; height: 72px; border-radius: 18px; display: grid; place-items: center;
+    background: var(--glass-2); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-edge), var(--sh-2); }
+  .ios-login .logo svg { width: 36px; height: 36px; }
+  .ios-login .brand { font-family: 'Cinzel', serif; font-weight: 600; font-size: 1.1rem; letter-spacing: .14em; color: var(--txt); }
+  .ios-login .sub-line { font-family: 'Cormorant Garamond', serif; font-size: .85rem; color: var(--txt-2); letter-spacing: .1em; font-style: italic; }
+  .ios-login .sp-line { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: .35; }
+  .ios-login .input-group { width: 100%; display: flex; align-items: center; gap: 0;
+    background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    border: 1.5px solid var(--glass-border); border-radius: 12px; height: 52px; padding: 0 14px; }
+  .ios-login .prefix { font-size: .9rem; font-weight: 600; color: var(--gold); padding-right: 10px; border-right: 1px solid rgba(248,244,230,.1); margin-right: 10px; }
+  .ios-login .input-group input { flex: 1; background: none; border: none; outline: none; color: var(--txt); font-size: .95rem; font-family: inherit; letter-spacing: .04em; }
+  .ios-login .input-group input::placeholder { color: var(--txt-3); }
+  .ios-login .pin-dots { display: flex; gap: 16px; justify-content: center; }
+  .ios-login .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--glass-border); background: var(--glass); transition: all .2s; }
+  .ios-login .pin-dot.filled { border-color: var(--gold); background: var(--gold); box-shadow: 0 0 10px rgba(200,164,90,.5); }
+  .ios-login .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; width: 100%; max-width: 260px; justify-items: center; }
+  .ios-login .key {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm);
+    color: var(--txt); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 0;
+    font-size: 1.6rem; font-weight: 500; cursor: pointer;
+    transition: all .12s var(--spring); line-height: 1; font-family: inherit;
+  }
+  .ios-login .key:active { background: var(--glass-2); transform: scale(.92); border-color: rgba(248,244,230,.2); }
+  .ios-login .key .k-sub { font-size: .5rem; font-weight: 500; letter-spacing: .14em; color: var(--txt-3); line-height: 1; margin-top: 1px; }
+  .ios-login .key .k-num { font-size: 1.6rem; font-weight: 500; line-height: 1; }
+  .ios-login .key.special { font-size: .9rem; color: var(--txt-2); }
+  .ios-login .key.special .k-sub { font-size: .38rem; letter-spacing: .1em; }
+  .ios-login .key.special:active { color: var(--txt); transform: scale(.92); }
+  .ios-login .key.gold {
+    background: var(--grad-gold); border: none;
+    box-shadow: 0 4px 20px rgba(212,175,55,.28), inset 0 1px 0 rgba(255,255,255,.35);
+    color: #0A0A0A; font-weight: 700; font-size: .85rem;
+  }
+  .ios-login .key.gold:active { transform: scale(.92); }
+  .ios-login .legal { font-size: .65rem; color: var(--txt-3); line-height: 1.5; margin-top: auto; padding: 0 10px; }
+
+  /* ── PRODUCTION Chat ── */
+  .prod-chat .aurora span:nth-child(1) { width: 300px; height: 300px; top: -80px; right: -60px; background: rgba(255,255,255,.10); }
+  .prod-chat .aurora span:nth-child(2) { width: 200px; height: 200px; bottom: 100px; left: -40px; background: rgba(212,175,55,.14); }
+  .prod-chat .aurora span:nth-child(3) { width: 180px; height: 180px; top: 200px; right: 40px; background: rgba(78,123,70,.10); }
+
+  .prod-chat .c-head { display: flex; align-items: center; gap: 11px; padding: 44px 14px 10px;
+    background: var(--glass-sheen), var(--glass); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm);
+    border-bottom: 1px solid var(--glass-border); position: relative; z-index: 5; }
+  .prod-chat .c-back { width: 28px; height: 28px; display: grid; place-items: center; color: var(--gold); }
+  .prod-chat .c-avatar { width: 36px; height: 36px; border-radius: 11px; background: linear-gradient(160deg, rgba(200,164,90,.2), rgba(78,123,70,.2)); display: grid; place-items: center; font-size: .75rem; font-weight: 700; color: var(--gold); border: 1px solid rgba(200,164,90,.2); }
+  .prod-chat .c-info { flex: 1; }
+  .prod-chat .c-name { font-size: .82rem; font-weight: 600; color: var(--txt); }
+  .prod-chat .c-st { font-size: .68rem; color: var(--green); display: flex; align-items: center; gap: 4px; }
+  .prod-chat .c-st::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+  .prod-chat .c-more { width: 28px; height: 28px; display: grid; place-items: center; color: var(--txt-2); }
+
+  .prod-chat .msgs { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 8px; padding: 16px 14px;
+    background: linear-gradient(180deg, var(--bg), #0C0C0C); position: relative; z-index: 2; }
+  .prod-chat .date { align-self: center; font-size: .68rem; color: var(--txt-3); background: var(--bg-2); border: 1px solid rgba(248,244,230,.06); padding: 3px 10px; border-radius: 999px; }
+  .prod-chat .bub { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: .82rem; line-height: 1.45; }
+  .prod-chat .bub.in { align-self: flex-start; background: #1C1C1C; border-left: 2px solid rgba(200,164,90,.3); border-bottom-left-radius: 5px; color: var(--txt); }
+  .prod-chat .bub.out { align-self: flex-end; background: linear-gradient(160deg, #1D4535, #153427); border-bottom-right-radius: 5px; color: var(--txt); }
+  .prod-chat .bub .time { display: block; font-size: .62rem; color: var(--txt-3); margin-top: 4px; text-align: right; }
+
+  .prod-chat .quick { display: flex; gap: 6px; padding: 6px 14px; overflow-x: auto; }
+  .prod-chat .quick button { flex-shrink: 0; height: 30px; padding: 0 12px; border-radius: 999px; background: #1C1C1C; border: 1px solid rgba(248,244,230,.08); color: var(--txt-2); font-size: .72rem; font-family: inherit; cursor: pointer; }
+
+  .prod-chat .input-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px 20px;
+    background: var(--bg-1); border-top: 1px solid rgba(248,244,230,.06); position: relative; z-index: 5; }
+  .prod-chat .plus { width: 36px; height: 36px; border-radius: 50%; background: #1C1C1C; border: 1px solid rgba(248,244,230,.08); display: grid; place-items: center; color: var(--txt-2); flex-shrink: 0; }
+  .prod-chat .msg-input { flex: 1; height: 38px; border-radius: 19px; background: #1C1C1C; border: 1px solid rgba(248,244,230,.08); padding: 0 14px; color: var(--txt); font-size: .82rem; font-family: inherit; outline: none; }
+  .prod-chat .msg-input::placeholder { color: var(--txt-3); }
+  .prod-chat .send { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(160deg, #C8A45A, #A8862F); display: grid; place-items: center; color: #0A0A0A; flex-shrink: 0; box-shadow: 0 6px 20px rgba(200,164,90,.35); }
+
+  /* ── iOS Chat ── */
+  .ios-chat .aurora span:nth-child(1) { width: 280px; height: 280px; top: -60px; right: -50px; background: rgba(255,255,255,.15); }
+  .ios-chat .aurora span:nth-child(2) { width: 180px; height: 180px; bottom: 120px; left: -30px; background: rgba(212,175,55,.22); }
+  .ios-chat .aurora span:nth-child(3) { width: 160px; height: 160px; top: 220px; right: 60px; background: rgba(78,123,70,.16); }
+
+  .ios-chat .c-head { display: flex; align-items: center; gap: 11px; padding: 44px 14px 10px;
+    background: var(--glass); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm);
+    border-bottom: 1px solid var(--glass-border); position: relative; z-index: 5; }
+  .ios-chat .c-back { width: 28px; height: 28px; display: grid; place-items: center; color: var(--gold); }
+  .ios-chat .c-avatar { width: 36px; height: 36px; border-radius: 11px; background: linear-gradient(160deg, rgba(200,164,90,.2), rgba(78,123,70,.2)); display: grid; place-items: center; font-size: .75rem; font-weight: 700; color: var(--gold); border: 1px solid rgba(200,164,90,.2); }
+  .ios-chat .c-info { flex: 1; }
+  .ios-chat .c-name { font-size: .82rem; font-weight: 600; color: var(--txt); }
+  .ios-chat .c-st { font-size: .68rem; color: var(--green); display: flex; align-items: center; gap: 4px; }
+  .ios-chat .c-st::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+  .ios-chat .c-more { width: 28px; height: 28px; display: grid; place-items: center; color: var(--txt-2); }
+
+  .ios-chat .msgs { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 8px; padding: 16px 14px;
+    position: relative; z-index: 2; }
+  .ios-chat .date { align-self: center; font-size: .68rem; color: var(--txt-3);
+    background: var(--glass); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm);
+    border: 1px solid var(--glass-border); padding: 3px 10px; border-radius: 999px; }
+  .ios-chat .bub { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: .82rem; line-height: 1.45; }
+  .ios-chat .bub.in { align-self: flex-start;
+    background: var(--glass-2); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm);
+    border: 1px solid var(--glass-border); border-bottom-left-radius: 5px; color: var(--txt); }
+  .ios-chat .bub.out { align-self: flex-end; background: linear-gradient(160deg, #2A5C4E, #1E4A3E); border-bottom-right-radius: 5px; color: var(--txt);
+    box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+  .ios-chat .bub .time { display: block; font-size: .62rem; color: var(--txt-3); margin-top: 4px; text-align: right; }
+
+  .ios-chat .input-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px 20px;
+    background: var(--glass); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm);
+    border-top: 1px solid var(--glass-border); position: relative; z-index: 5; }
+  .ios-chat .plus { width: 36px; height: 36px; border-radius: 12px;
+    background: var(--glass); border: 1px solid var(--glass-border); display: grid; place-items: center; color: var(--txt-2); flex-shrink: 0; }
+  .ios-chat .msg-input { flex: 1; height: 38px; border-radius: 19px;
+    background: var(--glass); border: 1px solid var(--glass-border); padding: 0 14px; color: var(--txt); font-size: .82rem; font-family: inherit; outline: none; }
+  .ios-chat .msg-input::placeholder { color: var(--txt-3); }
+  .ios-chat .send { width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(160deg, #C8A45A, #A8862F); display: grid; place-items: center; color: #0A0A0A; flex-shrink: 0;
+    box-shadow: 0 4px 18px rgba(212,175,55,.3); }
+
+  /* ── Nav bars ── */
+  .nav { display: flex; justify-content: space-around; padding: 8px 6px 14px; position: relative; z-index: 5; }
+  .prod-chat .nav { background: var(--glass-sheen), var(--glass); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border-top: 1px solid var(--glass-border); }
+  .ios-chat .nav { background: var(--glass); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border-top: 1px solid var(--glass-border); }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 8px; color: var(--txt-3); font-size: .62rem; position: relative; }
+  .nav-item.active { color: var(--gold); }
+  .prod-chat .nav-item.active::after { content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 22px; height: 3px; border-radius: 2px; background: var(--gold); box-shadow: 0 0 8px rgba(200,164,90,.5); }
+  .ios-chat .nav-item.active { background: rgba(200,164,90,.12); border-radius: 8px; }
+  .nav-item svg { width: 20px; height: 20px; }
+
+  /* ── Callouts ── */
+  .callout { position: absolute; z-index: 30; padding: 8px 12px; border-radius: 10px; font-size: .7rem; font-weight: 500; line-height: 1.4; max-width: 170px; pointer-events: none; }
+  .callout--prod { background: rgba(78,123,70,.18); border: 1px solid rgba(78,123,70,.3); color: #8FCA85; }
+  .callout--ios { background: rgba(200,164,90,.14); border: 1px solid rgba(200,164,90,.3); color: var(--gold); }
+  .callout::before { content: ''; position: absolute; width: 6px; height: 6px; border-radius: 1px; transform: rotate(45deg); }
+  .callout--prod::before { background: rgba(78,123,70,.3); }
+  .callout--ios::before { background: rgba(200,164,90,.3); }
+  .callout.top-left { top: -8px; left: 12px; }
+  .callout.top-left::before { bottom: -4px; left: 16px; }
+  .callout.top-right { top: -8px; right: 12px; }
+  .callout.top-right::before { bottom: -4px; right: 16px; }
+  .callout.bot-left { bottom: -8px; left: 12px; }
+  .callout.bot-left::before { top: -4px; left: 16px; }
+  .callout.bot-right { bottom: -8px; right: 12px; }
+  .callout.bot-right::before { top: -4px; right: 16px; }
+  .callout.mid { top: 50%; left: 50%; transform: translate(-50%,-50%); }
+
+  /* ── View sections ── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── Summary table ── */
+  .summary { max-width: 900px; margin: 0 auto 60px; padding: 0 24px; }
+  .summary h2 { font-family: 'Cinzel', serif; font-size: 1.05rem; font-weight: 600; letter-spacing: .1em; color: var(--gold); text-align: center; margin-bottom: 20px; }
+  .summary table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+  .summary th { text-align: left; padding: 10px 12px; border-bottom: 1px solid rgba(200,164,90,.15); color: var(--gold); font-weight: 600; letter-spacing: .06em; }
+  .summary td { padding: 10px 12px; border-bottom: 1px solid rgba(248,244,230,.04); color: var(--txt-2); vertical-align: top; }
+  .summary td:first-child { color: var(--txt); font-weight: 500; }
+  .summary .winner { color: var(--green); font-weight: 600; }
+  .summary .loser { color: var(--txt-3); }
+
+  @media (max-width: 760px) {
+    .arena { flex-direction: column; align-items: center; gap: 30px; }
+    .phone { width: 300px; }
+    .phone__frame { width: 300px; height: 600px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>SP OS</h1>
+  <div class="sep"></div>
+  <div class="sub">Comparación: Producción Actual vs Rediseño iOS</div>
+</div>
+
+<div class="tabs">
+  <button class="on" onclick="setView('login')">Login</button>
+  <button onclick="setView('chat')">Chat Asesor</button>
+  <button onclick="setView('summary')">Resumen</button>
+</div>
+
+<!-- ═══════════════ LOGIN VIEW ═══════════════ -->
+<div id="v-login" class="view active">
+<div class="arena">
+
+  <!-- PRODUCTION -->
+  <div class="phone">
+    <div class="phone__label"><b>●</b> Producción Actual</div>
+    <div class="phone__frame prod-login">
+      <div class="phone__notch"></div>
+      <div class="aurora">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="content">
+        <div class="callout top-right" style="top:50px;right:-10px">Aura dorada en logo<br><code>rgba(200,164,90,.08)</code></div>
+        <div class="callout top-left" style="top:100px;left:-10px">Texto Cinzel con<br><code>text-shadow dorado</code></div>
+
+        <div class="logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <div class="brand">SP Leons Group</div>
+        <div class="sub-line">Inversiones &amp; Finca Raiz</div>
+        <div class="sp-line"></div>
+
+        <div class="input-group">
+          <span class="prefix">+57</span>
+          <input type="tel" placeholder="321 462 5618" readonly>
+        </div>
+
+        <div class="pin-dots">
+          <div class="pin-dot filled"><div class="dot"></div></div>
+          <div class="pin-dot filled"><div class="dot"></div></div>
+          <div class="pin-dot filled"><div class="dot"></div></div>
+          <div class="pin-dot"><div class="dot"></div></div>
+        </div>
+
+        <div class="keypad">
+          <button class="key">1</button><button class="key">2</button><button class="key">3</button>
+          <button class="key">4</button><button class="key">5</button><button class="key">6</button>
+          <button class="key">7</button><button class="key">8</button><button class="key">9</button>
+          <button class="key special">Borrar</button><button class="key">0</button><button class="key gold">OK</button>
+        </div>
+
+        <div class="legal">Al continuar aceptas nuestra<br>Política de Privacidad y Términos</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- iOS REDESIGN -->
+  <div class="phone">
+    <div class="phone__label"><b>●</b> Rediseño iOS</div>
+    <div class="phone__frame ios-login">
+      <div class="phone__notch"></div>
+      <div class="aurora">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="content">
+        <div class="callout top-right" style="top:50px;right:-10px">Sin aura dorada<br><code>solo glass-edge</code></div>
+        <div class="callout top-left" style="top:100px;left:-10px">Cinzel plano<br><code>sin text-shadow</code></div>
+
+        <div class="logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <div class="brand">SP Leons Group</div>
+        <div class="sub-line">Inversiones &amp; Finca Raiz</div>
+        <div class="sp-line"></div>
+
+        <div class="input-group">
+          <span class="prefix">+57</span>
+          <input type="tel" placeholder="321 462 5618" readonly>
+        </div>
+
+        <div class="pin-dots">
+          <div class="pin-dot filled"></div>
+          <div class="pin-dot filled"></div>
+          <div class="pin-dot filled"></div>
+          <div class="pin-dot"></div>
+        </div>
+
+        <div class="keypad">
+          <div class="callout bot-right" style="bottom:-12px;right:-18px">Keypad circular<br><code>72×72 + letras ABC</code></div>
+          <button class="key">1<span class="k-sub"></span></button>
+          <button class="key">2<span class="k-sub">ABC</span></button>
+          <button class="key">3<span class="k-sub">DEF</span></button>
+          <button class="key">4<span class="k-sub">GHI</span></button>
+          <button class="key">5<span class="k-sub">JKL</span></button>
+          <button class="key">6<span class="k-sub">MNO</span></button>
+          <button class="key">7<span class="k-sub">PQRS</span></button>
+          <button class="key">8<span class="k-sub">TUV</span></button>
+          <button class="key">9<span class="k-sub">WXYZ</span></button>
+          <button class="key special"><span class="k-num">⌫</span><span class="k-sub">BORRAR</span></button>
+          <button class="key">0</button>
+          <button class="key gold">OK</button>
+        </div>
+
+        <div class="legal">Al continuar aceptas nuestra<br>Política de Privacidad y Términos</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════ CHAT VIEW ═══════════════ -->
+<div id="v-chat" class="view">
+<div class="arena">
+
+  <!-- PRODUCTION CHAT -->
+  <div class="phone">
+    <div class="phone__label"><b>●</b> Producción Actual</div>
+    <div class="phone__frame prod-chat">
+      <div class="phone__notch"></div>
+      <div class="aurora">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="c-head">
+        <div class="c-back">‹</div>
+        <div class="c-avatar">EP</div>
+        <div class="c-info">
+          <div class="c-name">Eduardo Parra</div>
+          <div class="c-st">en línea</div>
+        </div>
+        <div class="c-more">⋮</div>
+      </div>
+      <div class="msgs">
+        <div class="date">Hoy</div>
+        <div class="bub in">Buenos días, me interesa el lote en Tocaima<div class="time">9:14 AM</div></div>
+        <div class="bub out">¡Hola Eduardo! Claro, tenemos lotes desde $35M. ¿Cuántos metros cuadrados necesitas?<div class="time">9:15 AM ✓✓</div></div>
+        <div class="bub in">Algo de 120 m² con buen acceso<div class="time">9:16 AM</div></div>
+        <div class="bub out">Perfecto, te tengo uno en la Cañada Honda. 120 m², vía principal, agua y luz. ¿Te envío fotos?<div class="time">9:17 AM ✓✓</div></div>
+        <div class="bub in">Sí por favor 🙏<div class="time">9:18 AM</div></div>
+      </div>
+      <div class="quick">
+        <button>📐 Ver lotes</button>
+        <button>💰 Precio</button>
+        <button>📍 Ubicación</button>
+      </div>
+      <div class="nav">
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Chats
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          Inicio
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Tareas
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>
+          Copiloto
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Perfil
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- iOS CHAT -->
+  <div class="phone">
+    <div class="phone__label"><b>●</b> Rediseño iOS</div>
+    <div class="phone__frame ios-chat">
+      <div class="phone__notch"></div>
+      <div class="aurora">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="c-head">
+        <div class="c-back">‹</div>
+        <div class="c-avatar">EP</div>
+        <div class="c-info">
+          <div class="c-name">Eduardo Parra</div>
+          <div class="c-st">en línea</div>
+        </div>
+        <div class="c-more">⋮</div>
+      </div>
+      <div class="msgs">
+        <div class="date">Hoy</div>
+        <div class="bub in">Buenos días, me interesa el lote en Tocaima<div class="time">9:14 AM</div></div>
+        <div class="bub out">¡Hola Eduardo! Claro, tenemos lotes desde $35M. ¿Cuántos metros cuadrados necesitas?<div class="time">9:15 AM ✓✓</div></div>
+        <div class="bub in">Algo de 120 m² con buen acceso<div class="time">9:16 AM</div></div>
+        <div class="bub out">Perfecto, te tengo uno en la Cañada Honda. 120 m², vía principal, agua y luz. ¿Te envío fotos?<div class="time">9:17 AM ✓✓</div></div>
+        <div class="bub in">Sí por favor 🙏<div class="time">9:18 AM</div></div>
+      </div>
+      <div class="input-bar">
+        <div class="plus">+</div>
+        <input class="msg-input" placeholder="Escribe un mensaje..." readonly>
+        <div class="send">➤</div>
+      </div>
+      <div class="nav">
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Chats
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          Inicio
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Tareas
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>
+          Copiloto
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Perfil
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════ SUMMARY VIEW ═══════════════ -->
+<div id="v-summary" class="view">
+<div class="summary">
+  <h2>Resumen de Diferencias</h2>
+  <table>
+    <tr><th>Elemento</th><th>Producción Actual</th><th>Rediseño iOS</th><th>Ganador</th></tr>
+    <tr>
+      <td>Glass tokens</td>
+      <td>.10 transparency, 10px blur</td>
+      <td>.10 transparency, 10px blur</td>
+      <td class="winner">Empate (idénticos)</td>
+    </tr>
+    <tr>
+      <td>Capas de glass</td>
+      <td class="winner">Triple: sheen + light + glass (más profundidad)</td>
+      <td class="loser">Simple: solo glass (más plano)</td>
+      <td class="winner">Producción</td>
+    </tr>
+    <tr>
+      <td>Logo login — aura dorada</td>
+      <td class="winner">Sí: <code>rgba(200,164,90,.08)</code> 30px spread</td>
+      <td class="loser">No — solo glass-edge</td>
+      <td class="winner">Producción</td>
+    </tr>
+    <tr>
+      <td>Texto Cinzel</td>
+      <td class="winner">Gold gradient + text-shadow glow</td>
+      <td class="loser">Plano, sin glow</td>
+      <td class="winner">Producción</td>
+    </tr>
+    <tr>
+      <td>SP Line</td>
+      <td class="winner">Línea dorada decorativa 40px</td>
+      <td class="loser">No presente</td>
+      <td class="winner">Producción</td>
+    </tr>
+    <tr>
+      <td>Teclas keypad</td>
+      <td>Rectángulos transparentes (54×54)</td>
+      <td class="winner">Círculos glass 72×72 + letras ABC debajo (iPhone style)</td>
+      <td class="winner">iOS</td>
+    </tr>
+    <tr>
+      <td>PIN dots</td>
+      <td>Rectángulos 52×56 + punto interno</td>
+      <td class="winner">Círculos pequeños 14×14 sólidos (iPhone unlock)</td>
+      <td class="winner">iOS</td>
+    </tr>
+    <tr>
+      <td>Botón OK</td>
+      <td>Gold gradient plano</td>
+      <td class="winner">Gold + inset highlight + glow shadow</td>
+      <td class="winner">iOS</td>
+    </tr>
+    <tr>
+      <td>Burbujas chat (incoming)</td>
+      <td class="winner">Sólido <code>#1C1C1C</code> + gold border-left (más legible)</td>
+      <td class="loser">Glass <code>.16</code> + blur (menos contraste)</td>
+      <td class="winner">Producción</td>
+    </tr>
+    <tr>
+      <td>Burbujas chat (outgoing)</td>
+      <td>Green gradient plano</td>
+      <td class="winner">Green gradient + box-shadow (más dimensión)</td>
+      <td class="winner">iOS</td>
+    </tr>
+    <tr>
+      <td>Input bar</td>
+      <td>Sólido <code>var(--bg-1)</code></td>
+      <td class="winner">Glass + blur (consistencia visual)</td>
+      <td class="winner">iOS</td>
+    </tr>
+    <tr>
+      <td>Nav indicator</td>
+      <td class="winner">Barra dorada brillante con glow <code>box-shadow</code></td>
+      <td class="loser">Pill suave sin glow</td>
+      <td class="winner">Producción</td>
+    </tr>
+    <tr>
+      <td>Grano/noise</td>
+      <td>Opacity .04</td>
+      <td>Opacity .05 (+25%)</td>
+      <td class="winner">Empate (imperceptible)</td>
+    </tr>
+    <tr>
+      <td>Aurora</td>
+      <td>7 orbes, opacidades idénticas</td>
+      <td>7 orbes, opacidades idénticas</td>
+      <td class="winner">Empate</td>
+    </tr>
+    <tr>
+      <td>Inner card shadow</td>
+      <td><code>inset 0 -14px 26px rgba(0,0,0,.08)</code></td>
+      <td><code>inset 0 -14px 26px rgba(0,0,0,.10)</code></td>
+      <td class="winner">Empate (imperceptible)</td>
+    </tr>
+  </table>
+
+  <div style="margin-top:28px;padding:20px;border-radius:16px;background:rgba(200,164,90,.06);border:1px solid rgba(200,164,90,.15);text-align:center">
+    <div style="font-family:'Cinzel',serif;font-size:.9rem;font-weight:600;color:var(--gold);margin-bottom:8px">Veredicto</div>
+    <div style="font-size:.82rem;color:var(--txt-2);line-height:1.6">
+      La <b style="color:var(--txt)">producción actual</b> ya tiene <b style="color:var(--txt)">más profundidad visual</b> que el rediseño iOS.<br>
+      El rediseño solo gana en <b style="color:var(--txt)">teclas glass</b> y <b style="color:var(--txt)">botón OK con glow</b>.<br>
+      <span style="color:var(--gold)">Recomendación: mejorar producción con los 2 puntos del iOS, sin cambiar el resto.</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+function setView(v) {
+  document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+  document.getElementById('v-' + v).classList.add('active');
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('on'));
+  event.target.classList.add('on');
+}
+</script>
+
+</body>
+</html>

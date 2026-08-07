@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Centro Financiero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+.finance-chart { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding-top: var(--s2); }
+.finance-bar { flex: 1; border-radius: 4px 4px 0 0; min-height: 4px; transition: height .3s ease; position: relative; }
+.finance-bar__label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--text-3); white-space: nowrap; }
+.finance-bar__value { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
+.fila { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-soft); gap: 12px; }
+.fila:last-child { border-bottom: none; }
+.fila__label { font-size: 13px; flex: 1; }
+.fila__value { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS, api } = SPOS;
+  const ctx = await SPOS.mount({ active: 'finanzas', title: 'Centro Financiero', crumb: 'Ingresos, egresos y comisiones', padded: true });
+
+  const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const fmt = (n) => n == null ? '$0' : '$' + Number(n).toLocaleString('es-CO');
+
+  let resumen = null;
+  let transacciones = [];
+  let vista = 'resumen';
+
+  ctx.content.innerHTML = `
+   <div class="os-content__max">
+    <div class="u-between" style="margin-bottom:var(--s3)">
+      <div>
+        <div class="t-h2">Centro Financiero</div>
+        <div class="t-dim3" style="font-size:13px;margin-top:4px" id="periodo">Últimos 30 días</div>
+      </div>
+      <div class="u-row u-gap2">
+        <button class="btn btn--sm ${vista==='resumen'?'btn--gold':'btn--ghost'}" data-view="resumen">Resumen</button>
+        <button class="btn btn--sm ${vista==='transacciones'?'btn--gold':'btn--ghost'}" data-view="transacciones">Transacciones</button>
+        <button class="btn btn--gold btn--sm" id="btnNew">+ Nueva</button>
+      </div>
+    </div>
+    <div id="mainContent"></div>
+   </div>`;
+
+  document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => {
+    vista = b.getAttribute('data-view');
+    document.querySelectorAll('[data-view]').forEach(x => x.className = `btn btn--sm ${x.getAttribute('data-view')===vista?'btn--gold':'btn--ghost'}`);
+    render();
+  }));
+
+  async function cargar() {
+    const [r, t] = await Promise.all([
+      api('/api/finanzas/resumen'),
+      api('/api/finanzas/transacciones?limite=100'),
+    ]);
+    resumen = r || {};
+    transacciones = t || [];
+    render();
+  }
+
+  function render() {
+    const el = document.getElementById('mainContent');
+    if (vista === 'resumen') renderResumen(el);
+    else renderTransacciones(el);
+  }
+
+  function renderResumen(el) {
+    if (!resumen) { el.innerHTML = '<div class="empty">Cargando…</div>'; return; }
+    const r = resumen;
+    document.getElementById('periodo').textContent = `${r.periodo?.desde || ''} — ${r.periodo?.hasta || ''}`;
+
+    el.innerHTML = `
+      <div class="grid grid--4" style="margin-bottom:var(--s3)">
+        <div class="metric card--float"><div class="metric__label">Ingresos</div><div class="metric__value" style="color:var(--green)">${fmt(r.ingresos)}</div></div>
+        <div class="metric card--float"><div class="metric__label">Egresos</div><div class="metric__value" style="color:var(--red)">${fmt(r.egresos)}</div></div>
+        <div class="metric card--float"><div class="metric__label">Utilidad</div><div class="metric__value" style="color:${r.utilidad >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(r.utilidad)}</div></div>
+        <div class="metric card--float"><div class="metric__label">Margen</div><div class="metric__value">${r.margen || 0}%</div></div>
+      </div>
+      <div class="grid grid--2" style="gap:var(--s3);align-items:start">
+        <div class="card" style="padding:var(--s3)">
+          <div class="t-h3" style="margin-bottom:var(--s2)">Tendencia (6 meses)</div>
+          ${r.tendencia && r.tendencia.length ? renderTendencia(r.tendencia) : '<div class="t-dim3" style="font-size:13px">Sin datos suficientes</div>'}
+        </div>
+        <div class="card" style="padding:var(--s3)">
+          <div class="t-h3" style="margin-bottom:var(--s2)">Ingresos por proyecto</div>
+          ${r.porProyecto && r.porProyecto.length ? r.porProyecto.map(p => `
+            <div class="fila">
+              <span class="fila__label">${esc(p.nombre || 'Sin proyecto')}</span>
+              <span class="fila__value" style="color:var(--green)">${fmt(p.total)}</span>
+            </div>
+          `).join('') : '<div class="t-dim3" style="font-size:13px">Sin datos</div>'}
+        </div>
+        <div class="card" style="padding:var(--s3)">
+          <div class="t-h3" style="margin-bottom:var(--s2)">Comisiones</div>
+          <div class="fila"><span class="fila__label">Pendientes</span><span class="fila__value" style="color:var(--amber)">${fmt(r.comisionesPendientes)}</span></div>
+          <div class="fila"><span class="fila__label">Pagadas</span><span class="fila__value" style="color:var(--green)">${fmt(r.comisionesPagadas)}</span></div>
+        </div>
+        <div class="card" style="padding:var(--s3)">
+          <div class="t-h3" style="margin-bottom:var(--s2)">Top asesores</div>
+          ${r.topVendedores && r.topVendedores.length ? r.topVendedores.map((v, i) => `
+            <div class="fila">
+              <span class="fila__label">${i + 1}. ${esc(v.nombre)}</span>
+              <span class="t-dim3" style="font-size:12px">${v.ventas} ventas</span>
+              <span class="fila__value">${fmt(v.monto_total)}</span>
+            </div>
+          `).join('') : '<div class="t-dim3" style="font-size:13px">Sin datos</div>'}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderTendencia(data) {
+    const max = Math.max(1, ...data.map(d => Math.max(d.ingresos || 0, d.egresos || 0)));
+    return `<div class="finance-chart">${data.map(d => {
+      const inc = ((d.ingresos || 0) / max * 100);
+      const egr = ((d.egresos || 0) / max * 100);
+      return `<div style="flex:1;display:flex;gap:3px;align-items:flex-end;height:100%">
+        <div class="finance-bar" style="height:${inc}%;background:var(--green);flex:1"><div class="finance-bar__value">${fmt(d.ingresos)}</div></div>
+        <div class="finance-bar" style="height:${egr}%;background:var(--red);flex:1"><div class="finance-bar__value">${fmt(d.egresos)}</div></div>
+        <div class="finance-bar__label">${d.mes?.slice(5) || ''}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  function renderTransacciones(el) {
+    if (!transacciones.length) { el.innerHTML = '<div class="empty">Sin transacciones registradas.</div>'; return; }
+    el.innerHTML = `<div class="card" style="overflow:hidden">
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="border-bottom:1px solid var(--border-soft)">
+            <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-3)">Fecha</th>
+            <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-3)">Tipo</th>
+            <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-3)">Categoría</th>
+            <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-3)">Concepto</th>
+            <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-3)">Proyecto</th>
+            <th style="text-align:right;padding:10px 12px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-3)">Monto</th>
+          </tr></thead>
+          <tbody>${transacciones.map(t => `
+            <tr style="border-bottom:1px solid var(--border-soft)">
+              <td style="padding:10px 12px">${esc(t.fecha)}</td>
+              <td style="padding:10px 12px"><span class="badge badge--${t.tipo === 'ingreso' ? 'green' : 'red'}">${t.tipo}</span></td>
+              <td style="padding:10px 12px">${esc(t.categoria)}</td>
+              <td style="padding:10px 12px">${esc(t.concepto)}</td>
+              <td style="padding:10px 12px">${esc(t.proyecto_nombre || '—')}</td>
+              <td style="padding:10px 12px;text-align:right;font-weight:600;color:${t.tipo === 'ingreso' ? 'var(--green)' : 'var(--red)'}">${t.tipo === 'ingreso' ? '+' : '-'}${fmt(t.monto)}</td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  await cargar();
+})();
+</script>
+</body>
+</html>

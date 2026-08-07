@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Proyectos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+.pj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:22px; padding:6px 2px 40px; }
+
+.pj-card {
+  position:relative; border-radius:20px; overflow:hidden; cursor:pointer;
+  background:linear-gradient(180deg, rgba(28,28,28,.6), rgba(18,18,18,.75));
+  border:1px solid var(--border-soft);
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 10px 30px -18px rgba(0,0,0,.9);
+  transition:transform .45s cubic-bezier(.16,1,.3,1), box-shadow .45s cubic-bezier(.16,1,.3,1), border-color .3s;
+  opacity:0; transform:translateY(18px);
+  animation:pjIn .7s cubic-bezier(.16,1,.3,1) forwards;
+}
+@keyframes pjIn { to { opacity:1; transform:translateY(0); } }
+.pj-card:hover { transform:translateY(-6px); border-color:var(--gold-line);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 30px 60px -28px rgba(0,0,0,.95), 0 0 0 1px var(--gold-line); }
+
+.pj-hero { position:relative; height:172px; overflow:hidden; }
+.pj-hero__img { position:absolute; inset:0; background-size:cover; background-position:center;
+  transition:transform .8s cubic-bezier(.16,1,.3,1); }
+.pj-card:hover .pj-hero__img { transform:scale(1.07); }
+.pj-hero__fallback { position:absolute; inset:0;
+  background:radial-gradient(120% 100% at 20% 0%, #23301f 0%, #14140f 55%, #0c0c0a 100%); }
+.pj-hero__grad { position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,10,10,.05) 0%, rgba(10,10,10,.55) 62%, rgba(18,18,18,.96) 100%); }
+.pj-hero__top { position:absolute; top:14px; left:16px; right:16px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.pj-chip { display:inline-flex; align-items:center; gap:6px; font-size:10px; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+  padding:5px 11px; border-radius:999px; backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm); background:rgba(0,0,0,.42); border:1px solid var(--glass-border); color:var(--text); }
+.pj-chip__dot { width:6px; height:6px; border-radius:50%; }
+.pj-est-en_venta .pj-chip__dot { background:var(--green); box-shadow:0 0 8px var(--green); }
+.pj-est-preventa .pj-chip__dot { background:var(--gold); box-shadow:0 0 8px var(--gold); }
+.pj-est-planeacion .pj-chip__dot { background:var(--blue); }
+.pj-est-entregado .pj-chip__dot { background:#8b8b8b; }
+.pj-est-pausado .pj-chip__dot { background:var(--red); }
+
+.pj-hero__title { position:absolute; left:18px; right:18px; bottom:14px; }
+.pj-name { font-family:var(--f-title); font-weight:600; font-size:21px; letter-spacing:.02em; color:#fff; line-height:1.05;
+  text-shadow:0 2px 18px rgba(0,0,0,.6); }
+.pj-loc { display:flex; align-items:center; gap:6px; margin-top:5px; font-family:var(--f-sub, 'Cormorant Garamond'); font-size:15px; font-style:italic; color:rgba(248,248,248,.82); }
+
+.pj-body { padding:16px 18px 18px; }
+
+/* Barra segmentada por estado */
+.pj-bar { height:8px; border-radius:999px; overflow:hidden; display:flex; background:var(--bg-4); margin-bottom:12px; }
+.pj-bar span { height:100%; transition:width 1s cubic-bezier(.16,1,.3,1); }
+.pj-bar .sg-vendido { background:linear-gradient(90deg,#E5484D,#c23a3f); }
+.pj-bar .sg-separado { background:linear-gradient(90deg,#EDCC60,#D4AF37); }
+.pj-bar .sg-reservado { background:var(--blue); }
+.pj-bar .sg-disponible { background:rgba(78,123,70,.55); }
+
+.pj-pct { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; }
+.pj-pct__big { font-family:var(--f-title); font-size:26px; font-weight:600; color:var(--gold);
+  background:var(--grad-gold-text); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.pj-pct__lbl { font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-3); }
+.pj-pct__lots { font-size:12px; color:var(--text-2); }
+
+.pj-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+.pj-m { text-align:center; padding:9px 4px; border-radius:11px; background:var(--bg-2); border:1px solid var(--border-soft); }
+.pj-m__n { font-size:16px; font-weight:700; line-height:1; }
+.pj-m__l { font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3); margin-top:4px; }
+.pj-m.d .pj-m__n { color:#7bbf70; } .pj-m.s .pj-m__n { color:var(--gold); }
+.pj-m.v .pj-m__n { color:#ef6a6e; } .pj-m.r .pj-m__n { color:var(--blue); }
+
+.pj-foot { display:flex; align-items:center; justify-content:space-between; padding-top:14px; border-top:1px solid var(--border-soft); }
+.pj-price { line-height:1.2; }
+.pj-price__l { font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-3); }
+.pj-price__v { font-size:13.5px; font-weight:600; color:var(--text); }
+.pj-meta2 { display:flex; gap:14px; margin-top:9px; }
+.pj-meta2 div { font-size:11px; color:var(--text-3); display:flex; align-items:center; gap:5px; }
+.pj-enter { display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; color:#000;
+  background:var(--grad-gold); padding:10px 16px; border-radius:11px; border:none; cursor:pointer;
+  box-shadow:0 6px 18px -8px rgba(200,164,90,.7); transition:transform .25s, box-shadow .25s; white-space:nowrap; }
+.pj-card:hover .pj-enter { transform:translateX(2px); box-shadow:0 10px 24px -8px rgba(200,164,90,.85); }
+.pj-enter svg { width:15px; height:15px; }
+
+.pj-empty { grid-column:1/-1; text-align:center; padding:70px 20px; color:var(--text-3);
+  background:linear-gradient(180deg, rgba(28,28,28,.4), rgba(18,18,18,.5)); border-radius:20px; border:1px dashed var(--border); }
+.pj-empty h3 { font-family:var(--f-title); font-size:17px; color:var(--text-2); margin-bottom:8px; letter-spacing:.04em; }
+.pj-empty p { max-width:420px; margin:0 auto 18px; font-size:13px; line-height:1.6; }
+
+.os-header-actions { display:flex; gap:10px; align-items:center; }
+
+/* Modal */
+.pm-ov { position:fixed; inset:0; background:rgba(0,0,0,.42); backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+.pm-ov.show { display:flex; }
+.pm { background:var(--bg-1); border:1px solid var(--border); border-radius:20px; width:100%; max-width:560px; max-height:92vh; overflow-y:auto; padding:26px; box-shadow:var(--sh-pop); }
+.pm h3 { font-family:var(--f-title); font-size:17px; margin-bottom:2px; letter-spacing:.03em; }
+.pm > p.sub { font-size:12px; color:var(--text-3); margin-bottom:18px; }
+.pm-row { margin-bottom:15px; }
+.pm-row label { display:block; font-size:10px; color:var(--text-3); text-transform:uppercase; letter-spacing:.11em; margin-bottom:6px; }
+.pm-row input, .pm-row select, .pm-row textarea { width:100%; background:var(--bg-4); border:1px solid var(--border); border-radius:10px; color:var(--text); padding:11px 13px; font-family:var(--f-ui); font-size:13.5px; outline:none; transition:border-color .2s; }
+.pm-row input:focus, .pm-row select:focus, .pm-row textarea:focus { border-color:var(--gold-line); }
+.pm-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:10px; }
+.pm-btn { border:none; border-radius:11px; padding:11px 20px; font-size:13px; cursor:pointer; font-family:var(--f-ui); font-weight:500; }
+.pm-btn.save { background:var(--grad-gold); color:#000; font-weight:600; }
+.pm-btn.ghost { background:var(--bg-3); color:var(--text-2); border:1px solid var(--border); }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { api, toast, esc, ICONS } = SPOS;
+  const ctx = await SPOS.mount({ active: 'proyectos', title: 'Proyectos', crumb: 'Desarrollos inmobiliarios · Centro de comando', padded: true, adminOnly: true });
+  if (!ctx) return;
+
+  const EST_LABEL = { planeacion:'Planeación', preventa:'Preventa', en_venta:'En venta', entregado:'Entregado', pausado:'Pausado' };
+  let proyectos = [];
+
+  async function cargar() {
+    const r = await api('/api/proyectos');
+    proyectos = Array.isArray(r) ? r : [];
+    render();
+  }
+
+  function money(v) { return v ? '$' + Number(v).toLocaleString('es-CO') : '—'; }
+
+  function card(p, i) {
+    const total = p.total_lotes || 0;
+    const disp = p.disponibles || 0, sep = p.separados || 0, ven = p.vendidos || 0, res = p.reservados || 0;
+    const pct = total ? Math.round((ven / total) * 100) : 0;
+    const w = (n) => total ? (n / total * 100) : 0;
+    const hero = p.imagen_url
+      ? `<div class="pj-hero__img" style="background-image:url('${esc(p.imagen_url)}')"></div>`
+      : `<div class="pj-hero__fallback"></div>`;
+    const est = p.estado || 'en_venta';
+    const loc = [p.ciudad, p.departamento].filter(Boolean).map(esc).join(', ') || 'Colombia';
+    return `
+    <div class="pj-card" style="animation-delay:${i * 70}ms" data-open="${p.id}">
+      <div class="pj-hero">
+        ${hero}
+        <div class="pj-hero__grad"></div>
+        <div class="pj-hero__top">
+          <span class="pj-chip pj-est-${est}"><span class="pj-chip__dot"></span>${EST_LABEL[est] || est}</span>
+          ${p.fecha_inicio ? `<span class="pj-chip">${esc(p.fecha_inicio)}</span>` : ''}
+        </div>
+        <div class="pj-hero__title">
+          <div class="pj-name">${esc(p.nombre)}</div>
+          <div class="pj-loc">${ICONS.pin ? '' : ''}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${loc}</div>
+        </div>
+      </div>
+      <div class="pj-body">
+        <div class="pj-bar">
+          <span class="sg-vendido" style="width:${w(ven)}%"></span>
+          <span class="sg-separado" style="width:${w(sep)}%"></span>
+          <span class="sg-reservado" style="width:${w(res)}%"></span>
+          <span class="sg-disponible" style="width:${w(disp)}%"></span>
+        </div>
+        <div class="pj-pct">
+          <div><span class="pj-pct__big">${pct}%</span> <span class="pj-pct__lbl">vendido</span></div>
+          <div class="pj-pct__lots">${total.toLocaleString('es-CO')} lotes</div>
+        </div>
+        <div class="pj-metrics">
+          <div class="pj-m d"><div class="pj-m__n">${disp}</div><div class="pj-m__l">Disp.</div></div>
+          <div class="pj-m s"><div class="pj-m__n">${sep}</div><div class="pj-m__l">Separ.</div></div>
+          <div class="pj-m v"><div class="pj-m__n">${ven}</div><div class="pj-m__l">Vend.</div></div>
+          <div class="pj-m r"><div class="pj-m__n">${res}</div><div class="pj-m__l">Reserv.</div></div>
+        </div>
+        <div class="pj-foot">
+          <div>
+            <div class="pj-price"><div class="pj-price__l">Rango de valor</div>
+              <div class="pj-price__v">${money(p.precio_min)} — ${money(p.precio_max)}</div></div>
+            <div class="pj-meta2">
+              <div><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="3"/><path d="M2 21v-1a6 6 0 0 1 12 0v1M16 3.1a4 4 0 0 1 0 7.8M22 21v-1a6 6 0 0 0-4-5.6"/></svg>${p.asesores_activos || 0} asesores</div>
+            </div>
+          </div>
+          <button class="pj-enter" data-open="${p.id}">Entrar
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function render() {
+    const h = document.querySelector('.os-topbar');
+    if (h && !h.querySelector('.os-header-actions')) {
+      const div = document.createElement('div');
+      div.className = 'os-header-actions';
+      div.innerHTML = '<button id="btnAdd" class="btn btn--gold btn--sm">' + (ICONS.plus || '+') + 'Nuevo proyecto</button>';
+      h.appendChild(div);
+    }
+    if (!proyectos.length) {
+      ctx.content.innerHTML = `<div class="pj-empty"><h3>✦ Portafolio de proyectos</h3>
+        <p>Aún no hay proyectos. Crea el primero (ej. <em>La Bendición</em>) y luego digitaliza su plano en lotes dentro del Centro de Control.</p>
+        <button id="btnAdd2" class="btn btn--gold btn--sm">${ICONS.plus || '+'}Crear proyecto</button></div>`;
+    } else {
+      ctx.content.innerHTML = '<div class="pj-grid">' + proyectos.map(card).join('') + '</div>';
+    }
+    document.getElementById('btnAdd')?.addEventListener('click', () => abrirModal());
+    document.getElementById('btnAdd2')?.addEventListener('click', () => abrirModal());
+    ctx.content.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      location.href = '/os/proyecto.html?id=' + el.dataset.open;
+    }));
+  }
+
+  function abrirModal() {
+    const ov = document.createElement('div');
+    ov.className = 'pm-ov show';
+    ov.innerHTML =
+      '<div class="pm">' +
+        '<h3>Nuevo proyecto</h3><p class="sub">Un desarrollo independiente con su propio mapa, lotes y estadísticas.</p>' +
+        '<div class="pm-row"><label>Nombre del proyecto</label><input id="fNombre" placeholder="La Bendición"></div>' +
+        '<div style="display:flex;gap:12px">' +
+          '<div class="pm-row" style="flex:1"><label>Ciudad</label><input id="fCiudad" placeholder="Tocaima"></div>' +
+          '<div class="pm-row" style="flex:1"><label>Departamento</label><input id="fDepto" placeholder="Cundinamarca"></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:12px">' +
+          '<div class="pm-row" style="flex:1"><label>Estado</label><select id="fEstado">' +
+            '<option value="preventa">Preventa</option><option value="en_venta" selected>En venta</option>' +
+            '<option value="planeacion">Planeación</option><option value="entregado">Entregado</option><option value="pausado">Pausado</option></select></div>' +
+          '<div class="pm-row" style="flex:1"><label>Fecha de inicio</label><input id="fFecha" placeholder="2026"></div>' +
+        '</div>' +
+        '<div class="pm-row"><label>URL de imagen principal (opcional)</label><input id="fImg" placeholder="https://..."></div>' +
+        '<div class="pm-row"><label>Descripción (opcional)</label><textarea id="fDesc" rows="2" placeholder="Parcelación campestre..."></textarea></div>' +
+        '<div class="pm-actions"><button class="pm-btn ghost" id="pmCancel">Cancelar</button><button class="pm-btn save" id="pmSave">Crear proyecto</button></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.getElementById('pmCancel').onclick = () => ov.remove();
+    document.getElementById('pmSave').onclick = async () => {
+      const data = {
+        nombre: document.getElementById('fNombre').value.trim(),
+        ciudad: document.getElementById('fCiudad').value.trim(),
+        departamento: document.getElementById('fDepto').value.trim(),
+        estado: document.getElementById('fEstado').value,
+        fecha_inicio: document.getElementById('fFecha').value.trim(),
+        imagen_url: document.getElementById('fImg').value.trim(),
+        descripcion: document.getElementById('fDesc').value.trim(),
+      };
+      if (!data.nombre) { toast('El nombre es requerido', 'err'); return; }
+      const r = await api('/api/proyectos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      if (r && r.ok) { toast('Proyecto creado', 'ok'); ov.remove(); await cargar(); }
+      else toast('Error al crear', 'err');
+    };
+  }
+
+  await cargar();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Alertas · Supervisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>:root { --alert-success: var(--green); --alert-warning: var(--gold); --alert-danger: #C0392B; --alert-info: var(--blue, #3B82F6); }
+.s5_hero { width: 60px; height: 60px; border-radius: 50%; background: radial-gradient(circle at center, rgba(200,164,90,.18), transparent); display: grid; place-items: center; margin-bottom: var(--s1); }
+.s5_badge { font-size: 11px; font-weight: 600; color: #0A0A0A; background: var(--alert-warning); padding: 1px 7px; border-radius: 20px; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .03em; }
+.tag--red { background: var(--alert); color: #fff; }
+.tag--gold { background: var(--gold); color: #0A0A0A; }
+.tag--blue { background: var(--blue); color: #fff; }
+.tag--green { background: var(--green); color: #fff; }
+.tag--fade { background: var(--text-3); color: #fff; }
+.tag--mute { background: var(--bg-3); color: var(--text-2); }
+.s5_list { height: calc(100dvh - 280px); min-height: 200px; overflow-y: auto; padding-right: var(--s1); }
+.lero { opacity: 0.45; }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script src="/supervisor/supervisor-shell.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const { me, content, esc } = await SPS.mount({ active: 'alertas', title: 'Alertas', crumb: 'Supervisor Center · Monitoreo del equipo' });
+  if (!content) return;
+
+  const ICONS = (window.SPOS && window.SPOS.ICONS) || {};
+  const fmt = { ts: (t) => { const d = new Date(Number(t)); return d.toLocaleString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } };
+
+  const TIPOS = {
+    lead_asignado:      { label: 'Asignación',      color: 'tag--gold' },
+    lead_reasignado:    { label: 'Reasignación',     color: 'tag--gold' },
+    mensaje_cliente:    { label: 'Mensaje entrante',  color: 'tag--blue' },
+    respuesta_vendedor: { label: 'Respuesta',         color: 'tag--green' },
+    escalamiento_critico: { label: 'Escalado crítico', color: 'tag--red' },
+    escalamiento_admin: { label: 'Escalado admin',   color: 'tag--red' },
+    seguimiento:        { label: 'Seguimiento',       color: 'tag--mute' },
+    programado_cancelado: { label: 'Cancelado',      color: 'tag--mute' },
+    programado_fallido:  { label: 'Fallo programa',  color: 'tag--red' },
+    error_sistema:      { label: 'Error sistema',     color: 'tag--red' },
+  };
+
+  const TAG = (t) => { const v = TIPOS[t] || { label: String(t), color: 'tag--fade' }; return `<span class="tag ${v.color}">${v.label}</span>`; };
+
+  let alertas = [];
+  let sinLeer = 0;
+  let filtroTipo = '';
+  let filtroLeidas = 'todas';
+  let actual = null;
+
+  // prefijos de tipo para el selector ("escalamiento_critico" y "escalamiento_admin")
+  const mergeTipo = (t) => t.startsWith('escalamiento_') ? 'escalamiento_crit,escalamiento_admin' : t;
+
+  await refrescar();
+
+  content.innerHTML = `
+   <div class="os-content__max" style="max-width:none">
+    <!-- Hero -->
+    <div class="u-col u-gap2" style="margin-bottom:var(--s3);justify-content:space-between;min-height:0">
+      <div style="display:grid;grid-template-columns:60px 1fr auto;gap:var(--s3);align-items:center">
+        <div class="s5_hero">
+          ${ICONS.notification || '<svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" width="28" height="28"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>'}
+        </div>
+        <div>
+          <div class="t-h2" style="font-size:22px;margin:0">Centro de Alertas</div>
+          <div class="t-dim3" style="font-size:13px;margin-top:2px" id="saResumen">—</div>
+        </div>
+        <div class="u-row u-gap2" style="justify-content:flex-end;height:fit-content">
+          <span id="saBadge" class="s5_badge" style="display:none">0</span>
+          <button class="btn btn--sm btn--outline" id="saMarcarTodas" style="display:none">Todo listo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="u-row u-gap2" style="margin-bottom:var(--s3);flex-wrap:wrap">
+      <select class="input" id="saFiltroTipo" style="width:auto">
+        <option value="">Todos los tipos</option>
+        <option value="lead_asignado">Asignación</option>
+        <option value="lead_reasignado">Reasignación</option>
+        <option value="mensaje_cliente">Mensaje cliente</option>
+        <option value="respuesta_vendedor">Respuesta asesor</option>
+        <option value="escalamiento_crit">Escalación crítica</option>
+        <option value="escalamiento_admin">Escalación admin</option>
+        <option value="seguimiento">Seguimiento</option>
+        <option value="programado_cancelado">Programado cancelado</option>
+        <option value="programado_fallido">Falló programa</option>
+        <option value="error_sistema">Error sistema</option>
+      </select>
+      <select class="input" id="saLeidas" style="width:auto">
+        <option value="todas">Todas</option>
+        <option value="0">Sin leer</option>
+        <option value="1">Leídas</option>
+      </select>
+    </div>
+
+    <!-- Lista -->
+    <div class="s5_list scrollbar-mini" id="saLista"><div class="empty">Cargando alertas…</div></div>
+   </div>`;
+
+  document.getElementById('saFiltroTipo').addEventListener('change', e => { filtroTipo = e.target.value; renderizar(); });
+  document.getElementById('saLeidas').addEventListener('change', e => { filtroLeidas = e.target.value; renderizar(); });
+  document.getElementById('saMarcarTodas').addEventListener('click', async () => {
+    await SPS.api('/api/supervisor/alertas/marcar-todas', { method: 'POST' });
+    alertas.forEach(a => a.leida = 1);
+    sinLeer = 0;
+    renderizar();
+  });
+
+  // SSE
+  hookSSE();
+  setInterval(async () => { await refrescar(); renderizar(); }, 30000);
+
+  // ─ helpers ─
+
+  async function refrescar() {
+    const [r, b] = await Promise.all([
+      SPS.api('/api/supervisor/alertas'),
+      SPS.api('/api/supervisor/alertas/sin-leer'),
+    ]);
+    alertas = (r && r.alertas) ? r.alertas : (alertas || []);
+    sinLeer = (b && typeof b.sin_leer === 'number') ? b.sin_leer : 0;
+  }
+
+  function renderizar() {
+    let list = alertas || [];
+    if (filtroTipo) {
+      const raw = mergeTipo(filtroTipo).split(',');
+      list = list.filter(a => raw.includes(String(a.tipo)));
+    }
+    if (filtroLeidas === '0') list = list.filter(a => !a.leida);
+    else if (filtroLeidas === '1') list = list.filter(a => a.leida);
+
+    const badge = document.getElementById('saBadge');
+    const btn = document.getElementById('saMarcarTodas');
+    badge.textContent = sinLeer;
+    badge.style.display = sinLeer > 0 ? '' : 'none';
+    btn.style.display = sinLeer > 0 ? 'inline-flex' : 'none';
+    document.getElementById('saResumen').textContent = `${list.length} alerta(s) · ${sinLeer} sin leer`;
+
+    const listaEl = document.getElementById('saLista');
+    if (!list.length) { listaEl.innerHTML = '<div class="empty">Ninguna alerta coincide con los filtros.</div>'; return; }
+    listaEl.innerHTML = list.map(a => {
+      const tipoInfo = TIPOS[a.tipo] || { label: String(a.tipo), color: 'tag--fade' };
+      const clsLeido = a.leida ? 'lero' : '';
+      return `<div class="card card--float card--ripple u-row u-gap3 ${clsLeido}" style="align-items:flex-start;padding:calc(var(--s1)+4px) var(--s2);margin-bottom:var(--s1);cursor:pointer" data-alert-id="${a.id}">
+        <div class="${a.leida ? 'avatar avatar--sm' : 'avatar avatar--sm'}" style="flex-shrink:0;background:var(--gold);width:24px;height:24px;font-size:12px" title="${esc(tipoInfo.label)}">!</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600">${esc(a.titulo)}</div>
+          <div style="font-size:12px;color:var(--text-2);margin-top:2px;word-break:break-word">${esc(a.cuerpo || '')}</div>
+          <div class="u-row u-gap2" style="font-size:11px;color:var(--text-3);margin-top:4px;align-items:center">
+            <span class="tag ${tipoInfo.color}" style="flex-shrink:0">${tipoInfo.label}</span>
+            <span>${fmt.ts(a.created_at)}</span>
+            ${a.leida ? '<span class="t-dim3">· Leída</span>' : '<span style="color:var(--gold);font-weight:600">· No leída</span>'}
+          </div>
+        </div>
+        ${!a.leida ? `<span style="flex-shrink:0;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-top:6px" title="Sin leer"></span>` : ''}
+      </div>`;
+    }).join('');
+    listaEl.querySelectorAll('[data-alert-id]').forEach(el => {
+      el.addEventListener('click', () => s5_leer(Number(el.getAttribute('data-alert-id'))));
+    });
+  }
+
+  function s5_leer(id) {
+    const a = alertas.find(x => x.id === id);
+    if (!a) return;
+    a.leida = 1;
+    if (sinLeer > 0) sinLeer--;
+    renderizar();
+    SPS.api(`/api/supervisor/alertas/${id}/leer`, { method: 'POST' }).catch(() => {});
+  }
+
+  function hookSSE() {
+    if (typeof EventSource === 'undefined') return;
+    try {
+      const sse = new EventSource('/api/stream');
+      sse.addEventListener('notificacion', async e => {
+        try {
+          const d = JSON.parse(e.data);
+          if (d && d.tipo) {
+            alertas.unshift({ id: d.id, tipo: d.tipo, titulo: d.titulo, cuerpo: d.cuerpo, lead_id: d.leadId, leida: 0, created_at: d.ts });
+            sinLeer = (sinLeer || 0) + 1;
+            renderizar();
+          }
+        } catch (z) { /* no-op */ }
+      });
+      sse.onerror = () => sse.close();
+      window._s5_sse = sse;
+    } catch (e) { /* no soporta SSE */ }
+  }
+
+  // esc() is imported from SPS.mount()
+})();
+</script>
+</body>
+</html>

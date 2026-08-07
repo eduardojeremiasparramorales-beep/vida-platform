@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Campañas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  .cp-page { max-width: 960px; margin: 0 auto; }
+  .cp-sec { background: var(--bg-1); border: 1px solid var(--border-soft); border-radius: var(--r); padding: var(--s3); margin-bottom: var(--s3); }
+  .cp-sec h3 { font-family: var(--f-title); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+  .cp-sec p { font-size: 12.5px; color: var(--text-3); margin-bottom: var(--s2); }
+  .cp-field { margin-bottom: 14px; }
+  .cp-field label { display: block; font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
+  .cp-field input, .cp-field select, .cp-field textarea { width: 100%; background: var(--bg-3); border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--text); padding: 10px 12px; font-family: var(--f-ui); font-size: 13.5px; outline: none; }
+  .cp-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .cp-row > .cp-field { flex: 1; min-width: 160px; }
+  .cp-btn { height: 38px; padding: 0 20px; background: var(--gold); color: #000; border: none; border-radius: var(--r-sm); font-weight: 600; font-size: 13px; cursor: pointer; font-family: var(--f-ui); }
+  .cp-btn--ghost { background: var(--bg-3); color: var(--text); border: 1px solid var(--border); }
+  .cp-btn--danger { background: #c0392b; color: #fff; }
+  .cp-btn:disabled { opacity: .4; cursor: default; }
+  .cp-count { font-size: 13px; color: var(--gold); font-weight: 600; margin: 8px 0; }
+  .cp-card { border: 1px solid var(--border-soft); border-radius: 12px; padding: 16px; margin-bottom: 10px; background: var(--bg-2); }
+  .cp-card__top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .cp-badge { font-size: 10.5px; padding: 2px 9px; border-radius: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .cp-badge--draft { background: rgba(150,150,150,.15); color: var(--text-3); }
+  .cp-badge--generating { background: rgba(200,164,90,.18); color: var(--gold); }
+  .cp-badge--ready { background: rgba(78,123,70,.18); color: var(--green); }
+  .cp-badge--error { background: rgba(255,80,80,.15); color: #ff5050; }
+  .cp-badge--running { background: rgba(200,164,90,.18); color: var(--gold); }
+  .cp-badge--paused { background: rgba(255,170,0,.15); color: #ffaa00; }
+  .cp-badge--done { background: rgba(78,123,70,.18); color: var(--green); }
+  .cp-badge--failed { background: rgba(255,80,80,.15); color: #ff5050; }
+  .cp-stats { display: flex; gap: 18px; font-size: 12px; color: var(--text-3); margin-top: 8px; flex-wrap: wrap; }
+  .cp-stats b { color: var(--text); font-weight: 600; }
+  .cp-empty { text-align: center; padding: 40px 20px; color: var(--text-3); background: var(--bg-2); border-radius: 16px; border: 1px dashed var(--border); }
+  .cp-quality { display: flex; gap: 24px; flex-wrap: wrap; font-size: 13px; }
+  .cp-quality b { color: var(--gold); }
+
+  /* Assets preview */
+  .cp-asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 12px 0; }
+  .cp-asset-card { background: var(--bg-3); border-radius: 8px; padding: 8px; text-align: center; border: 1px solid var(--border); }
+  .cp-asset-card img { width: 100%; height: auto; border-radius: 6px; }
+  .cp-asset-card span { display: block; font-size: 10px; color: var(--text-3); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Proyect card */
+  .cp-proyect { border: 1px solid var(--border-soft); border-radius: 12px; padding: 16px; margin-bottom: 12px; background: var(--bg-2); }
+  .cp-proyect__header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .cp-proyect__name { font-size: 15px; font-weight: 600; }
+  .cp-proyect__meta { font-size: 12px; color: var(--text-3); margin: 4px 0; }
+  .cp-proyect__actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .cp-proyect__actions button { height: 32px; padding: 0 14px; font-size: 12px; }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const { api, toast } = SPOS;
+  const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  const ctx = await SPOS.mount({
+    active: 'campaigns', title: 'Campañas', crumb: 'Marketing', padded: true, adminOnly: true,
+  });
+  if (!ctx) return;
+
+  // ===== STATE =====
+  let projects = [];
+  let campaigns = [], templates = [], segmentOptions = { proyectos: [], ciudades: [] }, vendedores = [];
+  let currentTab = 'generar';
+  let projectImagesCache = {};
+  let crmProyectos = null; // proyectos reales del CRM (F2: puente catálogo→campaña), cargados una vez
+
+  async function loadCrmProyectos() {
+    if (crmProyectos) return crmProyectos;
+    crmProyectos = await api('/api/proyectos') || [];
+    return crmProyectos;
+  }
+  function nombreProyectoCrm(id) {
+    if (!id || !crmProyectos) return null;
+    const p = crmProyectos.find(x => Number(x.id) === Number(id));
+    return p ? p.nombre : null;
+  }
+
+  // ===== TABS =====
+  function renderTabs() {
+    ctx.content.innerHTML = `
+      <div class="cp-page">
+        <div class="tabs">
+          <div class="tabs__item ${currentTab === 'generar' ? 'active' : ''}" data-tab="generar">Generar Creativos</div>
+          <div class="tabs__item ${currentTab === 'whatsapp' ? 'active' : ''}" data-tab="whatsapp">Envios WhatsApp</div>
+        </div>
+        <div id="tabGenerar" class="tabs__pane" data-tab="generar" style="${currentTab === 'generar' ? 'display:block' : 'display:none'}"></div>
+        <div id="tabWhatsapp" class="tabs__pane" data-tab="whatsapp" style="${currentTab === 'whatsapp' ? 'display:block' : 'display:none'}"></div>
+      </div>`;
+    const tabsRoot = ctx.content.querySelector('.tabs');
+    tabsRoot.querySelectorAll('.tabs__item').forEach(t => t.addEventListener('click', () => {
+      currentTab = t.dataset.tab;
+      tabsRoot.querySelectorAll('.tabs__item').forEach(x => x.classList.toggle('active', x === t));
+      ctx.content.querySelectorAll('.tabs__pane').forEach(p => {
+        const show = p.dataset.tab === currentTab;
+        p.classList.toggle('active', show);
+        p.style.display = show ? 'block' : 'none';
+      });
+      if (currentTab === 'generar') renderGenerar();
+      else renderWhatsapp();
+    }));
+    if (currentTab === 'generar') renderGenerar();
+    else renderWhatsapp();
+  }
+
+  // ===================== TAB 1: GENERAR CREATIVOS =====================
+  async function renderGenerar() {
+    const box = document.getElementById('tabGenerar');
+    box.innerHTML = `
+      <div class="cp-sec">
+        <h3>Proyectos publicitarios</h3>
+        <p>Define un proyecto, sube sus imágenes y genera 27 assets profesionales para Meta Ads (feed, carrusel, stories, banners, reel y portada).</p>
+        <button class="cp-btn" id="btnNewProject" style="margin-bottom:14px">Nuevo proyecto</button>
+        <div id="projectList"></div>
+      </div>`;
+    await Promise.all([loadProjects(), loadCrmProyectos()]);
+    renderProjectList();
+    document.getElementById('btnNewProject').addEventListener('click', openNewProjectModal);
+  }
+
+  async function loadProjects() {
+    projects = await api('/api/campanas-sp/projects') || [];
+    // Cargar imágenes disponibles por slug
+    for (const p of projects) {
+      const slug = p.slug;
+      if (slug && !projectImagesCache[slug]) {
+        const dirs = await api('/api/campanas-sp/projects/dirs?slug=' + encodeURIComponent(slug));
+        projectImagesCache[slug] = dirs || { images: [] };
+      }
+    }
+  }
+
+  function renderProjectList() {
+    const box = document.getElementById('projectList');
+    if (!projects.length) {
+      box.innerHTML = '<div class="cp-empty">No hay proyectos. Crea el primero para generar assets.</div>';
+      return;
+    }
+    box.innerHTML = projects.map(p => {
+      const assets = parseAssets(p.assets_result);
+      const total = assets && assets.total ? assets.total : 0;
+      const statusBadge = `cp-badge cp-badge--${p.status === 'ready' ? 'done' : p.status === 'generating' ? 'generating' : p.status === 'error' ? 'error' : 'draft'}`;
+      const statusLabel = { draft: 'Borrador', generating: 'Generando…', ready: 'Listo', error: 'Error' }[p.status] || p.status;
+      const crmNombre = nombreProyectoCrm(p.proyecto_id);
+      const vinculoBadge = crmNombre
+        ? `<span class="cp-badge" style="background:rgba(200,164,90,.15);color:var(--gold)" title="Datos y fotos importados de este proyecto del CRM">📦 Vinculado a ${esc(crmNombre)}</span>`
+        : '';
+      return `<div class="cp-proyect" data-id="${p.id}">
+        <div class="cp-proyect__header">
+          <div>
+            <div class="cp-proyect__name">${esc(p.name)} <span class="${statusBadge}">${statusLabel}</span> ${vinculoBadge}</div>
+            <div class="cp-proyect__meta">${esc(p.location || '')} ${p.template ? '· Plantilla: ' + esc(p.template) : ''}</div>
+          </div>
+        </div>
+        <div class="cp-proyect__meta">
+          ${p.price ? esc(p.price) + (p.area ? ' · ' + esc(p.area) : '') : ''}
+          ${total ? '· ' + total + ' assets' : ''}
+        </div>
+        ${p.error ? '<div style="font-size:11px;color:#ff5050;margin:4px 0">' + esc(p.error) + '</div>' : ''}
+        <div class="cp-proyect__actions">
+          <button data-edit="${p.id}" class="cp-btn cp-btn--ghost">Editar</button>
+          ${p.status === 'draft' || p.status === 'error' ? `<button data-gen="${p.id}" class="cp-btn">Generar 27 assets</button>` : ''}
+          ${p.status === 'ready' ? `<button data-preview="${p.id}" class="cp-btn cp-btn--ghost">Vista previa</button>` : ''}
+          <button data-del="${p.id}" class="cp-btn cp-btn--danger" style="background:transparent;border:1px solid var(--border);color:var(--text-3)">Eliminar</button>
+        </div>
+        <div id="preview-${p.id}" style="margin-top:10px"></div>
+      </div>`;
+    }).join('');
+
+    box.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openEditProject(Number(b.dataset.edit))));
+    box.querySelectorAll('[data-gen]').forEach(b => b.addEventListener('click', () => generateProject(Number(b.dataset.gen))));
+    box.querySelectorAll('[data-preview]').forEach(b => b.addEventListener('click', () => togglePreview(Number(b.dataset.preview))));
+    box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Eliminar este proyecto?')) return;
+      const r = await api('/api/campanas-sp/projects/' + b.dataset.del, { method: 'DELETE' });
+      if (r && r.ok) { toast('Proyecto eliminado', 'ok'); await loadProjects(); renderProjectList(); }
+      else toast('Error al eliminar', 'err');
+    }));
+  }
+
+  function parseAssets(assetsStr) {
+    if (!assetsStr || assetsStr === '{}') return null;
+    try { return JSON.parse(assetsStr); } catch (e) { return null; }
+  }
+
+  async function togglePreview(id) {
+    const box = document.getElementById('preview-' + id);
+    if (!box) return;
+    if (box.dataset.open === '1') { box.innerHTML = ''; box.dataset.open = '0'; return; }
+    box.innerHTML = '<div style="font-size:12px;color:var(--text-3)">Cargando…</div>';
+    const p = projects.find(x => x.id === id);
+    const assets = parseAssets(p.assets_result);
+    if (!assets || !assets.assets) {
+      box.innerHTML = '<div style="font-size:12px;color:var(--text-3)">Sin datos de assets</div>';
+      return;
+    }
+    box.dataset.open = '1';
+    let html = '';
+    const assetBase = p.output_dir ? '/api/media/' + p.slug + '/generated' : '';
+    for (const [category, files] of Object.entries(assets.assets)) {
+      const imgs = (files || []).filter(f => /\.(png|jpg|jpeg|webp)$/i.test(f));
+      if (!imgs.length) continue;
+      html += `<div style="margin-top:10px"><strong style="font-size:12px;color:var(--gold);text-transform:uppercase">${esc(category)}</strong>`;
+      html += `<div class="cp-asset-grid">`;
+      if (assetBase) {
+        html += imgs.map(f => `<div class="cp-asset-card"><img src="${assetBase}/${category}/${esc(f)}" alt="${esc(f)}" loading="lazy"><span>${esc(f)}</span></div>`).join('');
+      } else {
+        html += imgs.map(f => `<div class="cp-asset-card"><span style="padding:12px 0">${esc(f)}</span></div>`).join('');
+      }
+      html += `</div></div>`;
+    }
+    box.innerHTML = html || '<div style="font-size:12px;color:var(--text-3)">Sin assets generados</div>';
+  }
+
+  async function generateProject(id) {
+    const btn = document.querySelector(`[data-gen="${id}"]`);
+    if (btn) btn.disabled = true;
+    const r = await api('/api/campanas-sp/projects/' + id + '/generate', { method: 'POST' });
+    if (btn) btn.disabled = false;
+    if (r && r.ok) {
+      toast(`Generados ${r.total} assets en ${r.time_ms}ms`, 'ok');
+    } else {
+      toast('Error: ' + ((r && r.error) || 'falló la generación'), 'err');
+    }
+    await loadProjects();
+    renderProjectList();
+  }
+
+  function openNewProjectModal() { openProjectModal(null); }
+  function openEditProject(id) {
+    const p = projects.find(x => x.id === id);
+    if (p) openProjectModal(p);
+  }
+
+  const TEMPLATES_OPTS = [
+    { value: 'premium', label: 'Premium — oscuro, dorado, sobrio' },
+    { value: 'moderna', label: 'Moderna — claro, contemporáneo' },
+    { value: 'clasica', label: 'Clásica — dorado fuerte, tradicional' },
+  ];
+
+  function openProjectModal(project) {
+    const isNew = !project;
+    const existing = document.getElementById('projModal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'projModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55)';
+    modal.innerHTML = `
+      <div style="background:var(--bg-1);border-radius:14px;padding:24px;width:92%;max-width:560px;max-height:90vh;overflow:auto;border:1px solid var(--border-soft)">
+        <h3 style="margin:0 0 16px;color:var(--text-1)">${isNew ? 'Nuevo proyecto' : 'Editar: ' + esc(project.name)}</h3>
+        ${isNew ? `
+        <div class="cp-field" style="background:var(--bg-3);border:1px solid var(--border-soft);border-radius:var(--r-sm);padding:12px;margin-bottom:16px">
+          <label style="margin-bottom:8px">📦 Importar desde un proyecto existente del CRM (opcional)</label>
+          <select id="fImportCrm">
+            <option value="">— Escribir todo a mano —</option>
+            ${(crmProyectos || []).map(cp => `<option value="${cp.id}">${esc(cp.nombre)}${cp.ciudad ? ' · ' + esc(cp.ciudad) : ''}</option>`).join('')}
+          </select>
+          <div id="importCrmInfo" style="font-size:11.5px;color:var(--text-3);margin-top:6px"></div>
+        </div>` : ''}
+        <form id="projForm">
+          <input type="hidden" id="fProyectoId" value="${project && project.proyecto_id ? project.proyecto_id : ''}">
+          <div class="cp-row">
+            <div class="cp-field" style="flex:2"><label>Nombre del proyecto</label><input id="fName" required value="${esc(project ? project.name : '')}" placeholder="Ej: La Bendición"></div>
+            <div class="cp-field" style="flex:1"><label>Ubicación</label><input id="fLocation" value="${esc(project ? project.location || '' : '')}" placeholder="Tocaima, Cundinamarca"></div>
+          </div>
+          <div class="cp-row">
+            <div class="cp-field"><label>Precio (texto)</label><input id="fPrice" value="${esc(project ? project.price || '' : '')}" placeholder="\$12.000.000"></div>
+            <div class="cp-field"><label>Área</label><input id="fArea" value="${esc(project ? project.area || '' : '')}" placeholder="98m2"></div>
+          </div>
+          <div class="cp-field"><label>Descripción</label><input id="fDesc" value="${esc(project ? project.description || '' : '')}" placeholder="Breve descripción"></div>
+          <div class="cp-field"><label>WhatsApp</label><input id="fWhatsapp" value="${esc(project ? project.whatsapp || '' : '+57 321 462 5618')}" placeholder="+57 321 462 5618"></div>
+          <div class="cp-field"><label>CTA</label><input id="fCta" value="${esc(project ? project.cta || '' : '')}" placeholder="SOLICITA INFORMACIÓN"></div>
+          <div class="cp-field"><label>Template visual</label>
+            <select id="fTemplate">${TEMPLATES_OPTS.map(t => `<option value="${t.value}" ${(project && project.template === t.value) || t.value === 'premium' ? 'selected' : ''}>${esc(t.label)}</option>`).join('')}</select>
+          </div>
+          <div class="cp-field"><label>Features (uno por línea)</label>
+            <textarea id="fFeatures" rows="3" placeholder="Urbanización completa
+Vías pavimentadas
+Servicios públicos">${project && project.features ? (Array.isArray(project.features) ? project.features.join('\n') : project.features) : ''}</textarea>
+          </div>
+          <div class="cp-field"><label>Slug (URL-safe, para la carpeta de imágenes)</label>
+            <input id="fSlug" value="${esc(project ? project.slug : '')}" placeholder="la-bendicion" ${!isNew ? 'readonly style="opacity:.5"' : ''}>
+          </div>
+          <div id="imagesSection">
+            <label style="display:block;font-size:10.5px;color:var(--text-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Imágenes del proyecto</label>
+            <div id="imageList" style="margin-bottom:8px"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+              <label class="cp-btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;height:34px">
+                Elegir carpeta
+                <input type="file" webkitdirectory multiple accept="image/*" id="folderPicker" style="display:none">
+              </label>
+              <span style="font-size:11px;color:var(--text-3);align-self:center">o</span>
+              <label class="cp-btn cp-btn--ghost" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;height:34px">
+                Elegir archivos
+                <input type="file" multiple accept="image/*" id="filePicker" style="display:none">
+              </label>
+              <button type="button" class="cp-btn cp-btn--ghost" id="btnScanImages" style="font-size:11px;height:34px">Escanear servidor</button>
+            </div>
+            <div id="uploadProgress" style="font-size:12px;color:var(--text-3);margin-top:6px"></div>
+            <p style="font-size:11px;color:var(--text-3);margin-top:6px">Las imágenes se guardan en CAMPAÑAS_SP/projects/<strong id="slugPreview">la-bendicion</strong>/images/</p>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+            <button type="button" class="cp-btn cp-btn--ghost" id="projCancel">Cancelar</button>
+            <button type="submit" class="cp-btn">${isNew ? 'Crear proyecto' : 'Guardar cambios'}</button>
+          </div>
+        </form>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    modal.querySelector('#projCancel').addEventListener('click', () => modal.remove());
+
+    // Slug auto desde nombre
+    function slugFromName(name) {
+      // Normaliza tildes/eñes ANTES de filtrar (si no, "Bendición" → "bendici-n" en vez de
+      // "bendicion") — importante ahora que los nombres suelen venir importados del CRM real.
+      const sinTildes = name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ñ/gi, 'n');
+      return sinTildes.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    }
+    const nameInput = document.getElementById('fName');
+    const slugInput = document.getElementById('fSlug');
+    const slugPreview = document.getElementById('slugPreview');
+    function updateSlugPreview() {
+      const slug = slugInput.value || slugFromName(nameInput.value);
+      slugPreview.textContent = slug;
+    }
+    if (isNew) {
+      nameInput.addEventListener('input', () => {
+        if (!slugInput.value) updateSlugPreview();
+      });
+    }
+    slugInput.addEventListener('input', updateSlugPreview);
+    updateSlugPreview();
+
+    // Importar desde proyecto real del CRM: autocompleta el formulario (editable) y
+    // guarda el proyecto_id para que, al crear, el servidor copie sus fotos reales.
+    const importSel = document.getElementById('fImportCrm');
+    if (importSel) {
+      importSel.addEventListener('change', async () => {
+        const info = document.getElementById('importCrmInfo');
+        const pid = importSel.value;
+        document.getElementById('fProyectoId').value = pid || '';
+        if (!pid) { info.textContent = ''; return; }
+        info.textContent = 'Cargando datos del proyecto…';
+        const fill = await api('/api/campanas-sp/auto-fill/' + pid);
+        if (!fill) { info.textContent = 'No se pudo cargar el proyecto.'; return; }
+        if (fill.name) nameInput.value = fill.name;
+        if (fill.location) document.getElementById('fLocation').value = fill.location;
+        if (fill.description) document.getElementById('fDesc').value = fill.description;
+        if (fill.price) document.getElementById('fPrice').value = fill.price;
+        if (fill.area) document.getElementById('fArea').value = fill.area;
+        if (fill.highlights && fill.highlights.length) {
+          document.getElementById('fFeatures').value = fill.highlights.join('\n');
+        }
+        if (!slugInput.value) { slugInput.value = slugFromName(fill.name || ''); updateSlugPreview(); }
+        info.innerHTML = `✓ Datos cargados${fill.disponibles ? ' · <b style="color:var(--gold)">' + fill.disponibles + ' lotes disponibles</b>' : ''} — revisa y ajusta antes de guardar. Sus fotos se copiarán automáticamente.`;
+      });
+    }
+
+    async function uploadImages(files) {
+      if (!files || !files.length) return;
+      const slug = slugInput.value || slugFromName(nameInput.value);
+      if (!slug) { toast('Primero ingresa un nombre o slug', 'err'); return; }
+      // Si el proyecto no existe aún, créalo primero con los datos actuales
+      let pId = project ? project.id : null;
+      if (!pId && document.getElementById('fName').value.trim()) {
+        const data = {
+          name: document.getElementById('fName').value.trim(),
+          slug,
+          location: document.getElementById('fLocation').value.trim(),
+          template: document.getElementById('fTemplate').value,
+        };
+        const created = await api('/api/campanas-sp/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        if (created && created.id) {
+          pId = created.id;
+          project = created;
+          toast('Proyecto creado automáticamente', 'ok');
+        }
+      }
+      if (!pId) { toast('Primero guarda el proyecto', 'err'); return; }
+      const prog = document.getElementById('uploadProgress');
+      const form = new FormData();
+      for (const f of files) form.append('images', f);
+      prog.textContent = 'Subiendo ' + files.length + ' imagen(es)…';
+      try {
+        const r = await fetch('/api/campanas-sp/projects/' + pId + '/upload-images', {
+          method: 'POST',
+          body: form,
+          credentials: 'same-origin',
+        });
+        const data = await r.json();
+        if (data.ok) {
+          prog.textContent = '' + data.count + ' imagen(es) subidas';
+          scanImages(slug);
+        } else {
+          prog.textContent = 'Error: ' + (data.error || 'desconocido');
+        }
+      } catch (e) {
+        prog.textContent = 'Error de conexión';
+      }
+    }
+    document.getElementById('folderPicker').addEventListener('change', function() {
+      uploadImages(this.files);
+      this.value = '';
+    });
+    document.getElementById('filePicker').addEventListener('change', function() {
+      uploadImages(this.files);
+      this.value = '';
+    });
+    async function scanImages(slug) {
+      if (!slug) { slug = slugInput.value || slugFromName(nameInput.value); }
+      if (!slug) return;
+      const dirs = await api('/api/campanas-sp/projects/dirs?slug=' + encodeURIComponent(slug));
+      const list = document.getElementById('imageList');
+      const imgs = (dirs && dirs.images) || [];
+      if (!imgs.length) {
+        list.innerHTML = '<div style="font-size:12px;color:var(--text-3);margin:6px 0">Sin imágenes aún. Selecciona una carpeta o archivos arriba.</div>';
+        return;
+      }
+      list.innerHTML = '<div style="font-size:12px;color:var(--green);margin:6px 0">' + imgs.length + ' imagen(es):</div>' +
+        imgs.map(f => '<span style="font-size:11px;color:var(--text-3);display:inline-block;margin:2px 6px 2px 0">' + esc(f) + '</span>').join('');
+    }
+    document.getElementById('btnScanImages').addEventListener('click', async () => {
+      const slug = slugInput.value || slugFromName(nameInput.value);
+      if (!slug) { toast('Primero ingresa un nombre o slug', 'err'); return; }
+      scanImages(slug);
+    });
+
+    modal.querySelector('#projForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const slug = slugInput.value || slugFromName(nameInput.value);
+      if (!slug) { toast('Slug requerido', 'err'); return; }
+      const data = {
+        name: document.getElementById('fName').value.trim(),
+        slug,
+        location: document.getElementById('fLocation').value.trim(),
+        description: document.getElementById('fDesc').value.trim(),
+        price: document.getElementById('fPrice').value.trim(),
+        area: document.getElementById('fArea').value.trim(),
+        whatsapp: document.getElementById('fWhatsapp').value.trim(),
+        cta: document.getElementById('fCta').value.trim(),
+        template: document.getElementById('fTemplate').value,
+        features: document.getElementById('fFeatures').value.split('\n').map(s => s.trim()).filter(Boolean),
+        highlights: [],
+      };
+      const proyectoIdVal = document.getElementById('fProyectoId') ? document.getElementById('fProyectoId').value : '';
+      if (proyectoIdVal) data.proyecto_id = Number(proyectoIdVal);
+      const submitBtn = modal.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      let r;
+      if (isNew) {
+        r = await api('/api/campanas-sp/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      } else {
+        r = await api('/api/campanas-sp/projects/' + project.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      }
+      submitBtn.disabled = false;
+      if (r && r.id) {
+        modal.remove();
+        toast(isNew ? 'Proyecto creado' : 'Proyecto actualizado', 'ok');
+        await loadProjects(); renderProjectList();
+      } else {
+        toast('Error: ' + ((r && r.error) || 'no se pudo guardar'), 'err');
+      }
+    });
+  }
+
+  // ===================== TAB 2: WHATSAPP =====================
+  async function renderWhatsapp() {
+    const box = document.getElementById('tabWhatsapp');
+    box.innerHTML = `
+      <div class="cp-sec">
+        <h3>Calidad y límite de envío</h3>
+        <p>WhatsApp limita cuántos destinatarios únicos puedes contactar por día según la calidad y verificación del número. El límite sube automáticamente con volumen + buena calidad — no se puede pagar para subirlo.</p>
+        <div id="qualityBox" class="cp-quality">Consultando con Meta…</div>
+        <div class="cp-row" style="margin-top:14px">
+          <div class="cp-field"><label>Mensajes por segundo (rate limit)</label><input id="cfgMps" type="number" min="1" placeholder="5"></div>
+          <div class="cp-field"><label>Límite diario configurado</label><input id="cfgDaily" type="number" min="1" placeholder="250"></div>
+        </div>
+        <button class="cp-btn cp-btn--ghost" id="btnSaveCfg">Guardar límites</button>
+      </div>
+      <div class="cp-sec">
+        <h3>Campañas WhatsApp</h3>
+        <p>Cada campaña envía UNA plantilla aprobada a un segmento de leads, respetando el límite diario y el opt-out.</p>
+        <div class="cp-proyect__actions" style="margin-bottom:12px">
+          <button class="cp-btn" id="btnNew">Nueva campaña</button>
+        </div>
+        <div id="campList"></div>
+      </div>`;
+    await cargarWhatsAppData();
+    renderCampaignList();
+    cargarQuality();
+    document.getElementById('cfgMps').value = '';
+    document.getElementById('cfgDaily').value = '';
+    api('/api/config').then(cfg => {
+      if (!cfg) return;
+      document.getElementById('cfgMps').value = cfg.campaign_mps || '';
+      document.getElementById('cfgDaily').value = cfg.campaign_daily_limit || '';
+    });
+    document.getElementById('btnSaveCfg').addEventListener('click', async () => {
+      const r = await api('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        campaign_mps: document.getElementById('cfgMps').value.trim(),
+        campaign_daily_limit: document.getElementById('cfgDaily').value.trim(),
+      }) });
+      if (r) toast('Límites guardados', 'ok'); else toast('Error al guardar', 'err');
+    });
+    document.getElementById('btnNew').addEventListener('click', openNewCampaignModal);
+  }
+
+  async function cargarWhatsAppData() {
+    const [c, t, so, v] = await Promise.all([
+      api('/api/campaigns'), api('/api/wa-templates'), api('/api/campaigns/segment-options'), api('/api/vendedores'),
+    ]);
+    campaigns = c || []; templates = t || []; segmentOptions = so || { proyectos: [], ciudades: [] }; vendedores = v || [];
+  }
+
+  function badgeClass(estado) { return 'cp-badge cp-badge--' + (estado || 'draft'); }
+  function estadoLabel(estado) {
+    return { draft: 'Borrador', running: 'Enviando', paused: 'Pausada', done: 'Completada', failed: 'Falló' }[estado] || estado;
+  }
+
+  function renderCampaignList() {
+    const box = document.getElementById('campList');
+    if (!box) return;
+    if (!campaigns.length) { box.innerHTML = '<div class="cp-empty">Aún no hay campañas. Crea la primera con "Nueva campaña".</div>'; return; }
+    box.innerHTML = campaigns.map(c => {
+      const tpl = templates.find(t => String(t.id) === String(c.template_id));
+      return `<div class="cp-card" data-id="${c.id}">
+        <div class="cp-card__top">
+          <div><strong style="font-size:14px">${esc(c.nombre)}</strong> <span class="${badgeClass(c.estado)}">${estadoLabel(c.estado)}</span></div>
+          <div style="display:flex;gap:6px">
+            ${c.estado === 'draft' || c.estado === 'paused' ? `<button class="cp-btn" style="height:30px;padding:0 14px;font-size:12px" data-start="${c.id}">${c.estado === 'paused' ? 'Reanudar' : 'Iniciar'}</button>` : ''}
+            ${c.estado === 'running' ? `<button class="cp-btn cp-btn--ghost" style="height:30px;padding:0 14px;font-size:12px" data-pause="${c.id}">Pausar</button>` : ''}
+            ${c.estado === 'draft' ? `<button class="cp-btn cp-btn--ghost" style="height:30px;padding:0 14px;font-size:12px" data-del="${c.id}">Eliminar</button>` : ''}
+            <button class="cp-btn cp-btn--ghost" style="height:30px;padding:0 14px;font-size:12px" data-view="${c.id}">Ver</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-3)">Plantilla: ${esc(tpl ? tpl.nombre : '?')}</div>
+        <div class="cp-stats">
+          <span>Destinatarios: <b>${c.total_destinatarios}</b></span>
+          <span>Enviados: <b>${c.total_enviados}</b></span>
+          <span>Entregados: <b>${c.total_entregados}</b></span>
+          <span>Leídos: <b>${c.total_leidos}</b></span>
+          <span>Fallidos: <b style="color:${c.total_fallidos > 0 ? '#ff5050' : 'inherit'}">${c.total_fallidos}</b></span>
+        </div>
+        <div id="detail-${c.id}"></div>
+      </div>`;
+    }).join('');
+
+    box.querySelectorAll('[data-start]').forEach(b => b.addEventListener('click', async () => {
+      const r = await api('/api/campaigns/' + b.dataset.start + '/start', { method: 'POST' });
+      if (r && r.ok) { toast('Campaña iniciada', 'ok'); await cargarWhatsAppData(); renderCampaignList(); }
+      else toast('Error: ' + ((r && r.detalle) || 'no se pudo iniciar'), 'err');
+    }));
+    box.querySelectorAll('[data-pause]').forEach(b => b.addEventListener('click', async () => {
+      const r = await api('/api/campaigns/' + b.dataset.pause + '/pause', { method: 'POST' });
+      if (r && r.ok) { toast('Campaña pausada', 'ok'); await cargarWhatsAppData(); renderCampaignList(); }
+    }));
+    box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('¿Eliminar esta campaña?')) return;
+      const r = await api('/api/campaigns/' + b.dataset.del, { method: 'DELETE' });
+      if (r && r.ok) { toast('Campaña eliminada', 'ok'); await cargarWhatsAppData(); renderCampaignList(); }
+    }));
+    box.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => toggleDetail(b.dataset.view)));
+  }
+
+  async function cargarQuality() {
+    const box = document.getElementById('qualityBox');
+    if (!box) return;
+    const q = await api('/api/campaigns/meta/quality');
+    if (!q || !q.ok) { box.innerHTML = '<span style="color:var(--text-3)">No se pudo consultar Meta (revisa WHATSAPP_TOKEN / PHONE_NUMBER_ID).</span>'; return; }
+    box.innerHTML = `
+      <span>Calidad: <b>${esc(q.quality_rating || '—')}</b></span>
+      <span>Tier de mensajería: <b>${esc(q.messaging_limit_tier || '—')}</b></span>
+      <span>Número: <b>${esc(q.display_phone_number || '—')}</b></span>
+      <span>Límite diario configurado: <b>${esc(String(q.dailyLimitConfigurado || 250))}</b></span>`;
+  }
+
+  async function toggleDetail(id) {
+    const box = document.getElementById('detail-' + id);
+    if (!box) return;
+    if (box.dataset.open === '1') { box.innerHTML = ''; box.dataset.open = '0'; return; }
+    box.innerHTML = '<div style="font-size:12px;color:var(--text-3);margin-top:8px">Cargando…</div>';
+    const [recipients, preview] = await Promise.all([
+      api('/api/campaigns/' + id + '/recipients'), api('/api/campaigns/' + id + '/preview'),
+    ]);
+    box.dataset.open = '1';
+    const previewHtml = preview && preview.sample && preview.sample.length
+      ? `<div style="margin-top:10px;font-size:11.5px;color:var(--text-3)"><strong style="color:var(--text-2)">Vista previa (${esc(preview.template)}):</strong><br>` +
+        preview.sample.map(s => `${esc(s.nombre || s.phone)}: ${esc(JSON.stringify(s.valores))}`).join('<br>') + '</div>'
+      : '';
+    const rows = (recipients || []).slice(0, 50).map(r =>
+      `<tr><td>${esc(r.phone)}</td><td><span class="${badgeClass(r.estado === 'sent' || r.estado === 'delivered' || r.estado === 'read' ? 'done' : r.estado === 'failed' ? 'failed' : 'draft')}">${esc(r.estado)}</span></td><td style="font-size:11px;color:var(--text-3)">${esc(r.error_detail || '')}</td></tr>`
+    ).join('');
+    box.innerHTML = `${previewHtml}
+      <table class="table" style="margin-top:10px">
+        <thead><tr><th>Teléfono</th><th>Estado</th><th>Detalle</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="3" class="t-dim3" style="text-align:center;padding:12px">Sin destinatarios</td></tr>'}</tbody>
+      </table>
+      ${recipients && recipients.length > 50 ? `<div style="font-size:11px;color:var(--text-3);margin-top:6px">Mostrando 50 de ${recipients.length}.</div>` : ''}`;
+  }
+
+  function openNewCampaignModal() {
+    const existing = document.getElementById('newCampModal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'newCampModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55)';
+    modal.innerHTML = `
+      <div style="background:var(--bg-1);border-radius:14px;padding:24px;width:92%;max-width:520px;max-height:88vh;overflow:auto;border:1px solid var(--border-soft)">
+        <h3 style="margin:0 0 16px;color:var(--text-1)">Nueva campaña WhatsApp</h3>
+        <form id="ncForm">
+          <div class="cp-field"><label>Nombre de la campaña</label><input id="ncNombre" required placeholder="Ej: Lanzamiento Lotes Tocaima Julio"></div>
+          <div class="cp-field"><label>Plantilla (solo aprobadas)</label>
+            <select id="ncTpl" required>
+              <option value="">Elegir plantilla…</option>
+              ${templates.map(t => `<option value="${t.id}">${esc(t.nombre)} (${esc(t.categoria || '')})</option>`).join('')}
+            </select>
+          </div>
+          <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px">Segmento (deja vacío = todos los leads activos)</div>
+          <div class="cp-row">
+            <div class="cp-field"><label>Etapa</label>
+              <select id="segEtiqueta"><option value="">Cualquiera</option>
+                <option value="sin_clasificar">Nuevo</option><option value="interesado">Interesado</option>
+                <option value="negociacion">Negociación</option><option value="cita">Cita</option><option value="vendido">Vendido</option>
+              </select>
+            </div>
+            <div class="cp-field"><label>Proyecto</label>
+              <select id="segProyecto"><option value="">Cualquiera</option>${segmentOptions.proyectos.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('')}</select>
+            </div>
+          </div>
+          <div class="cp-row">
+            <div class="cp-field"><label>Ciudad</label>
+              <select id="segCiudad"><option value="">Cualquiera</option>${segmentOptions.ciudades.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select>
+            </div>
+            <div class="cp-field"><label>Asesor</label>
+              <select id="segVendedor"><option value="">Cualquiera</option>${vendedores.map(v => `<option value="${v.id}">${esc(v.nombre)}</option>`).join('')}</select>
+            </div>
+          </div>
+          <div class="cp-count" id="segCount">Selecciona filtros para ver el tamaño de la audiencia…</div>
+          <div id="ncVarFields"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+            <button type="button" class="cp-btn cp-btn--ghost" id="ncCancel">Cancelar</button>
+            <button type="submit" class="cp-btn">Crear campaña (borrador)</button>
+          </div>
+        </form>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    modal.querySelector('#ncCancel').addEventListener('click', () => modal.remove());
+
+    const tplSel = document.getElementById('ncTpl');
+    function renderVarFields() {
+      const box = document.getElementById('ncVarFields');
+      const tpl = templates.find(t => String(t.id) === tplSel.value);
+      if (!tpl) { box.innerHTML = ''; return; }
+      let vars = []; try { vars = JSON.parse(tpl.variables || '[]'); } catch (e) {}
+      let mapping = {}; try { mapping = JSON.parse(tpl.var_mapping || '{}'); } catch (e) {}
+      const sinMapear = vars.filter(v => !mapping[v]);
+      if (!sinMapear.length) { box.innerHTML = vars.length ? '<div style="font-size:11.5px;color:var(--text-3);margin:8px 0">Todas las variables ya están mapeadas — se resuelven por lead automáticamente.</div>' : ''; return; }
+      box.innerHTML = '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 6px">Variables sin mapear — mismo valor para toda la campaña</div>' +
+        sinMapear.map(v => `<input type="text" data-ov="${esc(v)}" placeholder="{{${esc(v)}}}" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-soft);background:var(--bg-2);color:var(--text-1);margin-bottom:8px;font-size:13px">`).join('');
+    }
+    tplSel.addEventListener('change', renderVarFields);
+
+    async function actualizarConteo() {
+      const params = new URLSearchParams({
+        etiqueta: document.getElementById('segEtiqueta').value,
+        proyecto: document.getElementById('segProyecto').value,
+        ciudad: document.getElementById('segCiudad').value,
+        vendedorId: document.getElementById('segVendedor').value,
+      });
+      const r = await api('/api/campaigns/segment-preview?' + params.toString());
+      document.getElementById('segCount').textContent = r ? `${r.count} lead(s) recibirán esta campaña` : 'Error al calcular';
+    }
+    ['segEtiqueta', 'segProyecto', 'segCiudad', 'segVendedor'].forEach(id => document.getElementById(id).addEventListener('change', actualizarConteo));
+    actualizarConteo();
+
+    modal.querySelector('#ncForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const nombre = document.getElementById('ncNombre').value.trim();
+      const templateId = tplSel.value;
+      if (!nombre || !templateId) return;
+      const segmento = {
+        etiqueta: document.getElementById('segEtiqueta').value || undefined,
+        proyecto: document.getElementById('segProyecto').value || undefined,
+        ciudad: document.getElementById('segCiudad').value || undefined,
+        vendedorId: document.getElementById('segVendedor').value || undefined,
+      };
+      const overrides = {};
+      document.querySelectorAll('#ncVarFields [data-ov]').forEach(inp => { if (inp.value.trim()) overrides[inp.dataset.ov] = inp.value.trim(); });
+      const submitBtn = modal.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      const r = await api('/api/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, templateId, segmento, overrides }) });
+      submitBtn.disabled = false;
+      if (r && r.ok) {
+        modal.remove();
+        toast('Campaña creada como borrador — revisa la vista previa antes de iniciar', 'ok');
+        await cargarWhatsAppData(); renderCampaignList();
+      } else {
+        toast('Error: ' + ((r && r.error) || 'no se pudo crear'), 'err');
+      }
+    });
+  }
+
+  // ===== BOOT =====
+  renderTabs();
+})();
+</script>
+</body>
+</html>

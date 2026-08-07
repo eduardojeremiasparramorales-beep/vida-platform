@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>SP OS · Comparador Actual vs Rediseño</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  /* ════════════════════════════════════════════════════════════════════
+     COMPARADOR — SHELL
+     ════════════════════════════════════════════════════════════════════ */
+  html, body { height: 100%; }
+  body.cmp {
+    --c-bg: #0A0A0A; --c-bg2: #101014; --c-panel: #0E0E11;
+    --c-gold: #C8A45A; --c-gold2: #D4AF37; --c-green: #4E7B46;
+    --c-text: #F5F2EB; --c-text2: #B8B3A8; --c-text3: #7A756B;
+    --c-line: rgba(248,244,230,.10); --c-line-gold: rgba(200,164,90,.28);
+    background: var(--c-bg); color: var(--c-text);
+    font-family: 'Inter', system-ui, sans-serif; overflow: hidden;
+  }
+  body.cmp::before { content:''; position: fixed; inset: 0; z-index: 0; opacity: .035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+    pointer-events: none; }
+  .cmp-root { position: relative; z-index: 1; display: grid; grid-template-columns: 236px 1fr; height: 100vh; }
+
+  /* ── Top bar ── */
+  .cmp-top { position: fixed; top: 0; left: 236px; right: 0; z-index: 80; height: 58px; display: flex; align-items: center; gap: 14px; padding: 0 22px;
+    background: rgba(10,10,10,.72); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border-bottom: 1px solid var(--c-line); }
+  .cmp-top__brand { font-family: 'Cinzel', serif; font-size: .92rem; font-weight: 600; letter-spacing: .14em; color: var(--c-gold); white-space: nowrap; }
+  .cmp-top__sep { width: 1px; height: 20px; background: var(--c-line-gold); opacity: .5; }
+  .cmp-top__sub { font-size: .78rem; color: var(--c-text2); letter-spacing: .03em; }
+  .cmp-top__spacer { flex: 1; }
+  .cmp-seg { display: flex; align-items: center; background: rgba(42,38,30,.16); border: 1px solid var(--c-line); border-radius: 11px; padding: 3px; gap: 3px; }
+  .cmp-seg b { font-size: 9.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--c-text3); padding: 0 8px 0 10px; }
+  .cmp-seg button { padding: 6px 13px; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--c-text2); transition: all .15s; white-space: nowrap; }
+  .cmp-seg button:hover { color: var(--c-text); }
+  .cmp-seg button.on { background: rgba(200,164,90,.16); color: var(--c-gold); }
+  .cmp-seg button.on.warn { background: rgba(224,164,74,.16); color: #E0A44A; }
+  .cmp-seg button.on.final { background: linear-gradient(100deg, rgba(255,215,106,.28), rgba(200,164,90,.16)); color: #FFE7B0; box-shadow: 0 0 16px rgba(255,215,106,.3); }
+
+  /* ── Sidebar ── */
+  .cmp-side { background: var(--c-panel); border-right: 1px solid var(--c-line); display: flex; flex-direction: column; min-height: 0; }
+  .cmp-side__head { padding: 18px 18px 12px; border-bottom: 1px solid var(--c-line); }
+  .cmp-side__title { font-family: 'Cinzel', serif; font-size: .95rem; font-weight: 600; letter-spacing: .1em; color: var(--c-gold); }
+  .cmp-side__sub { font-size: .7rem; color: var(--c-text3); letter-spacing: .05em; margin-top: 3px; }
+  .cmp-side__scroll { flex: 1; overflow-y: auto; padding: 12px 10px 20px; }
+  .cmp-group { font-size: 9.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--c-text3); padding: 14px 10px 6px; }
+  .cmp-navbtn { width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 11px; font-size: 12.5px; font-weight: 500; color: var(--c-text2); transition: all .15s; text-align: left; }
+  .cmp-navbtn:hover { background: rgba(248,244,230,.05); color: var(--c-text); }
+  .cmp-navbtn.on { background: rgba(200,164,90,.13); color: var(--c-gold); font-weight: 600; }
+  .cmp-navbtn__n { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--c-text3); }
+  .cmp-navbtn.on .cmp-navbtn__n { color: var(--c-gold); }
+  .cmp-navbtn svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .85; }
+
+  /* ── Main / stage ── */
+  .cmp-main { position: relative; display: flex; flex-direction: column; height: 100vh; }
+  .cmp-stagewrap { position: absolute; top: 58px; bottom: 0; left: 0; right: 0; overflow: auto; display: grid; place-items: center; padding: 26px 18px 40px; }
+  .cmp-view { display: none; }
+  .cmp-view.on { display: grid; place-items: center; }
+  .cmp-stage { position: relative; overflow: hidden; background:
+      radial-gradient(circle 300px at 20% 12%, rgba(255,255,255,.10), transparent 60%),
+      radial-gradient(circle 260px at 82% 30%, rgba(212,175,55,.16), transparent 62%),
+      radial-gradient(circle 300px at 30% 95%, rgba(78,123,70,.14), transparent 62%),
+      linear-gradient(180deg, #0B0B0E, #08080A);
+    border: 1px solid var(--c-line); box-shadow: 0 30px 90px rgba(0,0,0,.65); }
+  .cmp-stage.phone { width: 354px; height: 706px; border-radius: 48px; padding: 10px; }
+  .cmp-stage.desktop { width: 1120px; height: 660px; border-radius: 18px; }
+  .cmp-frame { position: absolute; inset: 0; overflow: hidden; }
+  .cmp-frame.phone { inset: 10px; border-radius: 38px; }
+  .cmp-frame.desktop { border-radius: 17px; }
+  .cmp-notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 118px; height: 26px; background: #000; border-radius: 0 0 16px 16px; z-index: 60; }
+  .cmp-layer { position: absolute; inset: 0; display: flex; flex-direction: column; }
+  .cmp-layer--act { clip-path: inset(0 calc(100% - var(--pos, 50%)) 0 0); z-index: 2; }
+  .cmp-layer--new { clip-path: inset(0 0 0 var(--pos, 50%)); z-index: 3; }
+  .cmp-stage.show-new .cmp-layer--act { visibility: hidden; }
+  .cmp-stage.show-new .cmp-layer--new { clip-path: inset(0 0 0 0); }
+  .cmp-stage.show-new .cmp-divider { display: none; }
+  .cmp-divider { position: absolute; top: 0; bottom: 0; left: var(--pos, 50%); width: 3px; transform: translateX(-1.5px);
+    background: linear-gradient(180deg, var(--c-gold2), #8E7028); box-shadow: 0 0 16px rgba(212,175,55,.55); z-index: 50; cursor: ew-resize; touch-action: none; }
+  .cmp-handle { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(140deg, #EDCC60, var(--c-gold) 60%, #A08028); box-shadow: 0 4px 18px rgba(212,175,55,.55), inset 0 1px 0 rgba(255,255,255,.4);
+    display: grid; place-items: center; color: #0A0A0A; }
+  .cmp-handle svg { width: 16px; height: 16px; }
+  .cmp-label { position: absolute; top: 12px; z-index: 55; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    padding: 5px 11px; border-radius: 999px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); pointer-events: none; }
+  .cmp-label--act { left: 14px; background: rgba(78,123,70,.22); border: 1px solid rgba(78,123,70,.35); color: #8FCA85; }
+  .cmp-label--new { right: 14px; background: rgba(200,164,90,.16); border: 1px solid rgba(200,164,90,.35); color: var(--c-gold); }
+  .cmp-label--agg { right: 14px; background: rgba(224,90,74,.16); border: 1px solid rgba(224,90,74,.45); color: #FF8A5E; }
+  .cmp-label--curv { right: 14px; background: rgba(91,141,239,.16); border: 1px solid rgba(91,141,239,.45); color: #8FB8FF; }
+  .cmp-label--fusi { right: 14px; background: linear-gradient(90deg, rgba(255,215,106,.28), rgba(200,164,90,.16));
+    border: 1px solid rgba(255,215,106,.7); color: #FFE7B0; box-shadow: 0 0 18px rgba(255,215,106,.35); }
+
+  /* ── Modo versión: equilibrado (eq) vs agresivo (agg) vs curvado (curv) vs fusión (fusi) ── */
+  .cmp-layer--agg, .cmp-layer--curv, .cmp-layer--fusi { display: none; }
+  .cmp-label--agg, .cmp-label--curv, .cmp-label--fusi { display: none; }
+  .cmp-stage[data-vs="agg"] .cmp-layer--new:not(.cmp-layer--agg) { display: none; }
+  .cmp-stage[data-vs="agg"] .cmp-layer--agg { display: inline-flex; }
+  .cmp-stage[data-vs="agg"] .cmp-label--new, .cmp-stage[data-vs="agg"] .cmp-label--curv, .cmp-stage[data-vs="agg"] .cmp-label--fusi { display: none; }
+  .cmp-stage[data-vs="agg"] .cmp-label--agg { display: inline-block; }
+  .cmp-stage[data-vs="curv"] .cmp-layer--new:not(.cmp-layer--curv) { display: none; }
+  .cmp-stage[data-vs="curv"] .cmp-layer--curv { display: inline-flex; }
+  .cmp-stage[data-vs="curv"] .cmp-label--new, .cmp-stage[data-vs="curv"] .cmp-label--agg, .cmp-stage[data-vs="curv"] .cmp-label--fusi { display: none; }
+  .cmp-stage[data-vs="curv"] .cmp-label--curv { display: inline-block; }
+  .cmp-stage[data-vs="fusi"] .cmp-layer--new:not(.cmp-layer--fusi) { display: none; }
+  .cmp-stage[data-vs="fusi"] .cmp-layer--fusi { display: inline-flex; }
+  .cmp-stage[data-vs="fusi"] .cmp-label--new, .cmp-stage[data-vs="fusi"] .cmp-label--agg, .cmp-stage[data-vs="fusi"] .cmp-label--curv { display: none; }
+  .cmp-stage[data-vs="fusi"] .cmp-label--fusi { display: inline-block; }
+
+  /* ── Notes bar ── */
+  .cmp-notes { position: absolute; bottom: 0; left: 0; right: 0; z-index: 70; padding: 10px 16px 12px;
+    background: rgba(10,10,10,.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid var(--c-line);
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .cmp-notes__t { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--c-gold); white-space: nowrap; }
+  .cmp-notes__chip { font-size: 10.5px; color: var(--c-text2); background: rgba(248,244,230,.05); border: 1px solid var(--c-line); border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+
+  /* ── Footer pills ── */
+  .cmp-foot { position: fixed; left: 236px; right: 0; bottom: 0; z-index: 80; height: 46px; display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: rgba(10,10,10,.72); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); border-top: 1px solid var(--c-line); }
+  .cmp-foot__hint { font-size: 10.5px; color: var(--c-text3); letter-spacing: .04em; }
+  .cmp-foot__hint b { color: var(--c-gold); font-weight: 600; }
+
+  @media (max-width: 980px) {
+    .cmp-root { grid-template-columns: 190px 1fr; }
+    .cmp-top, .cmp-foot { left: 190px; }
+    .cmp-stagewrap { place-items: start center; padding: 18px 12px 30px; }
+    .cmp-stage.phone { transform: scale(.92); transform-origin: top center; }
+    .cmp-stage.desktop { transform: scale(.82); transform-origin: top center; margin-bottom: -120px; }
+  }
+  @media (max-width: 700px) {
+    .cmp-root { display: block; }
+    .cmp-side { display: none; }
+    .cmp-top { left: 0; }
+    .cmp-foot { left: 0; }
+    .cmp-stage.desktop { transform: scale(.52); transform-origin: top center; margin-bottom: -320px; }
+  }
+
+  /* ════════════════════════════════════════════════════════════════════
+     FRAME BASE — PHONE (status bar)
+     ════════════════════════════════════════════════════════════════════ */
+  .ph-status { display: flex; justify-content: space-between; padding: 12px 22px 2px; font-size: 11px; font-weight: 600; color: var(--c-text); letter-spacing: .02em; position: relative; z-index: 5; }
+  .ph-status .dots { display: flex; gap: 3px; align-items: center; }
+  .ph-status .dots i { width: 4px; height: 4px; border-radius: 50%; background: rgba(248,244,230,.3); }
+  .ph-status .dots i:nth-child(1) { background: var(--c-gold2); }
+  .ph-status .dots i:nth-child(2) { background: var(--c-green); }
+  .ph-status .dots i:nth-child(3) { background: #5B8DEF; }
+
+  .ph-tabs { display: flex; justify-content: space-around; padding: 8px 6px 14px; position: relative; z-index: 5; }
+  .ph-tabs__i { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 8px; color: var(--c-text3); font-size: .6rem; position: relative; }
+  .ph-tabs__i svg { width: 19px; height: 19px; }
+  .ph-tabs__i.on { color: var(--c-gold); }
+  .ph-tabs__i.on::after { content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 22px; height: 3px; border-radius: 2px; background: var(--c-gold); box-shadow: 0 0 8px rgba(200,164,90,.5); }
+
+  /* ── Login (actual) ── */
+  .ls-act .ph-content { position: relative; z-index: 5; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 46px 26px 20px; text-align: center; gap: 18px; overflow: hidden; }
+  .ls-act .ph-logo { width: 72px; height: 72px; border-radius: 18px; display: grid; place-items: center;
+    background: rgba(42,38,30,.14); backdrop-filter: blur(12px) saturate(1.5); -webkit-backdrop-filter: blur(12px) saturate(1.5);
+    border: 1px solid rgba(248,244,230,.14);
+    box-shadow: 0 8px 32px rgba(0,0,0,.3), 0 0 0 1px rgba(200,164,90,.2), 0 0 30px rgba(200,164,90,.08); }
+  .ls-act .ph-logo svg { width: 36px; height: 36px; color: var(--c-gold); }
+  .ls-act .ph-brand { font-family: 'Cinzel', serif; font-weight: 600; font-size: 1.05rem; letter-spacing: .14em;
+    background: linear-gradient(180deg, #F5F2EB, #C8A45A); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 40px rgba(200,164,90,.15)); }
+  .ls-act .ph-sub { font-family: 'Cormorant Garamond', serif; font-size: .82rem; color: var(--c-text2); letter-spacing: .1em; font-style: italic; }
+  .ls-act .ph-line { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, var(--c-gold), transparent); opacity: .35; }
+  .ls-act .ph-input { width: 100%; display: flex; align-items: center; gap: 0;
+    background: rgba(42,38,30,.10); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(248,244,230,.14); border-radius: 12px; height: 52px; padding: 0 14px; }
+  .ls-act .ph-input .pfx { font-size: .9rem; font-weight: 600; color: var(--c-gold); padding-right: 10px; border-right: 1px solid rgba(248,244,230,.1); margin-right: 10px; }
+  .ls-act .ph-input .val { font-size: .95rem; color: var(--c-text3); letter-spacing: .04em; }
+  .ls-act .ph-dots { display: flex; gap: 12px; justify-content: center; }
+  .ls-act .ph-dot { width: 52px; height: 56px; border-radius: 12px; background: rgba(42,38,30,.10);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(248,244,230,.14); display: grid; place-items: center; }
+  .ls-act .ph-dot.f { border-color: var(--c-gold); background: rgba(200,164,90,.08); }
+  .ls-act .ph-dot i { width: 12px; height: 12px; border-radius: 50%; background: var(--c-gold); opacity: 0; transition: opacity .15s; }
+  .ls-act .ph-dot.f i { opacity: 1; box-shadow: 0 0 10px rgba(200,164,90,.5); }
+  .ls-act .ph-kp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 280px; }
+  .ls-act .ph-key { height: 54px; border-radius: 12px; background: transparent; border: none; color: var(--c-text); font-size: 1.3rem; font-weight: 500; }
+  .ls-act .ph-key:active { background: rgba(248,244,230,.06); }
+  .ls-act .ph-key.sp { font-size: .78rem; color: var(--c-text2); }
+  .ls-act .ph-key.gd { background: linear-gradient(160deg, #C8A45A, #A8862F); color: #0A0A0A; font-weight: 700; font-size: .85rem; border-radius: 12px; }
+  .ls-act .ph-legal { font-size: .62rem; color: var(--c-text3); line-height: 1.5; margin-top: auto; }
+
+  /* ── Login (rediseño) — neumorfismo + keypad pill + glass profundo ── */
+  .ls-new .ph-content { position: relative; z-index: 5; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 46px 24px 20px; text-align: center; gap: 18px; overflow: hidden; }
+  .ls-new .ph-logo { width: 78px; height: 78px; border-radius: 24px; display: grid; place-items: center;
+    background: rgba(20,19,17,.55);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,.55), inset 0 -1px 0 rgba(255,255,255,.06), 0 10px 30px rgba(0,0,0,.35);
+    border: 1px solid rgba(248,244,230,.06); }
+  .ls-new .ph-logo svg { width: 36px; height: 36px; color: var(--c-gold); }
+  .ls-new .ph-brand { font-family: 'Cinzel', serif; font-weight: 600; font-size: 1.12rem; letter-spacing: .12em; color: #F5F2EB; }
+  .ls-new .ph-sub { font-family: 'Cormorant Garamond', serif; font-size: .85rem; color: var(--c-text2); letter-spacing: .12em; font-style: italic; }
+  .ls-new .ph-line { width: 46px; height: 1px; background: linear-gradient(90deg, transparent, var(--c-gold2), transparent); opacity: .55; }
+  .ls-new .ph-input { width: 100%; display: flex; align-items: center; gap: 0; height: 54px; padding: 0 16px; border-radius: 16px;
+    background: rgba(20,19,17,.55);
+    box-shadow: inset 0 3px 8px rgba(0,0,0,.5), inset 0 -1px 0 rgba(255,255,255,.05), 0 6px 20px rgba(0,0,0,.25);
+    border: 1px solid rgba(212,175,55,.16); }
+  .ls-new .ph-input .pfx { font-size: .9rem; font-weight: 700; color: var(--c-gold2); padding-right: 10px; border-right: 1px solid rgba(248,244,230,.12); margin-right: 10px; }
+  .ls-new .ph-input .val { font-size: .95rem; color: var(--c-text2); letter-spacing: .04em; font-weight: 500; }
+  .ls-new .ph-dots { display: flex; gap: 14px; justify-content: center; }
+  .ls-new .ph-dot { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid rgba(248,244,230,.2); background: transparent; transition: all .2s; }
+  .ls-new .ph-dot.f { border-color: var(--c-gold2); background: var(--c-gold2); box-shadow: 0 0 12px rgba(212,175,55,.55); }
+  .ls-new .ph-kp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; max-width: 264px; justify-items: center; }
+  .ls-new .ph-key { width: 68px; height: 62px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    background: rgba(20,19,17,.55);
+    box-shadow: inset 0 3px 8px rgba(0,0,0,.5), inset 0 -1px 0 rgba(255,255,255,.05), 0 8px 22px rgba(0,0,0,.3);
+    border: 1px solid rgba(248,244,230,.07); color: var(--c-text); transition: all .12s; }
+  .ls-new .ph-key:active { transform: scale(.93); background: rgba(42,38,30,.6); border-color: rgba(212,175,55,.3); }
+  .ls-new .ph-key .n { font-size: 1.4rem; font-weight: 500; line-height: 1; }
+  .ls-new .ph-key .k { font-size: .44rem; font-weight: 600; letter-spacing: .14em; color: var(--c-text3); line-height: 1; }
+  .ls-new .ph-key.sp .n { font-size: 1rem; color: var(--c-text2); }
+  .ls-new .ph-key.gd { border: none;
+    background: linear-gradient(140deg, #EDCC60, #D4AF37 60%, #A08028);
+    box-shadow: 0 6px 24px rgba(212,175,55,.35), inset 0 1px 0 rgba(255,255,255,.4), inset 0 -2px 6px rgba(0,0,0,.2);
+    color: #0A0A0A; font-weight: 700; }
+  .ls-new .ph-legal { font-size: .62rem; color: var(--c-text3); line-height: 1.5; margin-top: auto; }
+
+  /* ── Phone list ── */
+  .lst-act .ph-list { flex: 1; overflow: hidden; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; position: relative; z-index: 2; }
+  .lst-act .ph-search { display: flex; align-items: center; gap: 8px; margin: 6px 2px 10px; padding: 9px 13px; border-radius: 12px;
+    background: rgba(42,38,30,.10); border: 1.5px solid rgba(248,244,230,.14); color: var(--c-text3); font-size: .8rem; }
+  .lst-act .ph-row { display: flex; align-items: center; gap: 11px; padding: 11px 8px; border-radius: 14px; }
+  .lst-act .ph-row:active { background: rgba(248,244,230,.04); }
+  .lst-act .ph-av { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: .8rem; font-weight: 700; color: var(--c-gold); background: linear-gradient(160deg, rgba(200,164,90,.22), rgba(78,123,70,.22)); border: 1px solid rgba(200,164,90,.25); flex-shrink: 0; }
+  .lst-act .ph-av.b { background: linear-gradient(160deg, rgba(91,141,239,.22), rgba(78,123,70,.2)); border-color: rgba(91,141,239,.3); }
+  .lst-act .ph-row-mid { flex: 1; min-width: 0; }
+  .lst-act .ph-row-top { display: flex; justify-content: space-between; gap: 8px; }
+  .lst-act .ph-row-nm { font-size: .84rem; font-weight: 600; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lst-act .ph-row-tm { font-size: .64rem; color: var(--c-text3); flex-shrink: 0; }
+  .lst-act .ph-row-pv { font-size: .74rem; color: var(--c-text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .lst-act .ph-row-bd { width: 18px; height: 18px; border-radius: 9px; background: linear-gradient(160deg, #C8A45A, #A8862F); color: #0A0A0A; font-size: .62rem; font-weight: 700; display: grid; place-items: center; flex-shrink: 0; box-shadow: 0 3px 10px rgba(200,164,90,.4); }
+  .lst-act .ph-chip { display: inline-block; font-size: .6rem; font-weight: 600; color: #5B8DEF; background: rgba(91,141,239,.14); border: 1px solid rgba(91,141,239,.25); padding: 2px 7px; border-radius: 999px; margin-top: 4px; }
+
+  .lst-new .ph-list { flex: 1; overflow: hidden; padding: 8px 12px; display: flex; flex-direction: column; gap: 9px; position: relative; z-index: 2; }
+  .lst-new .ph-search { display: flex; align-items: center; gap: 8px; margin: 4px 2px 2px; padding: 11px 14px; border-radius: 15px;
+    background: rgba(20,19,17,.55);
+    box-shadow: inset 0 3px 8px rgba(0,0,0,.45), inset 0 -1px 0 rgba(255,255,255,.04);
+    border: 1px solid rgba(248,244,230,.07); color: var(--c-text3); font-size: .8rem; }
+  .lst-new .ph-card { display: flex; align-items: center; gap: 12px; padding: 13px 13px; border-radius: 18px;
+    background: rgba(42,38,30,.14); backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    border: 1px solid rgba(248,244,230,.10); border-top: 1px solid rgba(255,255,255,.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 12px 30px rgba(0,0,0,.3); transition: all .18s; }
+  .lst-new .ph-card.unread { border-color: rgba(212,175,55,.35); }
+  .lst-new .ph-av { width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; font-size: .8rem; font-weight: 700; color: var(--c-gold); background: linear-gradient(160deg, rgba(200,164,90,.25), rgba(78,123,70,.25)); border: 1px solid rgba(200,164,90,.3); flex-shrink: 0;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,.4), 0 4px 12px rgba(0,0,0,.25); }
+  .lst-new .ph-av.b { background: linear-gradient(160deg, rgba(91,141,239,.25), rgba(78,123,70,.22)); border-color: rgba(91,141,239,.35); }
+  .lst-new .ph-row-mid { flex: 1; min-width: 0; }
+  .lst-new .ph-row-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .lst-new .ph-row-nm { font-size: .86rem; font-weight: 600; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lst-new .ph-row-tm { font-size: .62rem; color: var(--c-text3); flex-shrink: 0; }
+  .lst-new .ph-row-pv { font-size: .74rem; color: var(--c-text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
+  .lst-new .ph-row-pv.mine::before { content: '✓✓ '; color: var(--c-green); }
+  .lst-new .ph-row-bd { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: linear-gradient(160deg, #EDCC60, #C8A45A); color: #0A0A0A; font-size: .66rem; font-weight: 700; display: grid; place-items: center; flex-shrink: 0; box-shadow: 0 4px 14px rgba(212,175,55,.45); }
+
+  /* ── Chat (actual) ── */
+  .ch-act .c-head { display: flex; align-items: center; gap: 11px; padding: 10px 14px 9px; background: rgba(42,38,30,.12); backdrop-filter: blur(12px) saturate(1.5); -webkit-backdrop-filter: blur(12px) saturate(1.5);
+    border-bottom: 1px solid rgba(248,244,230,.14); position: relative; z-index: 5; }
+  .ch-act .c-back { width: 28px; height: 28px; display: grid; place-items: center; color: var(--c-gold); font-size: 1.2rem; }
+  .ch-act .c-av { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(160deg, rgba(200,164,90,.22), rgba(78,123,70,.22)); display: grid; place-items: center; font-size: .78rem; font-weight: 700; color: var(--c-gold); border: 1px solid rgba(200,164,90,.25); }
+  .ch-act .c-info { flex: 1; }
+  .ch-act .c-nm { font-size: .84rem; font-weight: 600; color: var(--c-text); }
+  .ch-act .c-st { font-size: .68rem; color: var(--c-green); display: flex; align-items: center; gap: 4px; }
+  .ch-act .c-st::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--c-green); }
+  .ch-act .c-more { width: 28px; height: 28px; display: grid; place-items: center; color: var(--c-text2); }
+  .ch-act .c-msgs { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 8px; padding: 16px 14px; position: relative; z-index: 2; }
+  .ch-act .c-date { align-self: center; font-size: .68rem; color: var(--c-text3); background: rgba(28,28,28,.8); border: 1px solid rgba(248,244,230,.06); padding: 3px 10px; border-radius: 999px; }
+  .ch-act .c-bub { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: .82rem; line-height: 1.45; }
+  .ch-act .c-bub.in { align-self: flex-start; background: #1C1C1C; border-left: 2px solid rgba(200,164,90,.3); border-bottom-left-radius: 5px; color: var(--c-text); }
+  .ch-act .c-bub.out { align-self: flex-end; background: linear-gradient(160deg, #1D4535, #153427); border-bottom-right-radius: 5px; color: var(--c-text); }
+  .ch-act .c-bub .tm { display: block; font-size: .62rem; color: var(--c-text3); margin-top: 4px; text-align: right; }
+  .ch-act .c-quick { display: flex; gap: 6px; padding: 6px 14px; overflow-x: auto; position: relative; z-index: 2; }
+  .ch-act .c-quick button { flex-shrink: 0; height: 30px; padding: 0 12px; border-radius: 999px; background: #1C1C1C; border: 1px solid rgba(248,244,230,.08); color: var(--c-text2); font-size: .72rem; }
+  .ch-act .c-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px 14px; background: #121212; border-top: 1px solid rgba(248,244,230,.06); position: relative; z-index: 5; }
+  .ch-act .c-plus { width: 36px; height: 36px; border-radius: 50%; background: #1C1C1C; border: 1px solid rgba(248,244,230,.08); display: grid; place-items: center; color: var(--c-text2); flex-shrink: 0; }
+  .ch-act .c-inp { flex: 1; height: 38px; border-radius: 19px; background: #1C1C1C; border: 1px solid rgba(248,244,230,.08); padding: 0 14px; color: var(--c-text3); font-size: .82rem; display: flex; align-items: center; }
+  .ch-act .c-send { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(160deg, #C8A45A, #A8862F); display: grid; place-items: center; color: #0A0A0A; flex-shrink: 0; box-shadow: 0 6px 20px rgba(200,164,90,.35); }
+
+  /* ── Chat (rediseño) — glass bubbles + neumorfismo ── */
+  .ch-new .c-head { display: flex; align-items: center; gap: 11px; padding: 10px 14px 9px; background: rgba(42,38,30,.12); backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6);
+    border-bottom: 1px solid rgba(248,244,230,.10); position: relative; z-index: 5; }
+  .ch-new .c-back { width: 32px; height: 32px; border-radius: 11px; display: grid; place-items: center; color: var(--c-gold); background: rgba(20,19,17,.5);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,.45), 0 4px 12px rgba(0,0,0,.2); font-size: 1rem; }
+  .ch-new .c-av { width: 40px; height: 40px; border-radius: 14px; background: linear-gradient(160deg, rgba(200,164,90,.28), rgba(78,123,70,.28)); display: grid; place-items: center; font-size: .8rem; font-weight: 700; color: var(--c-gold); border: 1px solid rgba(200,164,90,.3);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,.35), 0 4px 12px rgba(0,0,0,.22); }
+  .ch-new .c-info { flex: 1; }
+  .ch-new .c-nm { font-size: .86rem; font-weight: 600; color: var(--c-text); }
+  .ch-new .c-st { font-size: .68rem; color: var(--c-green); display: flex; align-items: center; gap: 4px; }
+  .ch-new .c-st::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--c-green); box-shadow: 0 0 8px rgba(78,123,70,.8); }
+  .ch-new .c-msgs { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 9px; padding: 16px 14px; position: relative; z-index: 2; }
+  .ch-new .c-date { align-self: center; font-size: .66rem; color: var(--c-text2); background: rgba(42,38,30,.4); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(248,244,230,.1); padding: 4px 12px; border-radius: 999px; }
+  .ch-new .c-bub { max-width: 80%; padding: 11px 15px; border-radius: 18px; font-size: .83rem; line-height: 1.45; }
+  .ch-new .c-bub.in { align-self: flex-start; background: rgba(42,38,30,.5); backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+    border: 1px solid rgba(248,244,230,.10); border-bottom-left-radius: 6px; color: var(--c-text);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 8px 24px rgba(0,0,0,.25); }
+  .ch-new .c-bub.out { align-self: flex-end; background: linear-gradient(160deg, #2A5C4E, #1E4A3E); border-bottom-right-radius: 6px; color: #F0F5F2;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 26px rgba(20,60,48,.4); }
+  .ch-new .c-bub .tm { display: block; font-size: .62rem; opacity: .55; margin-top: 4px; text-align: right; }
+  .ch-new .c-quick { display: flex; gap: 7px; padding: 8px 14px; overflow-x: auto; position: relative; z-index: 2; }
+  .ch-new .c-quick button { flex-shrink: 0; height: 32px; padding: 0 14px; border-radius: 999px; background: rgba(42,38,30,.5); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(248,244,230,.1); color: var(--c-text2); font-size: .72rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
+  .ch-new .c-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px 14px; background: rgba(42,38,30,.12); backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6);
+    border-top: 1px solid rgba(248,244,230,.10); position: relative; z-index: 5; }
+  .ch-new .c-plus { width: 38px; height: 38px; border-radius: 13px; background: rgba(20,19,17,.55); border: 1px solid rgba(248,244,230,.08); display: grid; place-items: center; color: var(--c-text2); flex-shrink: 0;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,.45); }
+  .ch-new .c-inp { flex: 1; height: 40px; border-radius: 14px; background: rgba(20,19,17,.55); border: 1px solid rgba(248,244,230,.08); padding: 0 15px; color: var(--c-text3); font-size: .83rem; display: flex; align-items: center;
+    box-shadow: inset 0 3px 8px rgba(0,0,0,.45), inset 0 -1px 0 rgba(255,255,255,.04); }
+  .ch-new .c-send { width: 38px; height: 38px; border-radius: 13px; background: linear-gradient(140deg, #EDCC60, #D4AF37 60%, #A08028); display: grid; place-items: center; color: #0A0A0A; flex-shrink: 0;
+    box-shadow: 0 6px 22px rgba(212,175,55,.4), inset 0 1px 0 rgba(255,255,255,.4), inset 0 -2px 6px rgba(0,0,0,.2); }
+</style>
+</head>
+<body class="cmp">
+
+<div class="cmp-root">
+
+  <!-- ══════════ SIDEBAR ══════════ -->
+  <aside class="cmp-side">
+    <div class="cmp-side__head">
+      <div class="cmp-side__title">SP OS</div>
+      <div class="cmp-side__sub">Comparador Actual vs Rediseño</div>
+    </div>
+    <div class="cmp-side__scroll">
+      <div class="cmp-group">Vendedor · Móvil</div>
+      <button class="cmp-navbtn on" data-view="login">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span class="cmp-navbtn__n">01</span><span>Login</span>
+      </button>
+      <button class="cmp-navbtn" data-view="chats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="cmp-navbtn__n">02</span><span>Chats</span>
+      </button>
+      <button class="cmp-navbtn" data-view="chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h8M8 14h5"/></svg>
+        <span class="cmp-navbtn__n">03</span><span>Chat cliente</span>
+      </button>
+      <div class="cmp-group">Admin · SP OS</div>
+      <button class="cmp-navbtn" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/></svg>
+        <span class="cmp-navbtn__n">04</span><span>Dashboard</span>
+      </button>
+      <button class="cmp-navbtn" data-view="inbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13l3.5 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg>
+        <span class="cmp-navbtn__n">05</span><span>Inbox</span>
+      </button>
+      <button class="cmp-navbtn" data-view="equipo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="cmp-navbtn__n">06</span><span>Equipo</span>
+      </button>
+      <button class="cmp-navbtn" data-view="pipeline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><rect x="7" y="9" width="3" height="8" rx="1"/><rect x="13" y="5" width="3" height="12" rx="1"/></svg>
+        <span class="cmp-navbtn__n">07</span><span>Pipeline</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══════════ TOP BAR ══════════ -->
+  <header class="cmp-top">
+    <div class="cmp-top__brand">SP LEONS GROUP</div>
+    <div class="cmp-top__sep"></div>
+    <div class="cmp-top__sub" id="cmpViewTitle">Login — Vendedor</div>
+    <div class="cmp-top__spacer"></div>
+    <div class="cmp-seg">
+      <b>Comparar</b>
+      <button class="on" data-ab="split">Split</button>
+      <button data-ab="new" class="warn">Rediseño</button>
+    </div>
+    <div class="cmp-seg">
+      <b>Versión</b>
+      <button class="on" data-vs="eq">Equilibrado</button>
+      <button data-vs="agg" class="warn">Agresivo</button>
+      <button data-vs="curv" class="warn">Curvado</button>
+      <button data-vs="fusi" class="final">Fusión DEF</button>
+    </div>
+  </header>
+
+  <!-- ══════════ STAGE ══════════ -->
+  <main class="cmp-main">
+    <div class="cmp-stagewrap">
+
+      <!-- ── VISTA 01 · LOGIN ── -->
+      <div class="cmp-view on" id="v-login">
+        <div class="cmp-stage phone" id="st-login">
+          <div class="cmp-notch"></div>
+          <div class="cmp-label cmp-label--act">Actual</div>
+          <div class="cmp-label cmp-label--new">Rediseño</div>
+
+          <div class="cmp-frame phone">
+            <div class="cmp-layer cmp-layer--act ls-act">
+              <div class="ph-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+              <div class="ph-content">
+                <div class="ph-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+                <div class="ph-brand">SP Leons Group</div>
+                <div class="ph-sub">Inversiones &amp; Finca Raíz</div>
+                <div class="ph-line"></div>
+                <div class="ph-input"><span class="pfx">+57</span><span class="val">321 462 5618</span></div>
+                <div class="ph-dots"><div class="ph-dot f"><i></i></div><div class="ph-dot f"><i></i></div><div class="ph-dot f"><i></i></div><div class="ph-dot"><i></i></div></div>
+                <div class="ph-kp">
+                  <button class="ph-key">1</button><button class="ph-key">2</button><button class="ph-key">3</button>
+                  <button class="ph-key">4</button><button class="ph-key">5</button><button class="ph-key">6</button>
+                  <button class="ph-key">7</button><button class="ph-key">8</button><button class="ph-key">9</button>
+                  <button class="ph-key sp">Borrar</button><button class="ph-key">0</button><button class="ph-key gd">OK</button>
+                </div>
+                <div class="ph-legal">Al continuar aceptas nuestra<br>Política de Privacidad y Términos</div>
+              </div>
+            </div>
+
+            <div class="cmp-layer cmp-layer--new ls-new">
+              <div class="ph-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+              <div class="ph-content">
+                <div class="ph-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+                <div class="ph-brand">SP Leons Group</div>
+                <div class="ph-sub">Inversiones &amp; Finca Raíz</div>
+                <div class="ph-line"></div>
+                <div class="ph-input"><span class="pfx">+57</span><span class="val">321 462 5618</span></div>
+                <div class="ph-dots"><div class="ph-dot f"></div><div class="ph-dot f"></div><div class="ph-dot f"></div><div class="ph-dot"></div></div>
+                <div class="ph-kp">
+                  <button class="ph-key"><span class="n">1</span></button>
+                  <button class="ph-key"><span class="n">2</span><span class="k">ABC</span></button>
+                  <button class="ph-key"><span class="n">3</span><span class="k">DEF</span></button>
+                  <button class="ph-key"><span class="n">4</span><span class="k">GHI</span></button>
+                  <button class="ph-key"><span class="n">5</span><span class="k">JKL</span></button>
+                  <button class="ph-key"><span class="n">6</span><span class="k">MNO</span></button>
+                  <button class="ph-key"><span class="n">7</span><span class="k">PQRS</span></button>
+                  <button class="ph-key"><span class="n">8</span><span class="k">TUV</span></button>
+                  <button class="ph-key"><span class="n">9</span><span class="k">WXYZ</span></button>
+                  <button class="ph-key sp"><span class="n">⌫</span><span class="k">BORRAR</span></button>
+                  <button class="ph-key"><span class="n">0</span></button>
+                  <button class="ph-key gd">OK</button>
+                </div>
+                <div class="ph-legal">Al continuar aceptas nuestra<br>Política de Privacidad y Términos</div>
+              </div>
+            </div>
+          </div>
+          <div class="cmp-divider"><div class="cmp-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- ── VISTA 02 · CHATS ── -->
+      <div class="cmp-view" id="v-chats">
+        <div class="cmp-stage phone" id="st-chats">
+          <div class="cmp-notch"></div>
+          <div class="cmp-label cmp-label--act">Actual</div>
+          <div class="cmp-label cmp-label--new">Rediseño</div>
+          <div class="cmp-frame phone">
+            <div class="cmp-layer cmp-layer--act lst-act">
+              <div class="ph-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 2px;position:relative;z-index:5"><b style="font-size:1.05rem;font-family:'Cinzel',serif;letter-spacing:.08em">Chats</b><span style="font-size:.68rem;color:var(--c-text3)">3 pendientes</span></div>
+              <div class="ph-list">
+                <div class="ph-search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Buscar conversación…</div>
+                <div class="ph-row">
+                  <div class="ph-av">CG</div>
+                  <div class="ph-row-mid">
+                    <div class="ph-row-top"><div class="ph-row-nm">Carlos García</div><div class="ph-row-tm">9:41</div></div>
+                    <div class="ph-row-pv">¿Qué precios manejan para Tocaima?</div>
+                    <span class="ph-chip">WhatsApp</span>
+                  </div>
+                  <div class="ph-row-bd">3</div>
+                </div>
+                <div class="ph-row">
+                  <div class="ph-av b">AL</div>
+                  <div class="ph-row-mid">
+                    <div class="ph-row-top"><div class="ph-row-nm">Andrea López</div><div class="ph-row-tm">8:15</div></div>
+                    <div class="ph-row-pv">Me interesa el catálogo de La Bendición</div>
+                    <span class="ph-chip" style="color:#C8A45A;background:rgba(200,164,90,.12);border-color:rgba(200,164,90,.28)">Instagram</span>
+                  </div>
+                  <div class="ph-row-bd" style="background:rgba(248,244,230,.14);color:#F5F2EB;box-shadow:none">1</div>
+                </div>
+                <div class="ph-row">
+                  <div class="ph-av">MG</div>
+                  <div class="ph-row-mid">
+                    <div class="ph-row-top"><div class="ph-row-nm">María Gómez</div><div class="ph-row-tm">ayer</div></div>
+                    <div class="ph-row-pv">Listo, agendo la llamada para mañana</div>
+                  </div>
+                </div>
+                <div class="ph-row">
+                  <div class="ph-av b">JR</div>
+                  <div class="ph-row-mid">
+                    <div class="ph-row-top"><div class="ph-row-nm">Jorge Rivera</div><div class="ph-row-tm">lun</div></div>
+                    <div class="ph-row-pv">Gracias por la información 🙌</div>
+                  </div>
+                </div>
+              </div>
+              <div class="ph-tabs">
+                <div class="ph-tabs__i on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chats</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Inicio</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Tareas</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>Copiloto</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</div>
+              </div>
+            </div>
+
+            <div class="cmp-layer cmp-layer--new lst-new">
+              <div class="ph-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 2px;position:relative;z-index:5"><b style="font-size:1.1rem;font-family:'Cinzel',serif;letter-spacing:.08em">Chats</b><span style="font-size:.66rem;color:#E0A44A;font-weight:600;background:rgba(224,164,74,.12);padding:4px 10px;border-radius:999px;border:1px solid rgba(224,164,74,.25)">3 pendientes</span></div>
+              <div class="ph-list">
+                <div class="ph-search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Buscar conversación…</div>
+                <div class="ph-card unread">
+                  <div class="ph-av">CG</div>
+                  <div class="ph-row-mid">
+                    <div class="ph-row-top"><div class="ph-row-nm">Carlos García</div><div class="ph-row-tm">9:41</div></div>
+                    <div class="ph-row-pv">¿Qué precios manejan para Tocaima?</div>
+                  </div>
+                  <div class="ph-row-bd">3</div>
+                </div>
+                <div class="ph-card unread">
+                  <div class="ph-av b">AL</div>
+                  <div class="ph-row-mid">
+                    <div class="ph-row-top"><div class="ph-row-nm">Andrea López</div><div class="ph-row-tm">8:15</div></div>
+                    <div class="ph-row-pv">Me interesa el catálogo de La Bendición</div>
+                  </div>
+                  <div class="ph-row-bd">1</div>
+                </div>
+                <div class="ph-card">
+                  <div class="ph-av">MG</div>
+                  <div class="ph-row-mid">
+                    <div class="ph-row-top"><div class="ph-row-nm">María Gómez</div><div class="ph-row-tm">ayer</div></div>
+                    <div class="ph-row-pv mine">Listo, agendo la llamada para mañana</div>
+                  </div>
+                </div>
+                <div class="ph-card">
+                  <div class="ph-av b">JR</div>
+                  <div class="ph-row-mid">
+                    <div class="ph-row-top"><div class="ph-row-nm">Jorge Rivera</div><div class="ph-row-tm">lun</div></div>
+                    <div class="ph-row-pv mine">Gracias por la información 🙌</div>
+                  </div>
+                </div>
+              </div>
+              <div class="ph-tabs">
+                <div class="ph-tabs__i on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chats</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Inicio</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Tareas</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>Copiloto</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</div>
+              </div>
+            </div>
+          </div>
+          <div class="cmp-divider"><div class="cmp-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- ── VISTA 03 · CHAT ── -->
+      <div class="cmp-view" id="v-chat">
+        <div class="cmp-stage phone" id="st-chat">
+          <div class="cmp-notch"></div>
+          <div class="cmp-label cmp-label--act">Actual</div>
+          <div class="cmp-label cmp-label--new">Rediseño</div>
+          <div class="cmp-frame phone">
+            <div class="cmp-layer cmp-layer--act ch-act">
+              <div class="ph-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+              <div class="c-head">
+                <div class="c-back">‹</div>
+                <div class="c-av">CG</div>
+                <div class="c-info"><div class="c-nm">Carlos García</div><div class="c-st">en línea</div></div>
+                <div class="c-more">⋮</div>
+              </div>
+              <div class="c-msgs">
+                <div class="c-date">Hoy</div>
+                <div class="c-bub in">Buenos días, me interesa el lote en Tocaima<div class="tm">9:14 AM</div></div>
+                <div class="c-bub out">¡Hola Carlos! Tenemos lotes desde $35M. ¿Cuántos metros cuadrados necesitas?<div class="tm">9:15 AM ✓✓</div></div>
+                <div class="c-bub in">Algo de 120 m² con buen acceso<div class="tm">9:16 AM</div></div>
+                <div class="c-bub out">Perfecto, te tengo uno en la Cañada Honda. 120 m², vía principal, agua y luz. ¿Te envío fotos?<div class="tm">9:17 AM ✓✓</div></div>
+                <div class="c-bub in">Sí por favor 🙏<div class="tm">9:18 AM</div></div>
+              </div>
+              <div class="c-quick"><button>📐 Ver lotes</button><button>💰 Precio</button><button>📍 Ubicación</button></div>
+              <div class="c-bar"><div class="c-plus">＋</div><div class="c-inp">Escribe un mensaje…</div><div class="c-send">➤</div></div>
+              <div class="ph-tabs">
+                <div class="ph-tabs__i on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chats</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Inicio</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Tareas</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>Copiloto</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</div>
+              </div>
+            </div>
+
+            <div class="cmp-layer cmp-layer--new ch-new">
+              <div class="ph-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+              <div class="c-head">
+                <div class="c-back">‹</div>
+                <div class="c-av">CG</div>
+                <div class="c-info"><div class="c-nm">Carlos García</div><div class="c-st">en línea</div></div>
+                <div class="c-more">⋮</div>
+              </div>
+              <div class="c-msgs">
+                <div class="c-date">Hoy</div>
+                <div class="c-bub in">Buenos días, me interesa el lote en Tocaima<div class="tm">9:14 AM</div></div>
+                <div class="c-bub out">¡Hola Carlos! Tenemos lotes desde $35M. ¿Cuántos metros cuadrados necesitas?<div class="tm">9:15 AM ✓✓</div></div>
+                <div class="c-bub in">Algo de 120 m² con buen acceso<div class="tm">9:16 AM</div></div>
+                <div class="c-bub out">Perfecto, te tengo uno en la Cañada Honda. 120 m², vía principal, agua y luz. ¿Te envío fotos?<div class="tm">9:17 AM ✓✓</div></div>
+                <div class="c-bub in">Sí por favor 🙏<div class="tm">9:18 AM</div></div>
+              </div>
+              <div class="c-quick"><button>📐 Ver lotes</button><button>💰 Precio</button><button>📍 Ubicación</button></div>
+              <div class="c-bar"><div class="c-plus">＋</div><div class="c-inp">Escribe un mensaje…</div><div class="c-send">➤</div></div>
+              <div class="ph-tabs">
+                <div class="ph-tabs__i on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chats</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Inicio</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Tareas</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>Copiloto</div>
+                <div class="ph-tabs__i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</div>
+              </div>
+            </div>
+          </div>
+          <div class="cmp-divider"><div class="cmp-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- ── VISTA 04 · DASHBOARD (admin) ── -->
+      <div class="cmp-view" id="v-dashboard">
+        <div class="cmp-stage desktop" id="st-dashboard">
+          <div class="cmp-label cmp-label--act">Actual</div>
+          <div class="cmp-label cmp-label--new">Rediseño</div>
+          <div class="cmp-frame desktop">
+            <div class="cmp-layer cmp-layer--act adm-act">
+              <!-- Shell admin actual -->
+              <div style="display:flex;height:100%">
+                <div class="ad-nav">
+                  <div class="ad-nav__brand">SP OS</div>
+                  <div class="ad-nav__item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/></svg><span>Dashboard</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13l3.5 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Inbox</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><rect x="7" y="9" width="3" height="8" rx="1"/><rect x="13" y="5" width="3" height="12" rx="1"/></svg><span>Pipeline</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Equipo</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg><span>Campañas</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/></svg><span>Copiloto</span></div>
+                  <div class="ad-nav__spacer"></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.9 1.13V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 6 19.4a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 6 6a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 3.6a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 18 6a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 12H21a2 2 0 1 1 0 4z"/></svg><span>Ajustes</span></div>
+                </div>
+                <div class="ad-main">
+                  <div class="ad-top">
+                    <div><div class="ad-top__title">Dashboard</div><div class="ad-top__crumb">Resumen general · hoy</div></div>
+                    <div class="ad-top__search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Buscar…</div>
+                  </div>
+                  <div class="ad-content">
+                    <div class="ad-grid4">
+                      <div class="ad-metric"><div class="ad-metric__top"><div class="ad-metric__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div></div><div><div class="ad-metric__v t-num">342</div><div class="ad-metric__l">Leads totales</div></div></div>
+                      <div class="ad-metric"><div class="ad-metric__top"><div class="ad-metric__ic" style="background:rgba(78,123,70,.14);color:#83B778"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5a2.5 2.5 0 0 1 5 0c0 2.5-5 1-5 3.5a2.5 2.5 0 0 0 5 0"/></svg></div></div><div><div class="ad-metric__v t-num">47</div><div class="ad-metric__l">Cierres del mes</div></div></div>
+                      <div class="ad-metric"><div class="ad-metric__top"><div class="ad-metric__ic" style="background:rgba(91,141,239,.14);color:#5B8DEF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div></div><div><div class="ad-metric__v t-num">13.7%</div><div class="ad-metric__l">Conversión global</div></div></div>
+                      <div class="ad-metric"><div class="ad-metric__top"><div class="ad-metric__ic" style="background:rgba(224,164,74,.14);color:#E0A44A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div></div><div><div class="ad-metric__v t-num">12 min</div><div class="ad-metric__l">Resp. promedio</div></div></div>
+                    </div>
+                    <div class="ad-gridmain">
+                      <div class="ad-card" style="padding:0;overflow:hidden">
+                        <table class="table" style="font-size:12.5px">
+                          <thead><tr><th>Asesor</th><th>Leads</th><th>Conversión</th><th>Estado</th></tr></thead>
+                          <tbody>
+                            <tr><td><div class="u-row u-gap1"><div class="avatar avatar--sm" style="background:var(--gold)">EP</div>Eduardo Parra</div></td><td class="t-num">98</td><td><span class="badge badge--green">16%</span></td><td><span class="u-row u-gap1"><span class="dot dot--green"></span>Activo</span></td></tr>
+                            <tr><td><div class="u-row u-gap1"><div class="avatar avatar--sm" style="background:var(--green)">SP</div>Sergio Parra</div></td><td class="t-num">84</td><td><span class="badge badge--gold">12%</span></td><td><span class="u-row u-gap1"><span class="dot dot--green"></span>Activo</span></td></tr>
+                            <tr><td><div class="u-row u-gap1"><div class="avatar avatar--sm" style="background:var(--blue)">MG</div>María González</div></td><td class="t-num">51</td><td><span class="badge badge--mute">9%</span></td><td><span class="u-row u-gap1"><span class="dot dot--mute"></span>Suspendido</span></td></tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div class="ad-card">
+                        <div class="ad-card__t">Actividad reciente</div>
+                        <div class="tl" style="font-size:12px">
+                          <div class="tl-item"><div class="tl-item__dot" style="background:var(--gold)"></div><div class="tl-item__body"><div class="tl-item__title">Mensaje recibido · Carlos G.</div><div class="tl-item__time">hace 2 min</div></div></div>
+                          <div class="tl-item"><div class="tl-item__dot" style="background:var(--green)"></div><div class="tl-item__body"><div class="tl-item__title">Asignado a Eduardo Parra</div><div class="tl-item__time">hace 8 min</div></div></div>
+                          <div class="tl-item"><div class="tl-item__dot" style="background:var(--blue)"></div><div class="tl-item__body"><div class="tl-item__title">Lead nuevo · campaña Meta</div><div class="tl-item__time">hace 1 h</div></div></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cmp-layer cmp-layer--new adm-new">
+              <div style="display:flex;height:100%">
+                <div class="ad-nav">
+                  <div class="ad-nav__brand">SP OS</div>
+                  <div class="ad-nav__item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/></svg><span>Dashboard</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13l3.5 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Inbox</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><rect x="7" y="9" width="3" height="8" rx="1"/><rect x="13" y="5" width="3" height="12" rx="1"/></svg><span>Pipeline</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Equipo</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg><span>Campañas</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/></svg><span>Copiloto</span></div>
+                  <div class="ad-nav__spacer"></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.9 1.13V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 6 19.4a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 6 6a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 3.6a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 18 6a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 12H21a2 2 0 1 1 0 4z"/></svg><span>Ajustes</span></div>
+                </div>
+                <div class="ad-main">
+                  <div class="ad-top">
+                    <div><div class="ad-top__title">Dashboard</div><div class="ad-top__crumb">Resumen general · hoy</div></div>
+                    <div class="ad-top__search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Buscar…</div>
+                  </div>
+                  <div class="ad-content">
+                    <div class="nb-grid">
+                      <div class="nb-hero nb-m1">
+                        <div class="nb-hero__lbl">Leads totales</div>
+                        <div class="nb-hero__v t-num">342</div>
+                        <div class="nb-hero__d"><span class="nb-up">▲ 12%</span> vs mes anterior</div>
+                        <div class="nb-spark">
+                          <svg viewBox="0 0 200 44" preserveAspectRatio="none"><polyline points="0,30 30,26 60,28 90,18 120,22 150,10 180,14 200,6" fill="none" stroke="#D4AF37" stroke-width="2.2" stroke-linecap="round"/><polygon points="0,30 30,26 60,28 90,18 120,22 150,10 180,14 200,6 200,44 0,44" fill="url(#nbG)"/><defs><linearGradient id="nbG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D4AF37" stop-opacity=".28"/><stop offset="1" stop-color="#D4AF37" stop-opacity="0"/></linearGradient></defs></svg>
+                        </div>
+                        <div class="nb-hero__foot"><span class="badge badge--gold">+23 esta semana</span></div>
+                      </div>
+                      <div class="nb-cell nb-m2">
+                        <div class="nb-cell__lbl">Cierres del mes</div>
+                        <div class="nb-cell__v t-num">47</div>
+                        <div class="nb-cell__sub">Meta 60 · <b style="color:#83B778">78%</b></div>
+                        <div class="nb-bar"><i style="width:78%"></i></div>
+                      </div>
+                      <div class="nb-cell nb-m3">
+                        <div class="nb-cell__lbl">Conversión global</div>
+                        <div class="nb-cell__v t-num" style="color:#5B8DEF">13.7%</div>
+                        <div class="nb-cell__sub">+2.1 pts este mes</div>
+                      </div>
+                      <div class="nb-cell nb-m4">
+                        <div class="nb-cell__lbl">Resp. promedio</div>
+                        <div class="nb-cell__v t-num" style="color:#E0A44A">12 min</div>
+                        <div class="nb-cell__sub">Objetivo &lt; 15 min ✓</div>
+                      </div>
+                      <div class="nb-panel nb-m5">
+                        <div class="nb-card__h">Rendimiento por asesor</div>
+                        <table class="table" style="font-size:12px">
+                          <thead><tr><th>Asesor</th><th>Leads</th><th>Conv.</th></tr></thead>
+                          <tbody>
+                            <tr><td><div class="u-row u-gap1"><div class="avatar avatar--sm" style="background:var(--gold)">EP</div>Eduardo Parra</div></td><td class="t-num">98</td><td><span class="badge badge--green">16%</span></td></tr>
+                            <tr><td><div class="u-row u-gap1"><div class="avatar avatar--sm" style="background:var(--green)">SP</div>Sergio Parra</div></td><td class="t-num">84</td><td><span class="badge badge--gold">12%</span></td></tr>
+                            <tr><td><div class="u-row u-gap1"><div class="avatar avatar--sm" style="background:var(--blue)">MG</div>María González</div></td><td class="t-num">51</td><td><span class="badge badge--mute">9%</span></td></tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div class="nb-panel nb-m6">
+                        <div class="nb-card__h">Distribución por canal</div>
+                        <div class="nb-donut">
+                          <svg viewBox="0 0 84 84"><circle cx="42" cy="42" r="32" fill="none" stroke="rgba(248,244,230,.08)" stroke-width="12"/><circle cx="42" cy="42" r="32" fill="none" stroke="#D4AF37" stroke-width="12" stroke-dasharray="135 201" stroke-dashoffset="24" stroke-linecap="round" transform="rotate(-90 42 42)"/><circle cx="42" cy="42" r="32" fill="none" stroke="#4E7B46" stroke-width="12" stroke-dasharray="80 201" stroke-dashoffset="-115" stroke-linecap="round" transform="rotate(-90 42 42)"/><circle cx="42" cy="42" r="32" fill="none" stroke="#5B8DEF" stroke-width="12" stroke-dasharray="40 201" stroke-dashoffset="-199" stroke-linecap="round" transform="rotate(-90 42 42)"/></svg>
+                          <div class="nb-donut__c"><b class="t-num">342</b><span>leads</span></div>
+                        </div>
+                        <div class="nb-legend">
+                          <div><i style="background:#D4AF37"></i>WhatsApp <b>57%</b></div>
+                          <div><i style="background:#4E7B46"></i>Instagram <b>34%</b></div>
+                          <div><i style="background:#5B8DEF"></i>Messenger <b>9%</b></div>
+                        </div>
+                      </div>
+                      <div class="nb-panel nb-m7">
+                        <div class="nb-card__h">Actividad reciente</div>
+                        <div class="tl" style="font-size:12px">
+                          <div class="tl-item"><div class="tl-item__dot" style="background:var(--gold)"></div><div class="tl-item__body"><div class="tl-item__title">Mensaje recibido · Carlos G.</div><div class="tl-item__time">hace 2 min</div></div></div>
+                          <div class="tl-item"><div class="tl-item__dot" style="background:var(--green)"></div><div class="tl-item__body"><div class="tl-item__title">Asignado a Eduardo Parra</div><div class="tl-item__time">hace 8 min</div></div></div>
+                          <div class="tl-item"><div class="tl-item__dot" style="background:var(--blue)"></div><div class="tl-item__body"><div class="tl-item__title">Lead nuevo · campaña Meta</div><div class="tl-item__time">hace 1 h</div></div></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="cmp-divider"><div class="cmp-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></div></div>
+        </div>
+      </div>
+
+<style>
+  /* ════════════════════════════════════════════════════════════════════
+     ADMIN — SHELL COMÚN (nav + topbar) · fiel al sistema actual
+     ════════════════════════════════════════════════════════════════════ */
+  .cmp-layer { font-size: 13.5px; }
+  .cmp-layer .ad-nav { width: 206px; flex-shrink: 0; display: flex; flex-direction: column; padding: 14px 10px;
+    background: linear-gradient(115deg, rgba(255,255,255,.11) 0%, rgba(255,255,255,.03) 26%, rgba(255,255,255,0) 46%), rgba(12,11,9,.14);
+    backdrop-filter: blur(10px) saturate(1.7); -webkit-backdrop-filter: blur(10px) saturate(1.7);
+    border-right: 1px solid rgba(248,244,230,.14); box-shadow: 1px 0 26px rgba(0,0,0,.38); }
+  .cmp-layer .ad-nav__brand { font-family: 'Cinzel', serif; font-weight: 600; letter-spacing: .12em; color: var(--c-gold); font-size: 13px; padding: 4px 12px 18px; }
+  .cmp-layer .ad-nav__item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 500; color: rgba(248,248,248,.62); }
+  .cmp-layer .ad-nav__item svg { width: 16px; height: 16px; }
+  .cmp-layer .ad-nav__item.on { background: rgba(212,175,55,.13); color: var(--c-gold); font-weight: 600; box-shadow: inset 3px 0 0 var(--c-gold2); }
+  .cmp-layer .ad-nav__spacer { flex: 1; }
+  .cmp-layer .ad-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .cmp-layer .ad-top { height: 54px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 18px;
+    background: linear-gradient(115deg, rgba(255,255,255,.11) 0%, rgba(255,255,255,.03) 26%, rgba(255,255,255,0) 46%), rgba(42,38,30,.10);
+    backdrop-filter: blur(10px) saturate(1.7); -webkit-backdrop-filter: blur(10px) saturate(1.7);
+    border-bottom: 1px solid rgba(248,244,230,.14); }
+  .cmp-layer .ad-top__title { font-size: 14px; font-weight: 600; }
+  .cmp-layer .ad-top__crumb { font-size: 11px; color: rgba(248,248,248,.38); margin-top: 1px; }
+  .cmp-layer .ad-top__search { display: flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; font-size: 12px; color: rgba(248,248,248,.38);
+    background: linear-gradient(115deg, rgba(255,255,255,.11) 0%, rgba(255,255,255,.03) 26%, rgba(255,255,255,0) 46%), linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0) 42%), rgba(42,38,30,.10);
+    backdrop-filter: blur(10px) saturate(1.6); -webkit-backdrop-filter: blur(10px) saturate(1.6);
+    border: 1px solid rgba(248,244,230,.14); }
+  .cmp-layer .ad-content { flex: 1; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+
+  /* ── Admin ACTUAL · primitivas fieles a sp-os.css ── */
+  .cmp-layer--act .ad-grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; flex-shrink: 0; }
+  .cmp-layer--act .ad-metric { background: linear-gradient(115deg, rgba(255,255,255,.11) 0%, rgba(255,255,255,.03) 26%, rgba(255,255,255,0) 46%), linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0) 42%), rgba(42,38,30,.10);
+    border: 1px solid rgba(248,244,230,.14); border-top: 1px solid rgba(212,175,55,.25); border-radius: 18px; padding: 15px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.42), inset 0 -14px 26px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.3);
+    display: flex; flex-direction: column; gap: 11px; }
+  .cmp-layer--act .ad-metric__top { display: flex; }
+  .cmp-layer--act .ad-metric__ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: rgba(212,175,55,.14); color: var(--c-gold); }
+  .cmp-layer--act .ad-metric__ic svg { width: 16px; height: 16px; }
+  .cmp-layer--act .ad-metric__v { font-size: 25px; font-weight: 600; line-height: 1; letter-spacing: -.02em; }
+  .cmp-layer--act .ad-metric__l { font-size: 11.5px; color: rgba(248,248,248,.38); margin-top: 3px; }
+  .cmp-layer--act .ad-gridmain { display: grid; grid-template-columns: 1.75fr 1fr; gap: 14px; align-items: start; flex: 1; min-height: 0; }
+  .cmp-layer--act .ad-card { background: linear-gradient(115deg, rgba(255,255,255,.11) 0%, rgba(255,255,255,.03) 26%, rgba(255,255,255,0) 46%), linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0) 42%), rgba(42,38,30,.10);
+    border: 1px solid rgba(248,244,230,.14); border-top: 1px solid rgba(212,175,55,.25); border-radius: 18px; padding: 15px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.42), inset 0 -14px 26px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.3); }
+  .cmp-layer--act .ad-card__t { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+
+  /* ── Admin REDISEÑO · bento grid + neumorfismo + glass profundo ── */
+  .cmp-layer--new .ad-nav { backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+    background: rgba(16,15,13,.5); box-shadow: 1px 0 26px rgba(0,0,0,.3); }
+  .cmp-layer--new .ad-nav__item.on { background: rgba(212,175,55,.15); box-shadow: inset 3px 0 0 var(--c-gold2), 0 0 18px rgba(212,175,55,.12); }
+  .cmp-layer--new .ad-top { background: rgba(42,38,30,.10); backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5); }
+  .cmp-layer--new .ad-top__search { background: rgba(20,19,17,.5); border-color: rgba(248,244,230,.08);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.04); }
+  .cmp-layer--new .ad-content { gap: 13px; }
+  .cmp-layer--new .nb-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(5, 1fr); gap: 12px;
+    grid-template-areas: "hero hero hero hero conv conv" "hero hero hero hero resp resp" "rend rend rend rend prom prom" "rend rend rend rend donut donut" "act act act act act act"; }
+  .cmp-layer--new .nb-surf { background: rgba(42,38,30,.14); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border: 1px solid rgba(248,244,230,.10); border-top: 1px solid rgba(255,255,255,.14); border-radius: 20px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), inset 0 -14px 30px rgba(0,0,0,.12), 0 12px 34px rgba(0,0,0,.3); }
+  .cmp-layer--new .nb-hero { grid-area: hero; padding: 20px; display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden;
+    background: linear-gradient(150deg, rgba(212,175,55,.14), rgba(42,38,30,.10) 55%), rgba(20,19,17,.5);
+    border: 1px solid rgba(212,175,55,.26); border-radius: 22px;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.05), 0 16px 40px rgba(0,0,0,.35); }
+  .cmp-layer--new .nb-hero__lbl { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(248,248,248,.45); }
+  .cmp-layer--new .nb-hero__v { font-size: 46px; font-weight: 650; line-height: 1; letter-spacing: -.03em; }
+  .cmp-layer--new .nb-hero__d { font-size: 12px; color: rgba(248,248,248,.45); }
+  .cmp-layer--new .nb-up { color: #83B778; font-weight: 700; }
+  .cmp-layer--new .nb-spark { margin-top: auto; height: 46px; }
+  .cmp-layer--new .nb-spark svg { width: 100%; height: 100%; }
+  .cmp-layer--new .nb-hero__foot { display: flex; gap: 8px; }
+  .cmp-layer--new .nb-cell { padding: 16px 17px; display: flex; flex-direction: column; gap: 5px;
+    background: rgba(20,19,17,.5);
+    box-shadow: inset 0 3px 9px rgba(0,0,0,.42), inset 0 -1px 0 rgba(255,255,255,.04), 0 10px 26px rgba(0,0,0,.25);
+    border: 1px solid rgba(248,244,230,.07); border-radius: 20px; }
+  .cmp-layer--new .nb-cell__lbl { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(248,248,248,.4); }
+  .cmp-layer--new .nb-cell__v { font-size: 27px; font-weight: 650; line-height: 1.05; letter-spacing: -.02em; }
+  .cmp-layer--new .nb-cell__sub { font-size: 11px; color: rgba(248,248,248,.45); }
+  .cmp-layer--new .nb-bar { height: 6px; border-radius: 999px; background: rgba(248,244,230,.08); overflow: hidden; margin-top: auto; }
+  .cmp-layer--new .nb-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #C8A830, var(--c-gold2)); box-shadow: 0 0 12px rgba(212,175,55,.45); }
+  .cmp-layer--new .nb-m2 { grid-area: conv; } .cmp-layer--new .nb-m3 { grid-area: resp; }
+  .cmp-layer--new .nb-m4 { grid-area: prom; } .cmp-layer--new .nb-m5 { grid-area: rend; }
+  .cmp-layer--new .nb-m6 { grid-area: donut; } .cmp-layer--new .nb-m7 { grid-area: act; }
+  .cmp-layer--new .nb-panel { padding: 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: hidden; }
+  .cmp-layer--new .nb-panel .table { font-size: 12px; }
+  .cmp-layer--new .nb-card__h { font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .cmp-layer--new .nb-donut { position: relative; display: grid; place-items: center; flex: 1; min-height: 0; margin: 2px 0; }
+  .cmp-layer--new .nb-donut svg { width: 130px; height: 130px; }
+  .cmp-layer--new .nb-donut__c { position: absolute; display: flex; flex-direction: column; align-items: center; font-size: 9.5px; color: rgba(248,248,248,.4); }
+  .cmp-layer--new .nb-donut__c b { font-size: 17px; color: var(--c-text); font-weight: 650; }
+  .cmp-layer--new .nb-legend { display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: rgba(248,248,248,.62); }
+  .cmp-layer--new .nb-legend div { display: flex; align-items: center; gap: 7px; }
+  .cmp-layer--new .nb-legend i { width: 8px; height: 8px; border-radius: 50%; }
+  .cmp-layer--new .nb-legend b { margin-left: auto; font-weight: 650; color: var(--c-text); }
+  .cmp-layer--new .nb-m7 .tl { overflow: hidden; }
+
+  /* ── Inbox ── */
+  .cmp-layer .in-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1.25fr; gap: 14px; }
+  .cmp-layer .in-list { display: flex; flex-direction: column; overflow: hidden; }
+  .cmp-layer .in-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 13px; cursor: pointer; }
+  .cmp-layer .in-row.sel { background: rgba(212,175,55,.1); }
+  .cmp-layer .in-av { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: .72rem; font-weight: 700; color: var(--c-gold); background: linear-gradient(160deg, rgba(200,164,90,.22), rgba(78,123,70,.22)); border: 1px solid rgba(200,164,90,.25); flex-shrink: 0; }
+  .cmp-layer .in-av.b { background: linear-gradient(160deg, rgba(91,141,239,.22), rgba(78,123,70,.2)); border-color: rgba(91,141,239,.3); }
+  .cmp-layer .in-mid { flex: 1; min-width: 0; }
+  .cmp-layer .in-nm { font-size: 13px; font-weight: 600; }
+  .cmp-layer .in-pv { font-size: 11.5px; color: rgba(248,248,248,.45); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .cmp-layer .in-tm { font-size: 10px; color: rgba(248,248,248,.38); flex-shrink: 0; }
+  .cmp-layer .in-pane { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  .cmp-layer--act .in-pane { background: linear-gradient(115deg, rgba(255,255,255,.11) 0%, rgba(255,255,255,.03) 26%, rgba(255,255,255,0) 46%), linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0) 42%), rgba(42,38,30,.10); border: 1px solid rgba(248,244,230,.14); border-top: 1px solid rgba(212,175,55,.25); border-radius: 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,.42), inset 0 -14px 26px rgba(0,0,0,.08); }
+  .cmp-layer--new .in-pane { background: rgba(42,38,30,.14); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border: 1px solid rgba(248,244,230,.10); border-top: 1px solid rgba(255,255,255,.14); border-radius: 20px; box-shadow: inset 0 1px 0 rgba(255,255,255,.05), inset 0 -14px 30px rgba(0,0,0,.12), 0 12px 34px rgba(0,0,0,.3); }
+  .cmp-layer .in-pane__h { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid rgba(248,244,230,.08); }
+  .cmp-layer .in-pane__b { flex: 1; overflow: hidden; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .cmp-layer .in-bub { max-width: 82%; padding: 9px 12px; border-radius: 14px; font-size: 12.5px; line-height: 1.45; }
+  .cmp-layer--act .in-bub.in { align-self: flex-start; background: #1C1C1C; border-left: 2px solid rgba(200,164,90,.3); border-bottom-left-radius: 5px; }
+  .cmp-layer--act .in-bub.out { align-self: flex-end; background: linear-gradient(160deg, #1D4535, #153427); border-bottom-right-radius: 5px; }
+  .cmp-layer--new .in-bub.in { align-self: flex-start; background: rgba(42,38,30,.5); backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5); border: 1px solid rgba(248,244,230,.1); border-bottom-left-radius: 6px; box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 8px 24px rgba(0,0,0,.22); }
+  .cmp-layer--new .in-bub.out { align-self: flex-end; background: linear-gradient(160deg, #2A5C4E, #1E4A3E); border-bottom-right-radius: 6px; box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 26px rgba(20,60,48,.4); }
+  .cmp-layer .in-bub .tm { display: block; text-align: right; font-size: 9.5px; opacity: .55; margin-top: 3px; }
+  .cmp-layer .in-bar { display: flex; align-items: center; gap: 8px; padding: 9px 12px 12px; border-top: 1px solid rgba(248,244,230,.08); }
+  .cmp-layer--act .in-bar input { flex: 1; height: 36px; border-radius: 18px; background: #1C1C1C; border: 1px solid rgba(248,244,230,.08); padding: 0 14px; font-size: 12.5px; color: rgba(248,248,248,.38); font-family: inherit; }
+  .cmp-layer--new .in-bar input { flex: 1; height: 38px; border-radius: 13px; background: rgba(20,19,17,.55); border: 1px solid rgba(248,244,230,.08); padding: 0 15px; font-size: 12.5px; color: rgba(248,248,248,.38); font-family: inherit;
+    box-shadow: inset 0 3px 8px rgba(0,0,0,.42), inset 0 -1px 0 rgba(255,255,255,.04); }
+  .cmp-layer .in-send { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(160deg, #C8A45A, #A8862F); display: grid; place-items: center; color: #0A0A0A; flex-shrink: 0; box-shadow: 0 6px 20px rgba(200,164,90,.35); }
+  .cmp-layer--new .in-send { border-radius: 13px; background: linear-gradient(140deg, #EDCC60, #D4AF37 60%, #A08028); box-shadow: 0 6px 22px rgba(212,175,55,.4), inset 0 1px 0 rgba(255,255,255,.4), inset 0 -2px 6px rgba(0,0,0,.2); }
+  .cmp-layer--new .in-row { border-radius: 16px; }
+  .cmp-layer--new .in-row.sel { background: rgba(212,175,55,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 6px 18px rgba(0,0,0,.2); }
+  .cmp-layer--new .in-av { border-radius: 14px; box-shadow: inset 0 2px 5px rgba(0,0,0,.35), 0 4px 12px rgba(0,0,0,.22); }
+
+  /* ── Equipo ── */
+  .cmp-layer .eq-row { display: flex; align-items: center; gap: 12px; }
+  .cmp-layer .eq-act { display: flex; gap: 6px; justify-content: flex-end; }
+  .cmp-layer .eq-btn { height: 27px; padding: 0 10px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+  .cmp-layer--act .eq-btn.gold { background: linear-gradient(160deg, #C8A45A, #A8862F); color: #0A0A0A; }
+  .cmp-layer--act .eq-btn.ghost { background: rgba(42,38,30,.1); border: 1px solid rgba(248,244,230,.14); color: rgba(248,248,248,.62); }
+  .cmp-layer--new .eq-btn.gold { background: linear-gradient(140deg, #EDCC60, #D4AF37 60%, #A08028); color: #0A0A0A; box-shadow: 0 4px 14px rgba(212,175,55,.35), inset 0 1px 0 rgba(255,255,255,.4); }
+  .cmp-layer--new .eq-btn.ghost { background: rgba(20,19,17,.55); border: 1px solid rgba(248,244,230,.08); color: rgba(248,248,248,.62); box-shadow: inset 0 2px 5px rgba(0,0,0,.4); }
+  .cmp-layer--new .eq-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
+  .cmp-layer--new .eq-card { padding: 17px; display: flex; flex-direction: column; gap: 11px;
+    background: rgba(20,19,17,.5);
+    box-shadow: inset 0 3px 9px rgba(0,0,0,.42), inset 0 -1px 0 rgba(255,255,255,.04), 0 10px 26px rgba(0,0,0,.25);
+    border: 1px solid rgba(248,244,230,.07); border-radius: 20px; }
+  .cmp-layer--new .eq-card__stats { display: flex; gap: 8px; margin-top: auto; }
+  .cmp-layer--new .eq-card__st { flex: 1; text-align: center; padding: 8px 4px; border-radius: 13px; background: rgba(42,38,30,.35); box-shadow: inset 0 2px 5px rgba(0,0,0,.3); }
+  .cmp-layer--new .eq-card__st b { display: block; font-size: 15px; font-weight: 650; }
+  .cmp-layer--new .eq-card__st span { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: rgba(248,248,248,.4); }
+
+  /* ── Pipeline ── */
+  .cmp-layer .kanban { gap: 13px; flex: 1; min-height: 0; }
+  .cmp-layer .kanban .kan-col { flex: 0 0 268px; }
+  .cmp-layer .kan-col__head { display: flex; align-items: center; justify-content: space-between; padding: 13px 14px; font-size: 12.5px; font-weight: 600; border-bottom: 1px solid rgba(248,244,230,.06); }
+  .cmp-layer .kan-col__title { display: flex; align-items: center; gap: 8px; }
+  .cmp-layer .kan-col__count { min-width: 21px; height: 21px; padding: 0 6px; border-radius: 999px; display: grid; place-items: center; font-size: 11px; font-weight: 700; background: rgba(212,175,55,.14); color: var(--c-gold); }
+  .cmp-layer .kan-col__body { padding: 11px; display: flex; flex-direction: column; gap: 9px; overflow: hidden; }
+  .cmp-layer--act .kan-card { background: linear-gradient(115deg, rgba(255,255,255,.11) 0%, rgba(255,255,255,.03) 26%, rgba(255,255,255,0) 46%), linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0) 42%), rgba(50,45,35,.16); box-shadow: inset 0 1px 0 rgba(255,255,255,.42), inset 0 -10px 18px rgba(0,0,0,.06); }
+  .cmp-layer--new .kan-col { background: rgba(20,19,17,.5); border: 1px solid rgba(248,244,230,.07); border-radius: 20px;
+    box-shadow: inset 0 3px 10px rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.04), 0 10px 30px rgba(0,0,0,.28); }
+  .cmp-layer--new .kan-col__head { border-bottom: 1px solid rgba(248,244,230,.07); }
+  .cmp-layer--new .kan-card { background: rgba(42,38,30,.4); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(248,244,230,.09); border-top: 1px solid rgba(255,255,255,.1); border-radius: 16px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 8px 22px rgba(0,0,0,.25); }
+  .cmp-layer--new .kan-col__add { margin: 0 11px 11px; height: 34px; border-radius: 12px; display: grid; place-items: center; color: var(--c-gold);
+    background: rgba(42,38,30,.4); border: 1px dashed rgba(212,175,55,.3); font-size: 15px; }
+  .cmp-layer--new .kan-card .av-row { display: flex; align-items: center; gap: 8px; margin-top: 9px; }
+
+  /* ── Notes ── */
+  .cmp-notes { bottom: 46px; }
+  .cmp-notes__t { font-size: 9px; }
+</style>
+
+      <!-- ── VISTA 05 · INBOX (admin) ── -->
+      <div class="cmp-view" id="v-inbox">
+        <div class="cmp-stage desktop" id="st-inbox">
+          <div class="cmp-label cmp-label--act">Actual</div>
+          <div class="cmp-label cmp-label--new">Rediseño</div>
+          <div class="cmp-frame desktop">
+            <div class="cmp-layer cmp-layer--act">
+              <div style="display:flex;height:100%">
+                <div class="ad-nav">
+                  <div class="ad-nav__brand">SP OS</div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/></svg><span>Dashboard</span></div>
+                  <div class="ad-nav__item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13l3.5 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Inbox</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><rect x="7" y="9" width="3" height="8" rx="1"/><rect x="13" y="5" width="3" height="12" rx="1"/></svg><span>Pipeline</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Equipo</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg><span>Campañas</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/></svg><span>Copiloto</span></div>
+                  <div class="ad-nav__spacer"></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.9 1.13V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 6 19.4a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 6 6a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 3.6a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 18 6a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 12H21a2 2 0 1 1 0 4z"/></svg><span>Ajustes</span></div>
+                </div>
+                <div class="ad-main">
+                  <div class="ad-top">
+                    <div><div class="ad-top__title">Inbox</div><div class="ad-top__crumb">Todas las conversaciones · multicanal</div></div>
+                    <div class="ad-top__search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Buscar…</div>
+                  </div>
+                  <div class="ad-content">
+                    <div class="in-grid">
+                      <div class="ad-card in-list">
+                        <div class="ad-card__t">Conversaciones</div>
+                        <div class="in-row sel">
+                          <div class="in-av">CG</div>
+                          <div class="in-mid"><div class="in-nm">Carlos García</div><div class="in-pv">Sí por favor 🙏</div></div>
+                          <div><span class="badge badge--gold">3</span><div class="in-tm" style="text-align:right;margin-top:3px">9:41</div></div>
+                        </div>
+                        <div class="in-row">
+                          <div class="in-av b">AL</div>
+                          <div class="in-mid"><div class="in-nm">Andrea López</div><div class="in-pv">Me interesa el catálogo…</div></div>
+                          <div><span class="badge badge--blue">IG</span><div class="in-tm" style="text-align:right;margin-top:3px">8:15</div></div>
+                        </div>
+                        <div class="in-row">
+                          <div class="in-av">MG</div>
+                          <div class="in-mid"><div class="in-nm">María Gómez</div><div class="in-pv">Listo, agendo la llamada</div></div>
+                          <div class="in-tm">ayer</div>
+                        </div>
+                        <div class="in-row">
+                          <div class="in-av b">JR</div>
+                          <div class="in-mid"><div class="in-nm">Jorge Rivera</div><div class="in-pv">Gracias por la info 🙌</div></div>
+                          <div class="in-tm">lun</div>
+                        </div>
+                        <div class="in-row">
+                          <div class="in-av">DR</div>
+                          <div class="in-mid"><div class="in-nm">Diana Rojas</div><div class="in-pv">¿Hay financiación directa?</div></div>
+                          <div><span class="badge badge--green">Vta</span><div class="in-tm" style="text-align:right;margin-top:3px">dom</div></div>
+                        </div>
+                      </div>
+                      <div class="in-pane">
+                        <div class="in-pane__h">
+                          <div class="in-av">CG</div>
+                          <div style="flex:1"><div style="font-size:13px;font-weight:600">Carlos García</div><div style="font-size:10.5px;color:#4E7B46">en línea · WhatsApp</div></div>
+                          <span class="badge badge--gold">Negociación</span>
+                        </div>
+                        <div class="in-pane__b">
+                          <div class="in-bub in">Buenos días, me interesa el lote en Tocaima<div class="tm">9:14</div></div>
+                          <div class="in-bub out">¡Hola Carlos! Tenemos lotes desde $35M. ¿Cuántos m² necesitas?<div class="tm">9:15 ✓✓</div></div>
+                          <div class="in-bub in">Algo de 120 m² con buen acceso<div class="tm">9:16</div></div>
+                          <div class="in-bub out">Perfecto, te tengo uno en la Cañada Honda. ¿Te envío fotos?<div class="tm">9:17 ✓✓</div></div>
+                        </div>
+                        <div class="in-bar"><input value="Escribe un mensaje…"><div class="in-send">➤</div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cmp-layer cmp-layer--new">
+              <div style="display:flex;height:100%">
+                <div class="ad-nav">
+                  <div class="ad-nav__brand">SP OS</div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/></svg><span>Dashboard</span></div>
+                  <div class="ad-nav__item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13l3.5 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Inbox</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><rect x="7" y="9" width="3" height="8" rx="1"/><rect x="13" y="5" width="3" height="12" rx="1"/></svg><span>Pipeline</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Equipo</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg><span>Campañas</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/></svg><span>Copiloto</span></div>
+                  <div class="ad-nav__spacer"></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.9 1.13V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 6 19.4a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 6 6a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 3.6a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 18 6a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 12H21a2 2 0 1 1 0 4z"/></svg><span>Ajustes</span></div>
+                </div>
+                <div class="ad-main">
+                  <div class="ad-top">
+                    <div><div class="ad-top__title">Inbox</div><div class="ad-top__crumb">Todas las conversaciones · multicanal</div></div>
+                    <div class="ad-top__search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Buscar…</div>
+                  </div>
+                  <div class="ad-content">
+                    <div class="in-grid">
+                      <div class="nb-surf in-list" style="padding:14px">
+                        <div class="nb-card__h" style="margin-bottom:6px">Conversaciones</div>
+                        <div class="in-row sel">
+                          <div class="in-av">CG</div>
+                          <div class="in-mid"><div class="in-nm">Carlos García</div><div class="in-pv" style="color:rgba(248,248,248,.62)">Sí por favor 🙏</div></div>
+                          <div style="text-align:center"><span class="badge badge--gold" style="border-radius:999px">3</span><div class="in-tm" style="margin-top:3px">9:41</div></div>
+                        </div>
+                        <div class="in-row">
+                          <div class="in-av b">AL</div>
+                          <div class="in-mid"><div class="in-nm">Andrea López</div><div class="in-pv">Me interesa el catálogo…</div></div>
+                          <div style="text-align:center"><span class="badge badge--blue" style="border-radius:999px">IG</span><div class="in-tm" style="margin-top:3px">8:15</div></div>
+                        </div>
+                        <div class="in-row">
+                          <div class="in-av">MG</div>
+                          <div class="in-mid"><div class="in-nm">María Gómez</div><div class="in-pv">Listo, agendo la llamada</div></div>
+                          <div class="in-tm">ayer</div>
+                        </div>
+                        <div class="in-row">
+                          <div class="in-av b">JR</div>
+                          <div class="in-mid"><div class="in-nm">Jorge Rivera</div><div class="in-pv">Gracias por la info 🙌</div></div>
+                          <div class="in-tm">lun</div>
+                        </div>
+                        <div class="in-row">
+                          <div class="in-av">DR</div>
+                          <div class="in-mid"><div class="in-nm">Diana Rojas</div><div class="in-pv">¿Hay financiación directa?</div></div>
+                          <div style="text-align:center"><span class="badge badge--green" style="border-radius:999px">Vta</span><div class="in-tm" style="margin-top:3px">dom</div></div>
+                        </div>
+                      </div>
+                      <div class="in-pane">
+                        <div class="in-pane__h">
+                          <div class="in-av">CG</div>
+                          <div style="flex:1"><div style="font-size:13px;font-weight:600">Carlos García</div><div style="font-size:10.5px;color:#4E7B46">en línea · WhatsApp</div></div>
+                          <span class="badge badge--gold" style="border-radius:999px">Negociación</span>
+                        </div>
+                        <div class="in-pane__b">
+                          <div class="in-bub in">Buenos días, me interesa el lote en Tocaima<div class="tm">9:14</div></div>
+                          <div class="in-bub out">¡Hola Carlos! Tenemos lotes desde $35M. ¿Cuántos m² necesitas?<div class="tm">9:15 ✓✓</div></div>
+                          <div class="in-bub in">Algo de 120 m² con buen acceso<div class="tm">9:16</div></div>
+                          <div class="in-bub out">Perfecto, te tengo uno en la Cañada Honda. ¿Te envío fotos?<div class="tm">9:17 ✓✓</div></div>
+                        </div>
+                        <div class="in-bar"><input value="Escribe un mensaje…"><div class="in-send">➤</div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="cmp-divider"><div class="cmp-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- ── VISTA 06 · EQUIPO (admin) ── -->
+      <div class="cmp-view" id="v-equipo">
+        <div class="cmp-stage desktop" id="st-equipo">
+          <div class="cmp-label cmp-label--act">Actual</div>
+          <div class="cmp-label cmp-label--new">Rediseño</div>
+          <div class="cmp-frame desktop">
+            <div class="cmp-layer cmp-layer--act">
+              <div style="display:flex;height:100%">
+                <div class="ad-nav">
+                  <div class="ad-nav__brand">SP OS</div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/></svg><span>Dashboard</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13l3.5 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Inbox</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><rect x="7" y="9" width="3" height="8" rx="1"/><rect x="13" y="5" width="3" height="12" rx="1"/></svg><span>Pipeline</span></div>
+                  <div class="ad-nav__item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Equipo</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg><span>Campañas</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/></svg><span>Copiloto</span></div>
+                  <div class="ad-nav__spacer"></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.9 1.13V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 6 19.4a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 6 6a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 3.6a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 18 6a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 12H21a2 2 0 1 1 0 4z"/></svg><span>Ajustes</span></div>
+                </div>
+                <div class="ad-main">
+                  <div class="ad-top">
+                    <div><div class="ad-top__title">Equipo</div><div class="ad-top__crumb">Asesores comerciales · gestión de roles</div></div>
+                    <div class="ad-top__search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Buscar asesor…</div>
+                  </div>
+                  <div class="ad-content">
+                    <div class="ad-grid4" style="flex-shrink:0">
+                      <div class="ad-metric"><div class="ad-metric__top"><div class="ad-metric__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div></div><div><div class="ad-metric__v t-num">3</div><div class="ad-metric__l">Asesores</div></div></div>
+                      <div class="ad-metric"><div class="ad-metric__top"><div class="ad-metric__ic" style="background:rgba(78,123,70,.14);color:#83B778"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div></div><div><div class="ad-metric__v t-num">2</div><div class="ad-metric__l">Activos ahora</div></div></div>
+                      <div class="ad-metric"><div class="ad-metric__top"><div class="ad-metric__ic" style="background:rgba(91,141,239,.14);color:#5B8DEF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5a2.5 2.5 0 0 1 5 0c0 2.5-5 1-5 3.5a2.5 2.5 0 0 0 5 0"/></svg></div></div><div><div class="ad-metric__v t-num">47</div><div class="ad-metric__l">Cierres del equipo</div></div></div>
+                      <div class="ad-metric"><div class="ad-metric__top"><div class="ad-metric__ic" style="background:rgba(224,164,74,.14);color:#E0A44A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div></div><div><div class="ad-metric__v t-num">12.3%</div><div class="ad-metric__l">Conversión media</div></div></div>
+                    </div>
+                    <div class="ad-card" style="padding:0;overflow:hidden">
+                      <table class="table" style="font-size:12.5px">
+                        <thead><tr><th>Asesor</th><th>Teléfono</th><th>PIN</th><th>Leads</th><th>Estado</th><th style="text-align:right">Acciones</th></tr></thead>
+                        <tbody>
+                          <tr><td><div class="eq-row"><div class="avatar avatar--sm" style="background:var(--gold)">EP</div>Eduardo Parra</div></td><td class="t-num" style="color:rgba(248,248,248,.55)">+57 321 461 7082</td><td class="t-num">••••</td><td class="t-num">98</td><td><span class="u-row u-gap1"><span class="dot dot--green"></span>Activo</span></td><td><div class="eq-act"><button class="eq-btn gold">Ascender</button><button class="eq-btn ghost">Reset PIN</button></div></td></tr>
+                          <tr><td><div class="eq-row"><div class="avatar avatar--sm" style="background:var(--green)">SP</div>Sergio Parra <span class="badge badge--gold">Jefe</span></div></td><td class="t-num" style="color:rgba(248,248,248,.55)">+57 322 431 2518</td><td class="t-num">••••</td><td class="t-num">84</td><td><span class="u-row u-gap1"><span class="dot dot--green"></span>Activo</span></td><td><div class="eq-act"><button class="eq-btn ghost">Descender</button></div></td></tr>
+                          <tr><td><div class="eq-row"><div class="avatar avatar--sm" style="background:var(--blue)">MG</div>María González</div></td><td class="t-num" style="color:rgba(248,248,248,.55)">+57 300 555 1234</td><td class="t-num">••••</td><td class="t-num">51</td><td><span class="u-row u-gap1"><span class="dot dot--mute"></span>Suspendido</span></td><td><div class="eq-act"><button class="eq-btn ghost">Activar</button></div></td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cmp-layer cmp-layer--new">
+              <div style="display:flex;height:100%">
+                <div class="ad-nav">
+                  <div class="ad-nav__brand">SP OS</div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/></svg><span>Dashboard</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13l3.5 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Inbox</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><rect x="7" y="9" width="3" height="8" rx="1"/><rect x="13" y="5" width="3" height="12" rx="1"/></svg><span>Pipeline</span></div>
+                  <div class="ad-nav__item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Equipo</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg><span>Campañas</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/></svg><span>Copiloto</span></div>
+                  <div class="ad-nav__spacer"></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.9 1.13V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 6 19.4a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 6 6a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 3.6a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 18 6a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 12H21a2 2 0 1 1 0 4z"/></svg><span>Ajustes</span></div>
+                </div>
+                <div class="ad-main">
+                  <div class="ad-top">
+                    <div><div class="ad-top__title">Equipo</div><div class="ad-top__crumb">Asesores comerciales · gestión de roles</div></div>
+                    <div class="ad-top__search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Buscar asesor…</div>
+                  </div>
+                  <div class="ad-content">
+                    <div class="eq-grid">
+                      <div class="eq-card">
+                        <div class="eq-row">
+                          <div class="avatar avatar--md" style="background:var(--gold);box-shadow:inset 0 2px 5px rgba(0,0,0,.35)">EP</div>
+                          <div style="flex:1"><div style="font-size:14.5px;font-weight:600">Eduardo Parra</div><div style="font-size:11px;color:rgba(248,248,248,.45)">+57 321 461 7082</div></div>
+                          <span class="badge badge--green" style="border-radius:999px">Activo</span>
+                        </div>
+                        <div class="eq-card__stats">
+                          <div class="eq-card__st"><b>98</b><span>Leads</span></div>
+                          <div class="eq-card__st"><b>16%</b><span>Conv.</span></div>
+                          <div class="eq-card__st"><b>22</b><span>Cierres</span></div>
+                        </div>
+                        <div style="display:flex;gap:8px"><button class="eq-btn gold" style="flex:1;height:32px;border-radius:11px">Ascender</button><button class="eq-btn ghost" style="flex:1;height:32px;border-radius:11px">Reset PIN</button></div>
+                      </div>
+                      <div class="eq-card" style="border-color:rgba(212,175,55,.3);box-shadow:inset 0 3px 9px rgba(0,0,0,.42), 0 10px 30px rgba(212,175,55,.12)">
+                        <div class="eq-row">
+                          <div class="avatar avatar--md" style="background:var(--green);box-shadow:inset 0 2px 5px rgba(0,0,0,.35)">SP</div>
+                          <div style="flex:1"><div style="font-size:14.5px;font-weight:600">Sergio Parra</div><div style="font-size:11px;color:rgba(248,248,248,.45)">+57 322 431 2518</div></div>
+                          <span class="badge badge--gold" style="border-radius:999px;box-shadow:0 0 12px rgba(212,175,55,.3)">Jefe</span>
+                        </div>
+                        <div class="eq-card__stats">
+                          <div class="eq-card__st"><b>84</b><span>Leads</span></div>
+                          <div class="eq-card__st"><b>12%</b><span>Conv.</span></div>
+                          <div class="eq-card__st"><b>19</b><span>Cierres</span></div>
+                        </div>
+                        <div style="display:flex;gap:8px"><button class="eq-btn ghost" style="flex:1;height:32px;border-radius:11px">Descender</button></div>
+                      </div>
+                      <div class="eq-card">
+                        <div class="eq-row">
+                          <div class="avatar avatar--md" style="background:var(--blue);box-shadow:inset 0 2px 5px rgba(0,0,0,.35)">MG</div>
+                          <div style="flex:1"><div style="font-size:14.5px;font-weight:600">María González</div><div style="font-size:11px;color:rgba(248,248,248,.45)">+57 300 555 1234</div></div>
+                          <span class="badge badge--mute" style="border-radius:999px">Suspendido</span>
+                        </div>
+                        <div class="eq-card__stats">
+                          <div class="eq-card__st"><b>51</b><span>Leads</span></div>
+                          <div class="eq-card__st"><b>9%</b><span>Conv.</span></div>
+                          <div class="eq-card__st"><b>9</b><span>Cierres</span></div>
+                        </div>
+                        <div style="display:flex;gap:8px"><button class="eq-btn ghost" style="flex:1;height:32px;border-radius:11px">Reactivar</button></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="cmp-divider"><div class="cmp-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- ── VISTA 07 · PIPELINE (admin) ── -->
+      <div class="cmp-view" id="v-pipeline">
+        <div class="cmp-stage desktop" id="st-pipeline">
+          <div class="cmp-label cmp-label--act">Actual</div>
+          <div class="cmp-label cmp-label--new">Rediseño</div>
+          <div class="cmp-frame desktop">
+            <div class="cmp-layer cmp-layer--act">
+              <div style="display:flex;height:100%">
+                <div class="ad-nav">
+                  <div class="ad-nav__brand">SP OS</div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/></svg><span>Dashboard</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13l3.5 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Inbox</span></div>
+                  <div class="ad-nav__item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><rect x="7" y="9" width="3" height="8" rx="1"/><rect x="13" y="5" width="3" height="12" rx="1"/></svg><span>Pipeline</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Equipo</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg><span>Campañas</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/></svg><span>Copiloto</span></div>
+                  <div class="ad-nav__spacer"></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.9 1.13V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 6 19.4a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 6 6a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 3.6a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 18 6a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 12H21a2 2 0 1 1 0 4z"/></svg><span>Ajustes</span></div>
+                </div>
+                <div class="ad-main">
+                  <div class="ad-top">
+                    <div><div class="ad-top__title">Pipeline</div><div class="ad-top__crumb">Etapas de venta · arrastra para mover</div></div>
+                    <div class="ad-top__search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Buscar…</div>
+                  </div>
+                  <div class="ad-content">
+                    <div class="kanban">
+                      <div class="kan-col">
+                        <div class="kan-col__head"><div class="kan-col__title"><span class="dot dot--gold"></span>Interesados</div><span class="kan-col__count">6</span></div>
+                        <div class="kan-col__body">
+                          <div class="kan-card"><div class="u-between"><b style="font-size:12.5px">Carlos García</b><span class="badge badge--blue">WA</span></div><div class="t-dim3" style="font-size:11px;margin-top:4px">Pregunta por lote en Tocaima · hace 8 min</div></div>
+                          <div class="kan-card"><div class="u-between"><b style="font-size:12.5px">Andrea López</b><span class="badge badge--gold">IG</span></div><div class="t-dim3" style="font-size:11px;margin-top:4px">Pide catálogo de La Bendición · hace 1 h</div></div>
+                          <div class="kan-card"><div class="u-between"><b style="font-size:12.5px">María Gómez</b><span class="badge badge--mute">MS</span></div><div class="t-dim3" style="font-size:11px;margin-top:4px">Interesada en financiación · hace 2 h</div></div>
+                        </div>
+                      </div>
+                      <div class="kan-col">
+                        <div class="kan-col__head"><div class="kan-col__title"><span class="dot dot--green"></span>Negociación</div><span class="kan-col__count">3</span></div>
+                        <div class="kan-col__body">
+                          <div class="kan-card"><div class="u-between"><b style="font-size:12.5px">Jorge Rivera</b><span class="badge badge--amber">Cita</span></div><div class="t-dim3" style="font-size:11px;margin-top:4px">Visita el sábado 10 AM · Tocaima</div></div>
+                          <div class="kan-card"><div class="u-between"><b style="font-size:12.5px">Diana Rojas</b><span class="badge badge--green">Apartado</span></div><div class="t-dim3" style="font-size:11px;margin-top:4px">En revisión con asesor legal · hoy</div></div>
+                        </div>
+                      </div>
+                      <div class="kan-col">
+                        <div class="kan-col__head"><div class="kan-col__title"><span class="dot dot--red"></span>Cerrados</div><span class="kan-col__count">2</span></div>
+                        <div class="kan-col__body">
+                          <div class="kan-card"><div class="u-between"><b style="font-size:12.5px">Héctor Parra</b><span class="badge badge--green">Vendido</span></div><div class="t-dim3" style="font-size:11px;margin-top:4px">Lote 24 · Porvenir · este mes</div></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cmp-layer cmp-layer--new">
+              <div style="display:flex;height:100%">
+                <div class="ad-nav">
+                  <div class="ad-nav__brand">SP OS</div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/></svg><span>Dashboard</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13l3.5 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Inbox</span></div>
+                  <div class="ad-nav__item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><rect x="7" y="9" width="3" height="8" rx="1"/><rect x="13" y="5" width="3" height="12" rx="1"/></svg><span>Pipeline</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Equipo</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg><span>Campañas</span></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/></svg><span>Copiloto</span></div>
+                  <div class="ad-nav__spacer"></div>
+                  <div class="ad-nav__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.9 1.13V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 6 19.4a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 6 6a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 3.6a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 18 6a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 12H21a2 2 0 1 1 0 4z"/></svg><span>Ajustes</span></div>
+                </div>
+                <div class="ad-main">
+                  <div class="ad-top">
+                    <div><div class="ad-top__title">Pipeline</div><div class="ad-top__crumb">Etapas de venta · arrastra para mover</div></div>
+                    <div class="ad-top__search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Buscar…</div>
+                  </div>
+                  <div class="ad-content">
+                    <div class="kanban">
+                      <div class="kan-col">
+                        <div class="kan-col__head"><div class="kan-col__title"><span class="dot dot--gold"></span>Interesados</div><span class="kan-col__count">6</span></div>
+                        <div class="kan-col__body">
+                          <div class="kan-card"><div class="u-between"><b style="font-size:12.5px">Carlos García</b><span class="badge badge--blue" style="border-radius:999px">WA</span></div><div class="t-dim3" style="font-size:11px;margin-top:4px">Pregunta por lote en Tocaima · hace 8 min</div><div class="av-row"><div class="avatar avatar--sm" style="width:20px;height:20px;font-size:9px;background:var(--gold)">EP</div><span style="font-size:10px;color:rgba(248,248,248,.45)">Eduardo</span></div></div>
+                          <div class="kan-card"><div class="u-between"><b style="font-size:12.5px">Andrea López</b><span class="badge badge--gold" style="border-radius:999px">IG</span></div><div class="t-dim3" style="font-size:11px;margin-top:4px">Pide catálogo de La Bendición · hace 1 h</div><div class="av-row"><div class="avatar avatar--sm" style="width:20px;height:20px;font-size:9px;background:var(--gold)">EP</div><span style="font-size:10px;color:rgba(248,248,248,.45)">Eduardo</span></div></div>
+                          <div class="kan-card"><div class="u-between"><b style="font-size:12.5px">María Gómez</b><span class="badge badge--mute" style="border-radius:999px">MS</span></div><div class="t-dim3" style="font-size:11px;margin-top:4px">Interesada en financiación · hace 2 h</div><div class="av-row"><div class="avatar avatar--sm" style="width:20px;height:20px;font-size:9px;background:var(--green)">SP</div><span style="font-size:10px;color:rgba(248,248,248,.45)">Sergio</span></div></div>
+                        </div>
+                        <button class="kan-col__add">＋ Nueva tarjeta</button>
+                      </div>
+                      <div class="kan-col">
+                        <div class="kan-col__head"><div class="kan-col__title"><span class="dot dot--green"></span>Negociación</div><span class="kan-col__count">3</span></div>
+                        <div class="kan-col__body">
+                          <div class="kan-card"><div class="u-between"><b style="font-size:12.5px">Jorge Rivera</b><span class="badge badge--amber" style="border-radius:999px">Cita</span></div><div class="t-dim3" style="font-size:11px;margin-top:4px">Visita el sábado 10 AM · Tocaima</div><div class="av-row"><div class="avatar avatar--sm" style="width:20px;height:20px;font-size:9px;background:var(--gold)">EP</div><span style="font-size:10px;color:rgba(248,248,248,.45)">Eduardo</span></div></div>
+                          <div class="kan-card"><div class="u-between"><b style="font-size:12.5px">Diana Rojas</b><span class="badge badge--green" style="border-radius:999px">Apartado</span></div><div class="t-dim3" style="font-size:11px;margin-top:4px">En revisión con asesor legal · hoy</div><div class="av-row"><div class="avatar avatar--sm" style="width:20px;height:20px;font-size:9px;background:var(--gold)">EP</div><span style="font-size:10px;color:rgba(248,248,248,.45)">Eduardo</span></div></div>
+                        </div>
+                        <button class="kan-col__add">＋ Nueva tarjeta</button>
+                      </div>
+                      <div class="kan-col">
+                        <div class="kan-col__head"><div class="kan-col__title"><span class="dot dot--red"></span>Cerrados</div><span class="kan-col__count">2</span></div>
+                        <div class="kan-col__body">
+                          <div class="kan-card"><div class="u-between"><b style="font-size:12.5px">Héctor Parra</b><span class="badge badge--green" style="border-radius:999px">Vendido</span></div><div class="t-dim3" style="font-size:11px;margin-top:4px">Lote 24 · Porvenir · este mes</div><div class="av-row"><div class="avatar avatar--sm" style="width:20px;height:20px;font-size:9px;background:var(--blue)">MG</div><span style="font-size:10px;color:rgba(248,248,248,.45)">María</span></div></div>
+                        </div>
+                        <button class="kan-col__add">＋ Nueva tarjeta</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="cmp-divider"><div class="cmp-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></div></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer class="cmp-foot">
+  <span class="cmp-foot__hint">Arrastra el <b>divisor dorado</b> para comparar · usa <b>Split/Rediseño</b> arriba</span>
+</footer>
+
+<!-- ══════════ NOTES BAR (single, over footer) ══════════ -->
+<div class="cmp-notes" id="cmpNotes">
+  <span class="cmp-notes__t">Mejoras en este rediseño</span>
+  <span class="cmp-notes__chip">Neumorfismo en inputs y teclas</span>
+  <span class="cmp-notes__chip">Keypad pill con letras ABC</span>
+  <span class="cmp-notes__chip">PIN dots circulares con glow</span>
+  <span class="cmp-notes__chip">Blur profundo 20–24px</span>
+</div>
+
+<style>
+  /* ════════════════════════════════════════════════════════════════════
+     REDISEÑO AGRESIVO · RADICAL — tercera capa (clon del equilibrado,
+     con overrides de mayor especificidad para ganar la cascada)
+     Dirección: bordes duros, tipografía densa, oro encendido, contraste extremo.
+     ════════════════════════════════════════════════════════════════════ */
+  .cmp-layer--agg { --c-gold: #FFD76A; --c-gold2: #FFE08A; --c-green: #5CBF6A; --c-blue: #6FA0FF;
+    background: radial-gradient(560px 420px at 78% -8%, rgba(255,215,106,.16), transparent 60%), #050505; }
+
+  /* ── LOGIN radical ── */
+  .cmp-layer--agg.ls-new .ph-content { padding: 38px 20px 14px; gap: 15px; }
+  .cmp-layer--agg.ls-new .ph-logo { width: 86px; height: 86px; border-radius: 0; background: #000;
+    border: 2px solid var(--c-gold2);
+    box-shadow: 0 0 0 4px rgba(255,215,106,.14), 0 0 46px rgba(255,215,106,.4); }
+  .cmp-layer--agg.ls-new .ph-logo svg { width: 40px; height: 40px; color: var(--c-gold2); }
+  .cmp-layer--agg.ls-new .ph-brand { font-size: 1.24rem; letter-spacing: .22em; color: #FFF;
+    text-shadow: 0 0 28px rgba(255,215,106,.55); }
+  .cmp-layer--agg.ls-new .ph-sub { text-transform: uppercase; letter-spacing: .32em; color: #C9B27C; font-style: normal; font-size: .72rem; }
+  .cmp-layer--agg.ls-new .ph-line { width: 74px; height: 3px; background: linear-gradient(90deg, transparent, var(--c-gold2), transparent); opacity: .9;
+    box-shadow: 0 0 16px rgba(255,215,106,.7); }
+  .cmp-layer--agg.ls-new .ph-input { height: 56px; border-radius: 2px; background: rgba(0,0,0,.85);
+    border: 1.5px solid rgba(255,215,106,.45); box-shadow: 0 0 22px rgba(255,215,106,.12), inset 0 2px 10px rgba(0,0,0,.8); }
+  .cmp-layer--agg.ls-new .ph-input .pfx { color: var(--c-gold2); font-weight: 800; }
+  .cmp-layer--agg.ls-new .ph-input .val { font-weight: 700; color: #FFF; letter-spacing: .08em; }
+  .cmp-layer--agg.ls-new .ph-dots { gap: 10px; }
+  .cmp-layer--agg.ls-new .ph-dot { width: 24px; height: 7px; border-radius: 1px; border: 1px solid rgba(255,215,106,.4); background: transparent; }
+  .cmp-layer--agg.ls-new .ph-dot.f { background: linear-gradient(90deg, var(--c-gold2), #E8A93E); border-color: var(--c-gold2); box-shadow: 0 0 14px rgba(255,215,106,.85); }
+  .cmp-layer--agg.ls-new .ph-kp { max-width: 272px; gap: 9px; }
+  .cmp-layer--agg.ls-new .ph-key { width: 76px; height: 58px; border-radius: 2px; background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,215,106,.22); box-shadow: inset 0 2px 8px rgba(0,0,0,.7), 0 6px 16px rgba(0,0,0,.5); }
+  .cmp-layer--agg.ls-new .ph-key:active { background: rgba(255,215,106,.16); transform: scale(.9); border-color: rgba(255,215,106,.6); }
+  .cmp-layer--agg.ls-new .ph-key .n { font-size: 1.5rem; font-weight: 700; }
+  .cmp-layer--agg.ls-new .ph-key .k { letter-spacing: .2em; color: #8E7B45; }
+  .cmp-layer--agg.ls-new .ph-key.sp .n { color: var(--c-gold2); }
+  .cmp-layer--agg.ls-new .ph-key.gd { background: linear-gradient(140deg, #FFE08A, #E8A93E 60%, #C07F1E); border: none; color: #000;
+    box-shadow: 0 8px 28px rgba(255,190,60,.5), inset 0 1px 0 rgba(255,255,255,.5); }
+  .cmp-layer--agg.ls-new .ph-legal { color: #9A8C66; text-transform: uppercase; letter-spacing: .08em; font-size: .56rem; }
+
+  /* ── CHATS radical ── */
+  .cmp-layer--agg.lst-new .ph-list { gap: 8px; padding: 6px 10px; }
+  .cmp-layer--agg.lst-new .ph-search { border-radius: 2px; background: rgba(0,0,0,.8); border: 1.5px solid rgba(255,215,106,.3);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,.8); }
+  .cmp-layer--agg.lst-new .ph-card { border-radius: 2px; border: 1px solid rgba(255,215,106,.14); border-left: 4px solid transparent;
+    background: linear-gradient(115deg, rgba(255,255,255,.05), rgba(255,255,255,0) 42%), rgba(0,0,0,.72);
+    box-shadow: 0 12px 26px rgba(0,0,0,.55); }
+  .cmp-layer--agg.lst-new .ph-card.unread { border-left-color: var(--c-gold2); border-color: rgba(255,215,106,.38);
+    background: linear-gradient(115deg, rgba(255,215,106,.09), rgba(255,255,255,0) 55%), rgba(0,0,0,.8);
+    box-shadow: 0 0 24px rgba(255,215,106,.14), 0 12px 28px rgba(0,0,0,.6); }
+  .cmp-layer--agg.lst-new .ph-av { border-radius: 0; border: 1.5px solid rgba(255,215,106,.5); background: linear-gradient(160deg, #2A2412, #000);
+    box-shadow: 0 0 18px rgba(255,215,106,.2); }
+  .cmp-layer--agg.lst-new .ph-av.b { border-color: rgba(111,160,255,.55); background: linear-gradient(160deg, #101B30, #000); box-shadow: 0 0 18px rgba(111,160,255,.2); }
+  .cmp-layer--agg.lst-new .ph-row-nm { font-weight: 700; }
+  .cmp-layer--agg.lst-new .ph-row-pv { color: #B8B09B; font-weight: 500; }
+  .cmp-layer--agg.lst-new .ph-row-tm { font-weight: 700; color: #FFD76A; }
+  .cmp-layer--agg.lst-new .ph-row-bd { border-radius: 1px; background: linear-gradient(160deg, #FFE08A, #E8A93E); color: #000;
+    box-shadow: 0 0 16px rgba(255,215,106,.6); }
+  .cmp-layer--agg.lst-new .ph-row-bd:empty, .cmp-layer--agg.lst-new .ph-card:not(.unread) .ph-row-bd { display: none; }
+
+  /* ── CHAT radical ── */
+  .cmp-layer--agg.ch-new .c-head { border-bottom: 2px solid rgba(255,215,106,.35); background: rgba(0,0,0,.75); }
+  .cmp-layer--agg.ch-new .c-back { border-radius: 0; background: #000; border: 1px solid rgba(255,215,106,.4); color: var(--c-gold2); }
+  .cmp-layer--agg.ch-new .c-av { border-radius: 0; border: 1.5px solid rgba(255,215,106,.55); box-shadow: 0 0 18px rgba(255,215,106,.25); }
+  .cmp-layer--agg.ch-new .c-st { color: #5CBF6A; font-weight: 700; }
+  .cmp-layer--agg.ch-new .c-st::before { box-shadow: 0 0 10px rgba(92,191,106,.9); }
+  .cmp-layer--agg.ch-new .c-date { border-radius: 1px; background: rgba(0,0,0,.8); border: 1px solid rgba(255,215,106,.3); color: #FFD76A; text-transform: uppercase; letter-spacing: .14em; font-size: .6rem; }
+  .cmp-layer--agg.ch-new .c-bub { border-radius: 2px; }
+  .cmp-layer--agg.ch-new .c-bub.in { background: rgba(0,0,0,.8); border: 1px solid rgba(255,215,106,.22); border-left: 3px solid rgba(255,215,106,.55);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 10px 24px rgba(0,0,0,.5); }
+  .cmp-layer--agg.ch-new .c-bub.out { background: linear-gradient(150deg, #1E5A46, #0E3A2C); border: 1px solid rgba(92,191,106,.4);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 12px 28px rgba(10,70,50,.55); }
+  .cmp-layer--agg.ch-new .c-quick button { border-radius: 1px; background: rgba(0,0,0,.8); border: 1px solid rgba(255,215,106,.3); color: #FFE7B0; }
+  .cmp-layer--agg.ch-new .c-bar { background: rgba(0,0,0,.82); border-top: 2px solid rgba(255,215,106,.25); }
+  .cmp-layer--agg.ch-new .c-plus { border-radius: 0; background: #000; border: 1px solid rgba(255,215,106,.4); color: var(--c-gold2); }
+  .cmp-layer--agg.ch-new .c-inp { border-radius: 2px; background: rgba(0,0,0,.9); border: 1px solid rgba(255,215,106,.35);
+    box-shadow: inset 0 2px 10px rgba(0,0,0,.8), 0 0 16px rgba(255,215,106,.08); }
+  .cmp-layer--agg.ch-new .c-send { border-radius: 0; background: linear-gradient(140deg, #FFE08A, #E8A93E 60%, #C07F1E);
+    box-shadow: 0 6px 26px rgba(255,190,60,.55), inset 0 1px 0 rgba(255,255,255,.5); color: #000; }
+
+  /* ── ADMIN radical · shell ── */
+  .cmp-layer--agg .ad-nav { background: linear-gradient(115deg, rgba(255,215,106,.07), transparent 40%), rgba(0,0,0,.8);
+    border-right: 2px solid rgba(255,215,106,.22); }
+  .cmp-layer--agg .ad-nav__brand { color: var(--c-gold2); letter-spacing: .2em; }
+  .cmp-layer--agg .ad-nav__item { border-radius: 2px; }
+  .cmp-layer--agg .ad-nav__item.on { background: linear-gradient(90deg, rgba(255,215,106,.2), transparent); box-shadow: inset 3px 0 0 var(--c-gold2), 0 0 18px rgba(255,215,106,.15); color: var(--c-gold2); }
+  .cmp-layer--agg .ad-top { border-bottom: 2px solid rgba(255,215,106,.22); background: rgba(0,0,0,.8); }
+  .cmp-layer--agg .ad-top__title { letter-spacing: .04em; }
+  .cmp-layer--agg .ad-top__search { border-radius: 2px; background: rgba(0,0,0,.85); border: 1px solid rgba(255,215,106,.3); box-shadow: inset 0 2px 8px rgba(0,0,0,.8); }
+
+  /* ── DASHBOARD radical ── */
+  .cmp-layer--agg .nb-grid { gap: 11px; }
+  .cmp-layer--agg .nb-surf { border-radius: 3px; border: 1px solid rgba(255,215,106,.16); border-top: 2px solid rgba(255,215,106,.45);
+    background: linear-gradient(115deg, rgba(255,255,255,.045), transparent 40%), rgba(0,0,0,.74);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 14px 32px rgba(0,0,0,.55); }
+  .cmp-layer--agg .nb-hero { border-radius: 4px; border: 1.5px solid rgba(255,215,106,.5); border-top: 3px solid var(--c-gold2);
+    background: linear-gradient(150deg, rgba(255,215,106,.16), rgba(0,0,0,.5) 55%), #000;
+    box-shadow: 0 0 36px rgba(255,215,106,.16), inset 0 2px 12px rgba(0,0,0,.7); }
+  .cmp-layer--agg .nb-hero__lbl { letter-spacing: .22em; color: #FFD76A; }
+  .cmp-layer--agg .nb-hero__v { font-size: 54px; color: #FFF; text-shadow: 0 0 34px rgba(255,215,106,.45); }
+  .cmp-layer--agg .nb-hero__d { color: #B8B09B; }
+  .cmp-layer--agg .nb-spark polyline { stroke: var(--c-gold2); stroke-width: 2.6; }
+  .cmp-layer--agg .nb-hero__foot .badge { border-radius: 1px; }
+  .cmp-layer--agg .nb-cell { border-radius: 3px; border: 1px solid rgba(255,215,106,.14); border-top: 2px solid rgba(255,215,106,.4);
+    background: rgba(0,0,0,.78); box-shadow: inset 0 2px 10px rgba(0,0,0,.6); }
+  .cmp-layer--agg .nb-cell__v { font-size: 30px; font-weight: 800; }
+  .cmp-layer--agg .nb-cell__lbl { letter-spacing: .18em; color: #A89A6E; }
+  .cmp-layer--agg .nb-bar { border-radius: 0; background: rgba(255,215,106,.1); }
+  .cmp-layer--agg .nb-bar i { border-radius: 0; background: linear-gradient(90deg, #C07F1E, var(--c-gold2)); box-shadow: 0 0 16px rgba(255,215,106,.7); }
+  .cmp-layer--agg .nb-card__h { letter-spacing: .16em; text-transform: uppercase; font-size: 11px; color: #FFD76A; }
+  .cmp-layer--agg .nb-panel .table th { text-transform: uppercase; letter-spacing: .1em; font-size: 10px; color: #A89A6E; }
+  .cmp-layer--agg .nb-donut__c b { color: #FFF; }
+  .cmp-layer--agg .nb-legend b { color: #FFE08A; }
+  .cmp-layer--agg .tl-item__dot { box-shadow: 0 0 10px currentColor; }
+
+  /* ── INBOX radical ── */
+  .cmp-layer--agg .in-pane { border-radius: 3px; border: 1px solid rgba(255,215,106,.16); border-top: 2px solid rgba(255,215,106,.45);
+    background: rgba(0,0,0,.78); box-shadow: inset 0 2px 10px rgba(0,0,0,.6); }
+  .cmp-layer--agg .in-row { border-radius: 2px; border-left: 3px solid transparent; }
+  .cmp-layer--agg .in-row.sel { background: linear-gradient(90deg, rgba(255,215,106,.16), transparent 75%); border-left-color: var(--c-gold2); }
+  .cmp-layer--agg .in-av { border-radius: 0; border: 1.5px solid rgba(255,215,106,.5); box-shadow: 0 0 14px rgba(255,215,106,.2); }
+  .cmp-layer--agg .in-av.b { border-color: rgba(111,160,255,.55); box-shadow: 0 0 14px rgba(111,160,255,.2); }
+  .cmp-layer--agg .in-nm { font-weight: 700; }
+  .cmp-layer--agg .in-bub { border-radius: 2px; }
+  .cmp-layer--agg .in-bub.in { background: rgba(0,0,0,.85); border: 1px solid rgba(255,215,106,.22); border-left: 3px solid rgba(255,215,106,.5); }
+  .cmp-layer--agg .in-bub.out { background: linear-gradient(150deg, #1E5A46, #0E3A2C); border: 1px solid rgba(92,191,106,.4); }
+  .cmp-layer--agg .in-bar input { border-radius: 2px; background: rgba(0,0,0,.9); border: 1px solid rgba(255,215,106,.35); box-shadow: inset 0 2px 10px rgba(0,0,0,.8); }
+  .cmp-layer--agg .in-send { border-radius: 0; background: linear-gradient(140deg, #FFE08A, #E8A93E 60%, #C07F1E); color: #000;
+    box-shadow: 0 6px 24px rgba(255,190,60,.5), inset 0 1px 0 rgba(255,255,255,.5); }
+
+  /* ── EQUIPO radical ── */
+  .cmp-layer--agg .eq-card { border-radius: 3px; border: 1px solid rgba(255,215,106,.16); border-top: 2px solid rgba(255,215,106,.45);
+    background: linear-gradient(115deg, rgba(255,255,255,.045), transparent 40%), rgba(0,0,0,.78);
+    box-shadow: inset 0 2px 10px rgba(0,0,0,.6), 0 14px 30px rgba(0,0,0,.5); }
+  .cmp-layer--agg .eq-card__st { border-radius: 2px; background: rgba(0,0,0,.6); border-top: 2px solid rgba(255,215,106,.35); }
+  .cmp-layer--agg .eq-card__st b { color: #FFE08A; font-size: 16px; }
+  .cmp-layer--agg .eq-btn { border-radius: 2px; }
+  .cmp-layer--agg .eq-btn.gold { background: linear-gradient(140deg, #FFE08A, #E8A93E 60%, #C07F1E); color: #000;
+    box-shadow: 0 4px 18px rgba(255,190,60,.45), inset 0 1px 0 rgba(255,255,255,.5); }
+  .cmp-layer--agg .eq-btn.ghost { background: rgba(0,0,0,.8); border: 1px solid rgba(255,215,106,.35); color: #FFE7B0; }
+
+  /* ── PIPELINE radical ── */
+  .cmp-layer--agg .kan-col { border-radius: 3px; border: 1px solid rgba(255,215,106,.16); border-top: 2px solid rgba(255,215,106,.45);
+    background: rgba(0,0,0,.78); box-shadow: inset 0 2px 10px rgba(0,0,0,.6), 0 12px 30px rgba(0,0,0,.5); }
+  .cmp-layer--agg .kan-col__count { border-radius: 1px; background: linear-gradient(160deg, #FFE08A, #E8A93E); color: #000;
+    box-shadow: 0 0 14px rgba(255,215,106,.5); }
+  .cmp-layer--agg .kan-card { border-radius: 2px; border: 1px solid rgba(255,215,106,.14); border-left: 3px solid rgba(255,215,106,.4);
+    background: rgba(10,10,10,.85); box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 10px 22px rgba(0,0,0,.5); }
+  .cmp-layer--agg .kan-col__add { border-radius: 2px; border: 1.5px dashed rgba(255,215,106,.5); background: rgba(0,0,0,.6); color: var(--c-gold2); }
+  .cmp-layer--agg .badge { border-radius: 2px; }
+
+/* ════════════════════════════════════════════════════════════════════
+     REDISEÑO CURVADO — cuarta capa (clon del equilibrado + overrides orgánicos)
+     Dirección: pills, círculos, radios enormes, blur suave, acento azul.
+     ════════════════════════════════════════════════════════════════════ */
+  .cmp-layer--curv .ph-search { border-radius: 999px; }
+  .cmp-layer--curv .ph-card { border-radius: 28px; gap: 12px; padding: 12px 15px; }
+  .cmp-layer--curv .ph-av { border-radius: 50%; }
+  .cmp-layer--curv .ph-card .ph-row-bd { border-radius: 999px; }
+  .cmp-layer--curv .ph-row-tm { border-radius: 999px; }
+  .cmp-layer--curv.ls-new .ph-logo { border-radius: 50%; }
+  .cmp-layer--curv.ls-new .ph-dot { width: 15px; height: 15px; border-radius: 50%; }
+  .cmp-layer--curv.ls-new .ph-key { width: 66px; height: 66px; border-radius: 50%; }
+  .cmp-layer--curv.ls-new .ph-key.gd { border-radius: 50%; }
+  .cmp-layer--curv.ls-new .ph-input { border-radius: 999px; padding: 0 20px; }
+  .cmp-layer--curv.ls-new .ph-line { width: 90px; }
+  .cmp-layer--curv .c-head { border-radius: 0; }
+  .cmp-layer--curv .c-back { border-radius: 50%; }
+  .cmp-layer--curv .c-av { border-radius: 50%; }
+  .cmp-layer--curv .c-bub { border-radius: 22px; }
+  .cmp-layer--curv .c-bub.in { border-bottom-left-radius: 6px; }
+  .cmp-layer--curv .c-bub.out { border-bottom-right-radius: 6px; }
+  .cmp-layer--curv .c-quick button { border-radius: 999px; }
+  .cmp-layer--curv .c-send { border-radius: 50%; }
+  .cmp-layer--curv .c-inp { border-radius: 999px; }
+  .cmp-layer--curv .c-plus { border-radius: 50%; }
+  .cmp-layer--curv .ad-nav__item { border-radius: 999px; }
+  .cmp-layer--curv .ad-nav__item.on { border-radius: 999px; }
+  .cmp-layer--curv .ad-top__search { border-radius: 999px; }
+  .cmp-layer--curv .nb-surf { border-radius: 26px; }
+  .cmp-layer--curv .nb-hero { border-radius: 30px; }
+  .cmp-layer--curv .nb-hero__foot .badge { border-radius: 999px; }
+  .cmp-layer--curv .nb-cell { border-radius: 24px; }
+  .cmp-layer--curv .nb-bar { border-radius: 999px; height: 8px; }
+  .cmp-layer--curv .nb-bar i { border-radius: 999px; }
+  .cmp-layer--curv .nb-donut svg { border-radius: 50%; }
+  .cmp-layer--curv .in-pane { border-radius: 26px; }
+  .cmp-layer--curv .in-row { border-radius: 18px; }
+  .cmp-layer--curv .in-av { border-radius: 50%; }
+  .cmp-layer--curv .in-bub { border-radius: 20px; }
+  .cmp-layer--curv .in-bub.in { border-bottom-left-radius: 5px; }
+  .cmp-layer--curv .in-bub.out { border-bottom-right-radius: 5px; }
+  .cmp-layer--curv .in-send { border-radius: 50%; }
+  .cmp-layer--curv .in-bar input { border-radius: 999px; }
+  .cmp-layer--curv .eq-card { border-radius: 30px; }
+  .cmp-layer--curv .eq-card__st { border-radius: 999px; }
+  .cmp-layer--curv .eq-btn { border-radius: 999px; }
+  .cmp-layer--curv .eq-btn.gold { border-radius: 999px; }
+  .cmp-layer--curv .eq-btn.ghost { border-radius: 999px; }
+  .cmp-layer--curv .kan-col { border-radius: 28px; }
+  .cmp-layer--curv .kan-col__count { border-radius: 999px; }
+  .cmp-layer--curv .kan-col__add { border-radius: 999px; }
+  .cmp-layer--curv .kan-card { border-radius: 22px; }
+  .cmp-layer--curv .badge { border-radius: 999px; }
+
+/* ════════════════════════════════════════════════════════════════════
+     REDISEÑO FUSIÓN — quinta capa = AGRESIVO + CURVADO (DEFINITIVO)
+     Colores brutales (oro encendido sobre negro profundo, glow) +
+     formas orgánicas (pills, círculos, radios grandes).
+     ════════════════════════════════════════════════════════════════════ */
+  .cmp-layer--fusi { --c-gold: #FFD76A; --c-gold2: #FFE08A; --c-green: #5CBF6A; --c-blue: #6FA0FF;
+    background: radial-gradient(560px 420px at 78% -8%, rgba(255,215,106,.16), transparent 60%), linear-gradient(160deg, rgba(0,0,0,.6), rgba(5,5,5,.96));
+    box-shadow: 0 0 60px rgba(255,215,106,.12); }
+
+  /* ── LOGIN fusión (círculos + pill + glow) ── */
+  .cmp-layer--fusi.ls-new .ph-content { padding: 38px 20px 14px; gap: 15px; }
+  .cmp-layer--fusi.ls-new .ph-logo { width: 86px; height: 86px; border-radius: 50%; background: #000;
+    border: 2px solid var(--c-gold2); box-shadow: 0 0 0 4px rgba(255,215,106,.14), 0 0 46px rgba(255,215,106,.4); }
+  .cmp-layer--fusi.ls-new .ph-logo svg { width: 40px; height: 40px; color: var(--c-gold2); }
+  .cmp-layer--fusi.ls-new .ph-brand { font-size: 1.24rem; letter-spacing: .22em; color: #FFF;
+    text-shadow: 0 0 26px rgba(255,215,106,.5); }
+  .cmp-layer--fusi.ls-new .ph-sub { text-transform: uppercase; letter-spacing: .32em; color: #C9B27C; font-style: normal; font-size: .72rem; }
+  .cmp-layer--fusi.ls-new .ph-line { width: 74px; height: 3px; border-radius: 999px;
+    background: linear-gradient(90deg, transparent, var(--c-gold2), transparent); opacity: .9; box-shadow: 0 0 16px rgba(255,215,106,.7); }
+  .cmp-layer--fusi.ls-new .ph-input { height: 56px; border-radius: 999px; background: rgba(0,0,0,.85);
+    border: 1.5px solid rgba(255,215,106,.55); box-shadow: 0 0 22px rgba(255,215,106,.12), inset 0 2px 10px rgba(0,0,0,.8); }
+  .cmp-layer--fusi.ls-new .ph-input .pfx { color: var(--c-gold2); font-weight: 800; }
+  .cmp-layer--fusi.ls-new .ph-input .val { font-weight: 700; color: #FFF; letter-spacing: .08em; }
+  .cmp-layer--fusi.ls-new .ph-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid rgba(255,215,106,.4); background: transparent; }
+  .cmp-layer--fusi.ls-new .ph-dot.f { background: linear-gradient(150deg, var(--c-gold2), #E8A93E); border-color: var(--c-gold2); box-shadow: 0 0 14px rgba(255,215,106,.85); }
+  .cmp-layer--fusi.ls-new .ph-kp { max-width: 272px; gap: 14px; }
+  .cmp-layer--fusi.ls-new .ph-key { width: 74px; height: 74px; border-radius: 50%; background: rgba(255,255,255,.03);
+    border: 1.5px solid rgba(255,215,106,.35); box-shadow: inset 0 2px 8px rgba(0,0,0,.7), 0 6px 18px rgba(0,0,0,.5); }
+  .cmp-layer--fusi.ls-new .ph-key:active { background: rgba(255,215,106,.16); transform: scale(.9); border-color: rgba(255,215,106,.6); }
+  .cmp-layer--fusi.ls-new .ph-key .n { font-size: 1.5rem; font-weight: 700; }
+  .cmp-layer--fusi.ls-new .ph-key .k { letter-spacing: .2em; color: #8E7B45; }
+  .cmp-layer--fusi.ls-new .ph-key.sp .n { color: var(--c-gold2); }
+  .cmp-layer--fusi.ls-new .ph-key.gd { background: linear-gradient(140deg, #FFE08A, #E8A93E 60%, #C07F1E); border: none; color: #000;
+    box-shadow: 0 8px 28px rgba(255,190,60,.5), inset 0 1px 0 rgba(255,255,255,.5); }
+  .cmp-layer--fusi.ls-new .ph-legal { color: #9A8C66; text-transform: uppercase; letter-spacing: .08em; font-size: .56rem; }
+
+  /* ── CHATS fusión ── */
+  .cmp-layer--fusi.lst-new .ph-list { gap: 10px; padding: 6px 10px; }
+  .cmp-layer--fusi.lst-new .ph-search { border-radius: 999px; background: rgba(0,0,0,.8); border: 1.5px solid rgba(255,215,106,.3);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,.8); }
+  .cmp-layer--fusi.lst-new .ph-card { border-radius: 26px; border: 1px solid rgba(255,215,106,.14); border-left: 4px solid transparent;
+    background: linear-gradient(115deg, rgba(255,215,106,.05), transparent 40%), rgba(0,0,0,.78);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 12px 26px rgba(0,0,0,.5); }
+  .cmp-layer--fusi.lst-new .ph-card.unread { border-left-color: var(--c-gold2); border-color: rgba(255,215,106,.38);
+    box-shadow: 0 0 24px rgba(255,215,106,.16), 0 12px 28px rgba(0,0,0,.6); }
+  .cmp-layer--fusi.lst-new .ph-av { border-radius: 50%; border: 1.5px solid rgba(255,215,106,.5); background: linear-gradient(160deg, #2A2412, #000); box-shadow: 0 0 18px rgba(255,215,106,.2); }
+  .cmp-layer--fusi.lst-new .ph-av.b { border-color: rgba(111,160,255,.55); background: linear-gradient(160deg, #101B30, #000); box-shadow: 0 0 18px rgba(111,160,255,.2); }
+  .cmp-layer--fusi.lst-new .ph-row-nm { font-weight: 700; }
+  .cmp-layer--fusi.lst-new .ph-row-pv { color: #B88F7A; }
+  .cmp-layer--fusi.lst-new .ph-row-tm { font-weight: 700; color: #FFD76A; }
+  .cmp-layer--fusi.lst-new .ph-row-bd { border-radius: 999px; background: linear-gradient(160deg, #FFE08A, #E8A93E); color: #000;
+    box-shadow: 0 0 16px rgba(255,215,106,.6); }
+  .cmp-layer--fusi.lst-new .ph-row-bd:empty, .cmp-layer--fusi.lst-new .ph-card:not(.unread) .ph-row-bd { display: none; }
+
+  /* ── CHAT fusión ── */
+  .cmp-layer--fusi.ch-new .c-head { border-bottom: 2px solid rgba(255,215,106,.35); background: rgba(0,0,0,.75); }
+  .cmp-layer--fusi.ch-new .c-back { border-radius: 50%; background: #000; border: 1px solid rgba(255,215,106,.4); color: var(--c-gold2); }
+  .cmp-layer--fusi.ch-new .c-av { border-radius: 50%; border: 1.5px solid rgba(255,215,106,.55); box-shadow: 0 0 18px rgba(255,215,106,.25); }
+  .cmp-layer--fusi.ch-new .c-st { color: #5CBF6A; font-weight: 700; }
+  .cmp-layer--fusi.ch-new .c-st::before { box-shadow: 0 0 10px rgba(92,191,106,.9); }
+  .cmp-layer--fusi.ch-new .c-date { border-radius: 999px; background: rgba(0,0,0,.8); border: 1px solid rgba(255,215,106,.3); color: #FFD76A; text-transform: uppercase; letter-spacing: .14em; font-size: .6rem; }
+  .cmp-layer--fusi.ch-new .c-bub { border-radius: 22px; }
+  .cmp-layer--fusi.ch-new .c-bub.in { border-bottom-left-radius: 6px; background: rgba(0,0,0,.85); border: 1px solid rgba(255,215,106,.22); box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
+  .cmp-layer--fusi.ch-new .c-bub.out { border-bottom-right-radius: 6px; background: linear-gradient(150deg, #1E5A46, #0E3A2C); border: 1px solid rgba(92,191,106,.4); }
+  .cmp-layer--fusi.ch-new .c-quick button { border-radius: 999px; background: rgba(0,0,0,.8); border: 1px solid rgba(255,215,106,.3); color: #FFE7B0; }
+  .cmp-layer--fusi.ch-new .c-bar { background: rgba(0,0,0,.82); border-top: 2px solid rgba(255,215,106,.25); }
+  .cmp-layer--fusi.ch-new .c-plus { border-radius: 50%; background: #000; border: 1px solid rgba(255,215,106,.4); color: var(--c-gold2); }
+  .cmp-layer--fusi.ch-new .c-inp { border-radius: 999px; background: rgba(0,0,0,.9); border: 1px solid rgba(255,215,106,.35);
+    box-shadow: inset 0 2px 10px rgba(0,0,0,.8); }
+  .cmp-layer--fusi.ch-new .c-send { border-radius: 50%; background: linear-gradient(140deg, #FFE08A, #E8A93E 60%, #C07F1E);
+    box-shadow: 0 6px 24px rgba(255,190,60,.5), inset 0 1px 0 rgba(255,255,255,.5); }
+  .cmp-layer--fusi .c-send svg, .cmp-layer--fusi .c-plus svg { color: #000; }
+
+  /* ── ADMIN shell fusión ── */
+  .cmp-layer--fusi .ad-nav { background: linear-gradient(115deg, rgba(255,215,106,.07), transparent 40%), rgba(0,0,0,.8);
+    border-right: 1px solid rgba(255,215,106,.18); }
+  .cmp-layer--fusi .ad-nav__brand { color: var(--c-gold2); letter-spacing: .2em; }
+  .cmp-layer--fusi .ad-nav__item { border-radius: 999px; }
+  .cmp-layer--fusi .ad-nav__item.on { background: linear-gradient(90deg, rgba(255,215,106,.2), transparent); box-shadow: inset 3px 0 0 var(--c-gold2), 0 0 18px rgba(255,215,106,.15); color: var(--c-gold2); border-radius: 999px; }
+  .cmp-layer--fusi .ad-top { border-bottom: 2px solid rgba(255,215,106,.22); background: rgba(0,0,0,.8); }
+  .cmp-layer--fusi .ad-top__search { border-radius: 999px; background: rgba(0,0,0,.85); border: 1px solid rgba(255,215,106,.3); box-shadow: inset 0 2px 8px rgba(0,0,0,.8); }
+
+  /* ── DASHBOARD fusión ── */
+  .cmp-layer--fusi .nb-grid { gap: 12px; }
+  .cmp-layer--fusi .nb-surf { border-radius: 28px; border: 1px solid rgba(255,215,106,.16); border-top: 2px solid rgba(255,215,106,.45);
+    background: linear-gradient(115deg, rgba(255,255,255,.05), transparent 40%), rgba(0,0,0,.82);
+    box-shadow: inset 0 2px 10px rgba(0,0,0,.6), 0 14px 30px rgba(0,0,0,.5); }
+  .cmp-layer--fusi .nb-hero { border-radius: 30px; border: 1.5px solid rgba(255,215,106,.5); border-top: 3px solid var(--c-gold2); }
+  .cmp-layer--fusi .nb-hero__lbl { letter-spacing: .22em; color: #FFD76A; }
+  .cmp-layer--fusi .nb-hero__v { font-size: 54px; color: #FFF; text-shadow: 0 0 34px rgba(255,215,106,.45); }
+  .cmp-layer--fusi .nb-hero__d { color: #B8B09B; }
+  .cmp-layer--fusi .nb-spark polyline { stroke: var(--c-gold2); stroke-width: 2.6; }
+  .cmp-layer--fusi .nb-hero__foot .badge { border-radius: 999px; }
+  .cmp-layer--fusi .nb-cell { border-radius: 26px; border: 1px solid rgba(255,215,106,.14); border-top: 2px solid rgba(255,215,106,.4);
+    background: linear-gradient(115deg, rgba(255,255,255,.04), transparent 40%), rgba(0,0,0,.82); box-shadow: inset 0 2px 10px rgba(0,0,0,.6); }
+  .cmp-layer--fusi .nb-cell__v { font-size: 30px; font-weight: 800; }
+  .cmp-layer--fusi .nb-cell__lbl { letter-spacing: .18em; color: #A89A6E; }
+  .cmp-layer--fusi .nb-bar { border-radius: 999px; height: 8px; background: rgba(255,215,106,.1); }
+  .cmp-layer--fusi .nb-bar i { border-radius: 999px; background: linear-gradient(90deg, #C07F1E, var(--c-gold2)); box-shadow: 0 0 16px rgba(255,215,106,.7); }
+  .cmp-layer--fusi .nb-card__h { letter-spacing: .16em; text-transform: uppercase; font-size: 11px; color: #FFD76A; }
+  .cmp-layer--fusi .nb-panel .table th { text-transform: uppercase; letter-spacing: .1em; font-size: 10px; color: #A89A6E; }
+  .cmp-layer--fusi .nb-donut__c b { color: #FFF; }
+  .cmp-layer--fusi .nb-legend b { color: #FFE08A; }
+  .cmp-layer--fusi .tl-item__dot { box-shadow: 0 0 10px currentColor; }
+
+  /* ── INBOX fusión ── */
+  .cmp-layer--fusi .in-pane { border-radius: 28px; border: 1px solid rgba(255,215,106,.16); border-top: 2px solid rgba(255,215,106,.45);
+    background: rgba(0,0,0,.82); box-shadow: inset 0 2px 10px rgba(0,0,0,.6); }
+  .cmp-layer--fusi .in-row { border-radius: 18px; border-left: 3px solid transparent; }
+  .cmp-layer--fusi .in-row.sel { background: linear-gradient(90deg, rgba(255,215,106,.16), transparent 75%); border-left-color: var(--c-gold2); }
+  .cmp-layer--fusi .in-av { border-radius: 50%; border: 1.5px solid rgba(255,215,106,.5); box-shadow: 0 0 14px rgba(255,215,106,.2); }
+  .cmp-layer--fusi .in-av.b { border-color: rgba(111,160,255,.55); box-shadow: 0 0 14px rgba(111,160,255,.2); }
+  .cmp-layer--fusi .in-nm { font-weight: 700; }
+  .cmp-layer--fusi .in-bub { border-radius: 20px; }
+  .cmp-layer--fusi .in-bub.in { border-bottom-left-radius: 5px; background: rgba(0,0,0,.85); border: 1px solid rgba(255,215,106,.22); }
+  .cmp-layer--fusi .in-bub.out { border-bottom-right-radius: 5px; background: linear-gradient(150deg, #1E5A46, #0E3A2C); border: 1px solid rgba(92,191,106,.4); }
+  .cmp-layer--fusi .in-bar input { border-radius: 999px; background: rgba(0,0,0,.9); border: 1px solid rgba(255,215,106,.35); box-shadow: inset 0 2px 10px rgba(0,0,0,.8); }
+  .cmp-layer--fusi .in-send { border-radius: 50%; background: linear-gradient(140deg, #FFE08A, #E8A93E 60%, #C07F1E); color: #000;
+    box-shadow: 0 6px 24px rgba(255,190,60,.5), inset 0 1px 0 rgba(255,255,255,.5); }
+
+  /* ── EQUIPO fusión ── */
+  .cmp-layer--fusi .eq-card { border-radius: 30px; border: 1px solid rgba(255,215,106,.16); border-top: 2px solid rgba(255,215,106,.45);
+    background: linear-gradient(115deg, rgba(255,255,255,.045), transparent 40%), rgba(0,0,0,.82);
+    box-shadow: inset 0 2px 10px rgba(0,0,0,.6), 0 14px 30px rgba(0,0,0,.5); }
+  .cmp-layer--fusi .eq-card__st { border-radius: 999px; background: rgba(0,0,0,.6); border-top: 2px solid rgba(255,215,106,.35); }
+  .cmp-layer--fusi .eq-card__st b { color: #FFE08A; font-size: 16px; }
+  .cmp-layer--fusi .eq-btn { border-radius: 999px; }
+  .cmp-layer--fusi .eq-btn.gold { background: linear-gradient(140deg, #FFE08A, #E8A93E 60%, #C07F1E); color: #000;
+    box-shadow: 0 4px 18px rgba(255,190,60,.45), inset 0 1px 0 rgba(255,255,255,.5); }
+  .cmp-layer--fusi .eq-btn.ghost { background: rgba(0,0,0,.8); border: 1px solid rgba(255,215,106,.35); color: #FFE7B0; }
+
+  /* ── PIPELINE fusión ── */
+  .cmp-layer--fusi .kan-col { border-radius: 28px; border: 1px solid rgba(255,215,106,.16); border-top: 2px solid rgba(255,215,106,.45);
+    background: rgba(0,0,0,.82); box-shadow: inset 0 2px 10px rgba(0,0,0,.6), 0 12px 30px rgba(0,0,0,.5); }
+  .cmp-layer--fusi .kan-col__count { border-radius: 999px; background: linear-gradient(160deg, #FFE08A, #E8A93E); color: #000;
+    box-shadow: 0 0 14px rgba(255,215,106,.5); }
+  .cmp-layer--fusi .kan-card { border-radius: 22px; border: 1px solid rgba(255,215,106,.14); border-left: 3px solid rgba(255,215,106,.4);
+    background: rgba(10,10,10,.85); box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 10px 22px rgba(0,0,0,.5); }
+  .cmp-layer--fusi .kan-col__add { border-radius: 999px; border: 1.5px dashed rgba(255,215,106,.5); background: rgba(0,0,0,.6); color: var(--c-gold2); }
+  .cmp-layer--fusi .badge { border-radius: 999px; }
+</style>
+
+<script>
+  const VIEW_TITLES = {
+    login: 'Login — Vendedor', chats: 'Chats — Vendedor', chat: 'Chat cliente — Vendedor',
+    dashboard: 'Dashboard — Admin', inbox: 'Inbox — Admin', equipo: 'Equipo — Admin', pipeline: 'Pipeline — Admin'
+  };
+  const NOTES = {
+    login: ['Neumorfismo en logo, input y teclas', 'Keypad pill con letras ABC', 'PIN dots circulares con glow', 'Blur profundo + edge superior iluminado'],
+    chats: ['Filas → cards glass con borde superior luz', 'Avatares squircle con sombra interna', 'Badge pendiente dorado con glow', 'Chips de canal mejorados'],
+    chat: ['Burbujas glass con blur 22px', 'Burbuja saliente con highlight + profundidad', 'Input y botones neumórficos', 'Fecha flotante glass'],
+    dashboard: ['Bento grid: hero 2×2 + donut + tabla + timeline', 'Métricas 46px hero con sparkline', 'Donut de canales con leyenda', 'Neumorfismo + glass profundo en toda celda'],
+    inbox: ['Conversaciones en surface glass', 'Avatares squircle con sombra', 'Badges canal pill', 'Panel chat con blur y input neumórfico'],
+    equipo: ['Tabla → cards de asesores con stats', 'Badge Jefe dorado con glow', 'Botones neumórficos con highlight', 'Estado con dot + pill'],
+    pipeline: ['Columnas neumórficas profundas', 'Cards con asesor asignado (avatar+nombre)', 'Botón + Nueva tarjeta por columna', 'Chips pill en cada badge']
+  };
+const NOTES_CURV = {
+    login: ['Logo circular con halo', 'Keypad: teclas redondas', 'Dots circles grandes', 'Input pill con blur suave'],
+    chats: ['Cards con radios 28px orgánicos', 'Avatares circulares', 'Contadores pill', 'Search pill redonda'],
+    chat: ['Burbujas redondeadas 22px', 'Salientes con cola suave', 'Input pill', 'Header con blur profundo'],
+    dashboard: ['Hero 44px serif con gradiente', 'Superficies curvas 28–30px', 'Barras pill con glow', 'Acento azul en etiquetas'],
+    inbox: ['Rows redondeadas 18px', 'Avatares circulares', 'Bubbles redondeadas', 'Panel curvo con blur'],
+    equipo: ['Cards orgánicas 28px', 'Stats en bloques pill', 'Badge Jefe con glow', 'Avatares circulares con anillo'],
+    pipeline: ['Columnas con radios 28px curvos', 'Cards redondeadas 22px', 'Count pill solido', 'Add button pill dashed']
+  };
+  const NOTES_FUSI = {
+    login: ['Logo circular con doble anillo + halo', 'Keypad: teclas circulares 74px', 'Dots círculos con glow', 'Input pill con borde oro encendido'],
+    chats: ['Fondo negro profundo + glow oro radial', 'Cards redondeadas 26px con edge oro', 'Avatares circulares con anillo', 'Contadores pill dorados'],
+    chat: ['Burbujas 22px redondeadas con cola', 'Salientes verde-carbono con borde', 'Input pill con glow', 'Header negro con blur profundo'],
+    dashboard: ['Glass negro + heros 54px con glow', 'Superficies curvas 28px con top-edge oro', 'Barras pill con brillo', 'Ana gold radical'],
+    inbox: ['Rows redondeadas 18px con acento', 'Avatares circulares con anillo oro', 'Bubbles redondeadas', 'Panel curvo con blur'],
+    equipo: ['Cards orgánicas 30px con edge oro', 'Stats en bloques pill', 'Badge Jefe dorado con glow', 'Botones pill oro'],
+    pipeline: ['Columnas redondeadas 28px', 'Cards redondeadas 22px con edge', 'Count pill brillante', 'Add button pill dashed']
+  };
+
+  let curVS = 'eq';
+
+  function setView(v) {
+    document.querySelectorAll('.cmp-view').forEach(x => x.classList.toggle('on', x.id === 'v-' + v));
+    document.querySelectorAll('.cmp-navbtn').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+    document.getElementById('cmpViewTitle').textContent = VIEW_TITLES[v];
+    const st = document.getElementById('st-' + v);
+    if (st) st.style.setProperty('--pos', '50%');
+    setNotes(v);
+  }
+
+  function notesLabel() {
+    return curVS === 'agg' ? 'Rediseño agresivo' : curVS === 'curv' ? 'Rediseño curvado' : curVS === 'fusi' ? 'Fusión definitiva (agresivo + curvado)' : 'Mejoras en este rediseño';
+  }
+  function notesSource() {
+    return curVS === 'agg' ? NOTES_AGG : curVS === 'curv' ? NOTES_CURV : curVS === 'fusi' ? NOTES_FUSI : NOTES;
+  }
+
+  function setNotes(v) {
+    const notes = document.getElementById('cmpNotes');
+    notes.innerHTML = '<span class="cmp-notes__t">' + notesLabel() + '</span>' + (notesSource()[v] || []).map(n => '<span class="cmp-notes__chip">' + n + '</span>').join('');
+  }
+
+  function setVS(vs) {
+    curVS = vs;
+    document.querySelectorAll('.cmp-stage').forEach(st => st.dataset.vs = vs);
+    document.querySelectorAll('[data-vs]').forEach(b => b.classList.toggle('on', b.dataset.vs === vs));
+    const v = document.querySelector('.cmp-view.on .cmp-stage');
+    if (v) setNotes(v.id.replace('st-', ''));
+  }
+
+  document.querySelectorAll('.cmp-navbtn').forEach(b => b.onclick = () => setView(b.dataset.view));
+
+  /* Clonar cada capa --new en --agg (agresivo), --curv (curvado) y --fusi (fusión) */
+  document.querySelectorAll('.cmp-stage').forEach(st => {
+    const nlayers = st.querySelectorAll('.cmp-layer--new:not(.cmp-layer--agg):not(.cmp-layer--curv):not(.cmp-layer--fusi)');
+    nlayers.forEach(nl => {
+      const agg = nl.cloneNode(true);
+      agg.classList.add('cmp-layer--agg');
+      nl.after(agg);
+      const curv = nl.cloneNode(true);
+      curv.classList.add('cmp-layer--curv');
+      agg.after(curv);
+      const fusi = nl.cloneNode(true);
+      fusi.classList.add('cmp-layer--fusi');
+      curv.after(fusi);
+    });
+    const lbl = st.querySelector('.cmp-label--new');
+    if (lbl) {
+      const aggLbl = document.createElement('div');
+      aggLbl.className = 'cmp-label cmp-label--agg';
+      aggLbl.textContent = 'Agresivo';
+      lbl.after(aggLbl);
+      const curvLbl = document.createElement('div');
+      curvLbl.className = 'cmp-label cmp-label--curv';
+      curvLbl.textContent = 'Curvado';
+      aggLbl.after(curvLbl);
+      const fusiLbl = document.createElement('div');
+      fusiLbl.className = 'cmp-label cmp-label--fusi';
+      fusiLbl.textContent = 'Fusión DEF';
+      curvLbl.after(fusiLbl);
+    }
+  });
+  document.querySelectorAll('.cmp-stage').forEach(st => st.dataset.vs = 'eq');
+
+  document.querySelectorAll('.cmp-stage').forEach(st => {
+    const div = st.querySelector('.cmp-divider');
+    if (!div) return;
+    let drag = false;
+    const move = e => {
+      if (!drag) return;
+      const r = st.getBoundingClientRect();
+      let p = ((e.clientX - r.left) / r.width) * 100;
+      p = Math.max(3, Math.min(97, p));
+      st.style.setProperty('--pos', p + '%');
+    };
+    div.addEventListener('pointerdown', e => { drag = true; div.setPointerCapture(e.pointerId); move(e); });
+    div.addEventListener('pointermove', move);
+    div.addEventListener('pointerup', () => drag = false);
+    div.addEventListener('pointercancel', () => drag = false);
+  });
+
+  function setAB(mode) {
+    document.querySelectorAll('.cmp-stage').forEach(st => st.classList.toggle('show-new', mode === 'new'));
+    document.querySelectorAll('[data-ab]').forEach(b => b.classList.toggle('on', b.dataset.ab === mode));
+  }
+  document.querySelectorAll('[data-ab]').forEach(b => b.onclick = () => setAB(b.dataset.ab));
+  document.querySelectorAll('[data-vs]').forEach(b => b.onclick = () => setVS(b.dataset.vs));
+</script>
+
+</body>
+</html>

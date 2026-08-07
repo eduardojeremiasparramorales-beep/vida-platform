@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Equipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS, api, fmt, avatarColor, initials, toast } = SPOS;
+
+  // Inline SVG helper for icons not in SPOS
+  const S = {
+    refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+    activity: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  };
+
+  const ctx = await SPOS.mount({
+    active: 'team', title: 'Equipo', crumb: 'Asesores y rendimiento', padded: true, adminOnly: true,
+    action: `<button class="btn btn--gold btn--sm" id="add">${ICONS.plus}Agregar asesor</button>`
+  });
+
+  async function cargar(){
+    const [m, stats, vendedores, usuarios] = await Promise.all([
+      api('/api/metricas'),
+      api('/api/stats'),
+      api('/api/vendedores'),
+      api('/api/usuarios'),
+    ]);
+    const team = ((m && m.porVendedor) || []).sort((a, b) => {
+      if (a.estado === 'activo' && b.estado !== 'activo') return -1;
+      if (a.estado !== 'activo' && b.estado === 'activo') return 1;
+      return b.total - a.total;
+    });
+    const totalLeads = team.reduce((s,v)=>s+v.total,0);
+    const totalVend = team.reduce((s,v)=>s+v.vendidos,0);
+    const avgConv = team.length ? Math.round(team.reduce((s,v)=>s+v.conversion,0)/team.length) : 0;
+    const topId = team.slice().sort((a,b)=>b.vendidos-a.vendidos)[0]?.id;
+    const vendsAll = Array.isArray(vendedores) ? vendedores : [];
+    const usrs = Array.isArray(usuarios) ? usuarios : [];
+    // Mapa: vendedor_id → nombre de usuario (para saber quién tiene cuenta)
+    const vUserMap = {};
+    usrs.forEach(u => { if(u.vendedor_id) vUserMap[u.vendedor_id] = u.email; });
+    // Mapa: vendedor_id → rol en usuarios (para mostrar el rol solicitado en pendientes
+    // y badge en la tabla de gestión — un supervisor autoregistrado crea una fila en
+    // usuarios.rol='supervisor' vinculada a su vendedor_id).
+    const vRolMap = {};
+    usrs.forEach(u => { if(u.vendedor_id) vRolMap[u.vendedor_id] = u.rol; });
+    // Cuentas admin: no se pueden suspender/eliminar desde aquí — borrar esa fila
+    // borra también su login (usuarios + sesión) y deja al admin bloqueado fuera del sistema.
+    const adminVendedorIds = new Set(usrs.filter(u => u.rol === 'admin' && u.vendedor_id).map(u => u.vendedor_id));
+    // Auto-registrados desde /login.html, esperando aprobación — no entran a la
+    // tabla de gestión normal hasta que el admin decide.
+    const pendientes = vendsAll.filter(v => v.estado === 'pendiente');
+    const vends = vendsAll.filter(v => v.estado !== 'pendiente' && !adminVendedorIds.has(v.id) && !['supervisor', 'jefe'].includes(vRolMap[v.id] || 'vendedor'));
+    const adminsSup = vendsAll.filter(v => adminVendedorIds.has(v.id) || ['supervisor', 'jefe'].includes(vRolMap[v.id] || 'vendedor'));
+
+    ctx.content.innerHTML = `
+     <div class="os-content__max">
+      <div class="grid grid--4 rise rise-1" style="margin-bottom:var(--s3)">
+        ${metric('team','Asesores', fmt.n(vends.length))}
+        ${metric('activity','Activos ahora', fmt.n((stats||{}).vendedoresActivos||0))}
+        ${metric('money','Cierres del equipo', fmt.n(totalVend))}
+        ${metric('target','Conversión media', avgConv+'%')}
+      </div>
+
+      <div class="grid grid--3 rise rise-2" style="margin-bottom:var(--s3)">
+        ${team.map((v,i)=>{
+          const share = totalLeads ? Math.round((v.total/totalLeads)*100) : 0;
+          return `<div class="card card--pad card--float">
+            <div class="u-between" style="margin-bottom:var(--s2)">
+              <div class="u-row u-gap2">
+                <div class="avatar avatar--md" style="background:${avatarColor(v.nombre)};overflow:hidden">${v.foto?`<img src="${esc(v.foto)}" style="width:100%;height:100%;object-fit:cover">`:initials(v.nombre)}</div>
+                <div><div style="font-weight:600">${v.nombre}</div>
+                <div class="u-row u-gap1" style="font-size:11.5px"><span class="dot dot--${v.estado==='activo'?'green':'mute'}"></span><span class="t-dim3">${v.estado}</span></div></div>
+              </div>
+              ${v.id===topId?`<span class="badge badge--gold">${ICONS.flame.replace('<svg ','<svg style="width:12px;height:12px" ')}Top</span>`:''}
+            </div>
+            <div class="grid grid--3" style="gap:8px;margin-bottom:var(--s2)">
+              ${miniStat('Leads', fmt.n(v.total))}
+              ${miniStat('Activos', fmt.n(v.activos))}
+              ${miniStat('Cierres', fmt.n(v.vendidos))}
+            </div>
+            <div class="u-between" style="margin-bottom:6px"><span class="t-dim3" style="font-size:11.5px">Conversión</span><span style="font-size:12px;font-weight:600" class="${v.conversion>=15?'t-green':'t-gold'}">${v.conversion}%</span></div>
+            <div style="height:8px;background:var(--bg-4);border-radius:999px;overflow:hidden"><div style="height:100%;width:${Math.min(100,v.conversion*4)}%;background:${v.conversion>=15?'var(--green)':'var(--gold)'};border-radius:999px"></div></div>
+            <div class="t-dim3" style="font-size:11px;margin-top:10px">${share}% de la carga total del equipo</div>
+          </div>`;
+        }).join('') || `<div class="empty" style="grid-column:1/-1">${ICONS.team}<div>Aún no hay asesores</div></div>`}
+      </div>
+
+      <!-- Monitoreo del chat interno (solo lectura) -->
+      <div class="card rise rise-2" style="overflow:hidden;margin-bottom:var(--s3)">
+        <div class="card--pad" style="padding-bottom:var(--s2)">
+          <div class="u-between">
+            <div><div class="t-h3">🛡️ Monitoreo del chat interno</div>
+            <div class="t-dim3" style="font-size:12px;margin-top:4px">Canal general y mensajes directos entre asesores</div></div>
+            <div class="u-row u-gap1">
+              <a href="/os/equipo-interno.html" class="btn btn--gold btn--sm" style="text-decoration:none">Abrir Chat Interno</a>
+              <button class="btn btn--ghost btn--sm" id="monRefresh">Actualizar</button>
+            </div>
+          </div>
+        </div>
+        <div id="monFeed" style="max-height:340px;overflow-y:auto;padding:0 var(--s3) var(--s3)">
+          <div class="t-dim3" style="text-align:center;padding:var(--s3);font-size:13px">Cargando conversaciones…</div>
+        </div>
+      </div>
+
+      ${pendientes.length ? `
+      <!-- Pendientes de aprobación (auto-registro desde /login.html) -->
+      <div class="card rise rise-2" style="overflow:hidden;margin-bottom:var(--s3);border-color:rgba(200,164,90,.4)">
+        <div class="card--pad" style="padding-bottom:var(--s2)">
+          <div class="t-h3">Pendientes de aprobación <span class="badge badge--gold" style="font-size:11px">${pendientes.length}</span></div>
+          <div class="t-dim3" style="font-size:12px;margin-top:4px">Se registraron ellos mismos desde el login — revisa y aprueba o rechaza</div>
+        </div>
+        <table class="table">
+          <thead><tr><th>Solicitante</th><th>Rol</th><th>Teléfono</th><th>Acción</th></tr></thead>
+          <tbody>${pendientes.map(v => {
+            const rol = vRolMap[v.id] || 'vendedor';
+            const rolBadge = rol === 'supervisor'
+              ? `<span class="badge" style="font-size:10px;background:rgba(78,123,70,.15);color:var(--green);border:1px solid rgba(78,123,70,.3)">Supervisor</span>`
+              : `<span class="badge badge--mute" style="font-size:10px">Asesor</span>`;
+            return `
+            <tr>
+              <td><div class="u-row u-gap2"><div class="avatar avatar--sm" style="background:${avatarColor(v.nombre)};overflow:hidden">${v.foto?`<img src="${esc(v.foto)}" style="width:100%;height:100%;object-fit:cover">`:initials(v.nombre)}</div><span style="font-weight:500">${esc(v.nombre)}</span></div></td>
+              <td>${rolBadge}</td>
+              <td class="t-dim" style="font-size:13px">${fmtPhone(v.telefono)}</td>
+              <td>
+                <div class="u-row u-gap1">
+                  <button class="btn btn--gold btn--xs" data-action="aprobar" data-id="${v.id}" data-name="${esc(v.nombre)}">Aprobar</button>
+                  <button class="btn btn--ghost btn--xs t-red" data-action="rechazar" data-id="${v.id}" data-name="${esc(v.nombre)}">Rechazar</button>
+                </div>
+              </td>
+            </tr>`}).join('')}</tbody>
+        </table>
+      </div>` : ''}
+
+      <!-- Tabla de gestión -->
+      <div class="card rise rise-3">
+        <div class="card--pad" style="padding-bottom:var(--s2)">
+          <div class="t-h3">Gestión de asesores</div>
+          <div class="t-dim3" style="font-size:12px;margin-top:4px">${vends.length} asesores registrados</div>
+        </div>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table class="table">
+          <thead><tr>
+            <th>Asesor</th><th>Teléfono</th><th>Estado</th><th>Cuenta</th><th>PIN</th><th>Acción</th>
+          </tr></thead>
+          <tbody>${vends.map(v => {
+            const tieneCuenta = vUserMap[v.id] ? true : false;
+            const esAdmin = adminVendedorIds.has(v.id);
+            const esSupervisor = (vRolMap[v.id] || 'vendedor') === 'supervisor';
+            const esJefe = (vRolMap[v.id] || 'vendedor') === 'jefe';
+            // Badge de rol: Admin (gold) toma precedencia, luego Jefe, luego Supervisor (green soft).
+            const rolBadge = esAdmin
+              ? `<span class="badge badge--gold" style="font-size:10px">Admin</span>`
+              : esJefe
+                ? `<span class="badge badge--gold" style="font-size:10px">Jefe</span>`
+                : esSupervisor
+                  ? `<span class="badge" style="font-size:10px;background:rgba(78,123,70,.15);color:var(--green);border:1px solid rgba(78,123,70,.3)">Supervisor</span>`
+                  : '';
+            return `<tr>
+              <td><div class="u-row u-gap2"><div class="avatar avatar--sm" style="background:${avatarColor(v.nombre)};overflow:hidden">${v.foto?`<img src="${esc(v.foto)}" style="width:100%;height:100%;object-fit:cover">`:initials(v.nombre)}</div><span style="font-weight:500">${esc(v.nombre)}</span>${rolBadge}</div></td>
+              <td class="t-dim" style="font-size:13px">${fmtPhone(v.telefono)}${v.telefono && !v.telefono.startsWith('+57') ? ` <button class="btn btn--ghost btn--xs" data-action="fixPhone" data-id="${v.id}" data-tel="${esc(v.telefono)}" title="Corregir teléfono (agregar +57)">${S.refresh}Fix</button>` : ''}</td>
+              <td><span class="badge badge--${v.estado==='activo'?'green':'mute'}">${v.estado}</span></td>
+              <td>${tieneCuenta ? '<span class="badge badge--green" style="font-size:10px">Sí</span>' : '<span class="t-dim3" style="font-size:11px">—</span>'}</td>
+              <td><button class="btn btn--ghost btn--xs" data-action="resetPin" data-id="${v.id}" data-name="${esc(v.nombre)}">${S.refresh} Reset</button></td>
+              <td>
+                ${esAdmin ? `<span class="t-dim3" style="font-size:11px" title="Las cuentas admin no se pueden suspendir ni eliminar desde aquí">Protegida</span>` : `
+                <div class="u-row u-gap1">
+                  <button class="btn btn--ghost btn--xs" data-action="rol" data-id="${v.id}" data-name="${esc(v.nombre)}" data-rol="${(vRolMap[v.id]||'vendedor')}">${S.user} Ascender</button>
+                  <button class="btn btn--ghost btn--xs" data-action="estado" data-id="${v.id}" data-name="${esc(v.nombre)}" data-estado="${v.estado}">${S.activity} ${v.estado==='activo'?'Suspender':'Activar'}</button>
+                  <button class="btn btn--ghost btn--xs t-red" data-action="delete" data-id="${v.id}" data-name="${esc(v.nombre)}">${S.trash} Eliminar</button>
+                </div>`}
+              </td>
+            </tr>`;
+          }).join('') || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-3)">Sin asesores registrados</td></tr>'}</tbody>
+        </table>
+        </div>
+      </div>
+
+      <!-- Gestión de admin, supervisores y jefes -->
+      ${adminsSup.length ? `
+      <div class="card rise rise-3" style="margin-top:var(--s3)">
+        <div class="card--pad" style="padding-bottom:var(--s2)">
+          <div class="t-h3">Admins, supervisores y jefes</div>
+          <div class="t-dim3" style="font-size:12px;margin-top:4px">${adminsSup.length} cuentas</div>
+        </div>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table class="table">
+          <thead><tr>
+            <th>Usuario</th><th>Teléfono</th><th>Rol</th><th>Estado</th><th>PIN</th>
+          </tr></thead>
+          <tbody>${adminsSup.map(v => {
+            const esAdmin = adminVendedorIds.has(v.id);
+            const rol = esAdmin ? 'Admin' : (vRolMap[v.id] === 'jefe' ? 'Jefe' : 'Supervisor');
+            const esJefe = vRolMap[v.id] === 'jefe';
+            const rolBadge = esAdmin
+              ? `<span class="badge badge--gold" style="font-size:10px">Admin</span>`
+              : `<span class="badge ${esJefe?'badge--gold':'badge--green'}" style="font-size:10px">${rol}</span>`;
+            return `<tr>
+              <td><div class="u-row u-gap2">
+                <div class="avatar avatar--sm" style="background:${avatarColor(v.nombre)};overflow:hidden">${v.foto?`<img src="${esc(v.foto)}" style="width:100%;height:100%;object-fit:cover">`:initials(v.nombre)}</div>
+                <span style="font-weight:500">${esc(v.nombre)}</span>
+              </div></td>
+              <td class="t-dim" style="font-size:13px">${fmtPhone(v.telefono)}</td>
+              <td>${rolBadge}</td>
+              <td><span class="badge badge--${v.estado==='activo'?'green':'mute'}">${v.estado}</span></td>
+              <td><div class="u-row u-gap1">
+                <button class="btn btn--ghost btn--xs" data-action="resetPin" data-id="${v.id}" data-name="${esc(v.nombre)}">${S.refresh} Reset</button>
+                ${esAdmin ? '' : `<button class="btn btn--ghost btn--xs" data-action="rol" data-id="${v.id}" data-name="${esc(v.nombre)}" data-rol="${esJefe?'jefe':'supervisor'}">${S.user} ${esJefe?'Descender':'Ascender'}</button>`}
+              </div></td>
+            </tr>`;
+          }).join('') || '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-3)">Sin cuentas admin/supervisor</td></tr>'}</tbody>
+        </table>
+        </div>
+      </div>` : ''}
+     </div>`;
+
+    // ── Agregar asesor ──
+    document.getElementById('add').addEventListener('click', ()=>{
+      abrirModal('Agregar asesor', `
+        <form id="addForm" style="display:flex;flex-direction:column;gap:14px">
+          <input name="nombre" placeholder="Nombre completo" required style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border-soft);background:var(--bg);color:var(--txt);font-size:14px;font-family:inherit;outline:none">
+          <input name="telefono" placeholder="+573XXXXXXXXX" required pattern="\\+573\\d{9}" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border-soft);background:var(--bg);color:var(--txt);font-size:14px;font-family:inherit;outline:none">
+          <input name="pin" placeholder="PIN de 4 dígitos" required pattern="\\d{4}" maxlength="4" inputmode="numeric" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border-soft);background:var(--bg);color:var(--txt);font-size:14px;font-family:inherit;outline:none">
+          <div style="display:flex;gap:10px;margin-top:6px">
+            <button type="button" class="btn btn--ghost" id="modalCancel">Cancelar</button>
+            <button type="submit" class="btn btn--gold">Crear asesor</button>
+          </div>
+        </form>`);
+      document.getElementById('modalCancel').addEventListener('click', cerrarModal);
+      document.getElementById('addForm').addEventListener('submit', async e=>{
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const nombre = fd.get('nombre').trim();
+        const telefono = fd.get('telefono').trim();
+        const pin = fd.get('pin').trim();
+        if(!nombre || !telefono || !pin){ toast('Campos requeridos','err'); return; }
+        try {
+          const r = await api('/api/vendedores', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nombre, telefono, pin }) });
+          if(r && r.vendedorId){ toast('Asesor creado'); cerrarModal(); setTimeout(()=> cargar(), 600); }
+          else toast(r?.error || 'Error al crear','err');
+        } catch(err){ toast('Error de conexión','err'); }
+      });
+    });
+
+    // ── Pendientes: aprobar / rechazar ──
+    document.querySelectorAll('[data-action="aprobar"]').forEach(btn => btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id; const name = btn.dataset.name;
+      if(!confirm(`¿Aprobar a ${name}? Podrá iniciar sesión de inmediato.`)) return;
+      try {
+        const r = await api('/api/vendedores/'+id+'/estado', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ estado:'activo' }) });
+        if(r && r.ok){ toast(name+' aprobado'); cargar(); }
+        else toast(r?.error || 'Error al aprobar','err');
+      } catch(err){ toast('Error de conexión','err'); }
+    }));
+    document.querySelectorAll('[data-action="rechazar"]').forEach(btn => btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id; const name = btn.dataset.name;
+      if(!confirm(`¿Rechazar y eliminar el registro de ${name}? No podrá volver a intentarlo con el mismo teléfono a menos que se vuelva a registrar.`)) return;
+      try {
+        const r = await api('/api/vendedores/'+id, { method:'DELETE' });
+        if(r && r.ok){ toast(name+' rechazado'); cargar(); }
+        else toast(r?.error || 'Error al rechazar','err');
+      } catch(err){ toast('Error de conexión','err'); }
+    }));
+
+    // ── Monitoreo del chat interno ──
+    async function cargarMonitor(){
+      const feed = document.getElementById('monFeed'); if(!feed) return;
+      const msgs = await api('/api/equipo/monitor?limit=150');
+      if(!Array.isArray(msgs) || !msgs.length){ feed.innerHTML = '<div class="t-dim3" style="text-align:center;padding:var(--s3);font-size:13px">Sin mensajes internos aún</div>'; return; }
+      const general = msgs.filter(m => m.to_vendedor_id == null).reverse();
+      const directos = msgs.filter(m => m.to_vendedor_id != null).reverse();
+      function renderMsg(m){
+        const directo = m.to_vendedor_id != null;
+        const quien = m.from_nombre_full || m.from_nombre || (Number(m.from_vendedor_id)===0?'Admin':'Asesor');
+        const destino = directo ? ('→ ' + (m.to_nombre || 'Asesor')) : '';
+        const hora = new Date(String(m.created_at).replace(' ','T')).toLocaleString('es-CO',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+        return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-soft)">
+          <div class="avatar avatar--sm" style="background:${avatarColor(quien)};flex-shrink:0">${initials(quien)}</div>
+          <div style="flex:1;min-width:0">
+            <div class="u-row u-gap1" style="font-size:12px"><span style="font-weight:600">${esc(quien)}</span>
+              ${directo?`<span class="badge badge--gold" style="font-size:10px">${esc(destino)}</span>`:''}
+              <span class="t-dim3" style="margin-left:auto;font-size:11px">${hora}</span></div>
+            <div style="font-size:13px;margin-top:2px;color:var(--txt)">${esc(m.body)}</div>
+          </div></div>`;
+      }
+      let html = '';
+      if(general.length){
+        html += `<div style="margin-bottom:var(--s2)"><div class="u-row u-gap1" style="margin-bottom:8px"><span style="font-weight:600;font-size:13px">Canal General</span><span class="badge badge--mute" style="font-size:10px">${general.length}</span></div>${general.map(renderMsg).join('')}</div>`;
+      }
+      if(directos.length){
+        html += `<div><div class="u-row u-gap1" style="margin-bottom:8px"><span style="font-weight:600;font-size:13px">Mensajes Directos</span><span class="badge badge--gold" style="font-size:10px">${directos.length}</span></div>${directos.map(renderMsg).join('')}</div>`;
+      }
+      feed.innerHTML = html;
+    }
+    cargarMonitor();
+    const monBtn = document.getElementById('monRefresh'); if(monBtn) monBtn.addEventListener('click', cargarMonitor);
+
+    // ── Acciones de tabla ──
+    document.querySelectorAll('[data-action="resetPin"]').forEach(btn => btn.addEventListener('click', ()=>{
+      const id = btn.dataset.id;
+      const name = btn.dataset.name;
+      abrirModal(`Resetear PIN · ${name}`, `
+        <form id="pinForm" style="display:flex;flex-direction:column;gap:14px">
+          <div class="t-dim3" style="font-size:13px">Nuevo PIN de 4 dígitos</div>
+          <input name="pin" placeholder="0000" required pattern="\\d{4}" maxlength="4" inputmode="numeric" autofocus style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border-soft);background:var(--bg);color:var(--txt);font-size:20px;text-align:center;font-family:inherit;outline:none;letter-spacing:8px">
+          <div style="display:flex;gap:10px;margin-top:6px">
+            <button type="button" class="btn btn--ghost" id="modalCancel">Cancelar</button>
+            <button type="submit" class="btn btn--gold">Guardar</button>
+          </div>
+        </form>`);
+      document.getElementById('modalCancel').addEventListener('click', cerrarModal);
+      document.getElementById('pinForm').addEventListener('submit', async e=>{
+        e.preventDefault();
+        const pin = new FormData(e.target).get('pin').trim();
+        if(!pin || pin.length !== 4){ toast('PIN debe ser 4 dígitos','err'); return; }
+        try {
+          const r = await api('/api/vendedores/'+id+'/pin', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ pin }) });
+          if(r && r.ok){ toast('PIN actualizado a '+pin); cerrarModal(); }
+          else toast('Error al actualizar PIN','err');
+        } catch(err){ toast('Error de conexión','err'); }
+      });
+    }));
+
+    document.querySelectorAll('[data-action="fixPhone"]').forEach(btn => btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id;
+      const oldTel = btn.dataset.tel;
+      const newTel = oldTel.startsWith('57') ? '+'+oldTel : '+57'+oldTel.replace(/\D/g,'');
+      if(!confirm(`Corregir teléfono de ${oldTel} a ${newTel}?`)) return;
+      try {
+        const r = await api('/api/vendedores/'+id+'/telefono', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ telefono: newTel }) });
+        if(r && r.ok){ toast('Teléfono corregido'); cargar(); }
+        else toast(r?.error || 'Error','err');
+      } catch(err){ toast('Error de conexión','err'); }
+    }));
+
+    document.querySelectorAll('[data-action="rol"]').forEach(btn => btn.addEventListener('click', ()=>{
+      const id = btn.dataset.id;
+      const name = btn.dataset.name;
+      const actual = btn.dataset.rol;
+      const actualLabel = {vendedor:'Asesor', supervisor:'Supervisor', jefe:'Jefe'}[actual] || actual;
+      const opciones = [
+        { rol:'vendedor',  label:'Asesor',  desc:'Chats asignados, sin acceso global' },
+        { rol:'supervisor',label:'Supervisor', desc:'Chats + comentarios de todo el equipo' },
+        { rol:'jefe',      label:'Jefe',    desc:'Acceso global y Supervisión desde el móvil' },
+      ];
+      abrirModal(`Cambiar rol · ${name}`, `
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="t-dim3" style="font-size:13px;margin-bottom:2px">Rol actual: <b style="color:var(--txt)">${esc(actualLabel)}</b></div>
+          ${opciones.map(o=>`
+            <button data-setrol="${o.rol}" class="btn btn--ghost" style="text-align:left;justify-content:space-between;display:flex;gap:10px;align-items:center">
+              <span>${esc(o.label)}</span><span class="t-dim3" style="font-size:11.5px">${esc(o.desc)}</span>
+            </button>`).join('')}
+          <button type="button" class="btn btn--ghost" id="modalCancel" style="margin-top:6px">Cancelar</button>`);
+      document.getElementById('modalCancel').addEventListener('click', cerrarModal);
+      modalBg.querySelectorAll('[data-setrol]').forEach(b => b.addEventListener('click', async ()=>{
+        const nuevo = b.dataset.setrol;
+        if(nuevo === actual){ cerrarModal(); return; }
+        if(!confirm(`¿Aplicar rol ${newLabel(nuevo)} a ${name}?`)) return;
+        try {
+          const r = await api('/api/vendedores/'+id+'/rol', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ rol: nuevo }) });
+          if(r && r.ok){ toast(`${name} ahora es ${newLabel(nuevo)}`); cerrarModal(); cargar(); }
+          else toast(r?.error || 'Error al cambiar rol','err');
+        } catch(err){ toast('Error de conexión','err'); }
+      }));
+      function newLabel(rol){ return { vendedor:'Asesor', supervisor:'Supervisor', jefe:'Jefe' }[rol] || rol; }
+    }));
+
+    document.querySelectorAll('[data-action="estado"]').forEach(btn => btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id;
+      const name = btn.dataset.name;
+      const actual = btn.dataset.estado;
+      const nuevo = actual === 'activo' ? 'suspendido' : 'activo';
+      if(!confirm(`¿${nuevo === 'activo' ? 'Activar' : 'Suspender'} a ${name}?`)) return;
+      try {
+        const r = await api('/api/vendedores/'+id+'/estado', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ estado: nuevo }) });
+        if(r && r.ok){ toast('Estado cambiado'); cargar(); }
+        else toast('Error','err');
+      } catch(err){ toast('Error de conexión','err'); }
+    }));
+
+    document.querySelectorAll('[data-action="delete"]').forEach(btn => btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id;
+      const name = btn.dataset.name;
+      if(!confirm(`¿Eliminar a ${name}? Sus leads se reasignarán automáticamente.`)) return;
+      if(!confirm(`¿Estás seguro? Esta acción no se puede deshacer.`)) return;
+      try {
+        const r = await api('/api/vendedores/'+id, { method:'DELETE' });
+        if(r && r.ok){
+          const reasig = r.reasignadoA ? ` Leads reasignados a ${r.reasignadoA.nombre}` : '';
+          toast('Asesor eliminado.'+reasig);
+          cargar();
+        } else {
+          const errores = { no_puedes_eliminar_tu_propia_cuenta:'No puedes eliminar tu propia cuenta', no_se_puede_eliminar_una_cuenta_admin:'Las cuentas admin no se pueden eliminar', vendedor_no_existe:'Ese asesor ya no existe' };
+          const base = (r?.error && errores[r.error]) || r?.error || 'Error al eliminar';
+          toast(r?.detalle ? `${base}: ${r.detalle}` : base, 'err');
+        }
+      } catch(err){ toast('Error de conexión','err'); }
+    }));
+
+  }
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function fmtPhone(t){ if(!t) return '—'; const c=t.replace(/\D/g,''); if(c.length===12&&c.startsWith('57')) return '+57 '+c.slice(2,5)+' '+c.slice(5,8)+' '+c.slice(8); return t; }
+
+  // Modal helper
+  const modalBg = document.createElement('div');
+  modalBg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:999;display:grid;place-items:center;animation:fadeIn .2s ease';
+  let modalActive = null;
+
+  function abrirModal(titulo, html){
+    if(modalActive) cerrarModal();
+    modalActive = document.createElement('div');
+    modalActive.style.cssText = 'background:var(--bg-1);border:1px solid var(--border-soft);border-radius:16px;padding:28px;width:90%;max-width:400px;animation:slideUp .25s var(--ease);max-height:90vh;overflow-y:auto';
+    modalActive.innerHTML = `<div style="font-size:16px;font-weight:600;margin-bottom:20px">${esc(titulo)}</div>${html}`;
+    modalBg.innerHTML = '';
+    modalBg.appendChild(modalActive);
+    document.body.appendChild(modalBg);
+  }
+
+  function cerrarModal(){ modalBg.remove(); modalActive = null; }
+
+  function metric(icon,label,value){ return `<div class="metric"><div class="metric__top"><div class="metric__icon">${ICONS[icon]}</div></div><div><div class="metric__value t-num">${value}</div><div class="metric__label">${label}</div></div></div>`; }
+  function miniStat(k,v){ return `<div style="background:var(--bg-1);border:1px solid var(--border-soft);border-radius:10px;padding:9px;text-align:center"><div class="t-num" style="font-size:16px;font-weight:600">${v}</div><div class="t-dim3" style="font-size:10.5px">${k}</div></div>`; }
+
+  cargar();
+})();
+</script>
+</body>
+</html>

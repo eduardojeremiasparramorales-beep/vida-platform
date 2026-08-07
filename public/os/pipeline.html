@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  .kb { display: flex; gap: 12px; padding: var(--s3); overflow-x: auto; height: 100%; align-items: flex-start; }
+  .kb-col { min-width: 250px; width: 250px; flex-shrink: 0; background: var(--bg-1); border: 1px solid var(--border-soft); border-radius: var(--r); display: flex; flex-direction: column; max-height: 100%; }
+  .kb-col__head { padding: 12px 14px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-soft); }
+  .kb-col__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .kb-col__title { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); flex: 1; }
+  .kb-col__count { font-size: 11px; color: var(--text-3); background: var(--bg-3); padding: 2px 8px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+  .kb-col__body { padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 60px; }
+  .kb-card { background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: var(--r-sm); padding: 11px 12px; transition: border-color .15s; }
+  .kb-card:hover { border-color: var(--border-strong); }
+  .kb-card__top { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+  .kb-card__name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  .kb-card__meta { font-size: 11.5px; color: var(--text-3); display: flex; justify-content: space-between; gap: 6px; margin-bottom: 9px; }
+  .kb-card__actions { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .kb-move { background: var(--bg-3); border: 1px solid var(--border); color: var(--text-2); width: 28px; height: 26px; border-radius: var(--r-sm); cursor: pointer; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; transition: color .12s, border-color .12s; }
+  .kb-move:hover:not(:disabled) { color: var(--gold); border-color: var(--gold-line); }
+  .kb-move:disabled { opacity: .25; cursor: default; }
+  .kb-chat { font-size: 11px; color: var(--gold); text-decoration: none; padding: 4px 10px; border: 1px solid var(--gold-line); border-radius: 999px; }
+  .kb-empty { color: var(--text-3); font-size: 12px; text-align: center; padding: 14px 6px; }
+  @media (max-width: 720px) { .kb { padding: var(--s2); gap: 8px; } .kb-col { min-width: 230px; width: 230px; } }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const { api, toast, avatarColor, initials, fmtPhone } = SPOS;
+
+  const ETAPAS = [
+    { k: 'sin_clasificar', t: 'Nuevos', c: 'var(--text-3)' },
+    { k: 'interesado', t: 'Interesados', c: 'var(--blue)' },
+    { k: 'negociacion', t: 'Negociación', c: 'var(--gold)' },
+    { k: 'cita', t: 'Cita', c: 'var(--amber)' },
+    { k: 'vendido', t: 'Vendidos', c: 'var(--green)' },
+    { k: 'no_interesado', t: 'No interesados', c: 'var(--red)' },
+  ];
+  const ORDEN = ETAPAS.map(e => e.k);
+
+  const ctx = await SPOS.mount({ active: 'pipeline', title: 'Pipeline', crumb: 'Embudo de ventas por etapa', padded: false });
+  if (!ctx) return;
+  ctx.content.style.cssText = 'flex:1;min-height:0;overflow:hidden;padding:0';
+
+  let leads = [];
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function timeago(ts) {
+    if (!ts) return '';
+    const d = new Date(String(ts).replace(' ', 'T')); if (isNaN(d)) return '';
+    const m = Math.floor((Date.now() - d) / 60000);
+    if (m < 60) return m + ' min'; const h = Math.floor(m / 60);
+    if (h < 24) return h + ' h'; return Math.floor(h / 24) + ' d';
+  }
+
+  async function cargar() {
+    const [data, scoresData] = await Promise.all([
+      api('/api/leads'),
+      api('/api/leads/calientes?limite=200'),
+    ]);
+    leads = Array.isArray(data) ? data : [];
+    // Merge scores into leads
+    const scores = Array.isArray(scoresData) ? scoresData : [];
+    scores.forEach(s => {
+      const lead = leads.find(l => l.id === s.lead_id);
+      if (lead) lead.score = s.score;
+    });
+    render();
+  }
+
+  function render() {
+    ctx.content.innerHTML = `<div class="kb">${ETAPAS.map(col).join('')}</div>`;
+    ctx.content.querySelectorAll('.kb-move').forEach(btn =>
+      btn.addEventListener('click', () => mover(Number(btn.dataset.id), etapaPorDir(btn))));
+    wireDragAndDrop();
+  }
+
+  function etapaPorDir(btn) {
+    const lead = leads.find(l => l.id === Number(btn.dataset.id));
+    const idx = ORDEN.indexOf(lead.etiqueta || 'sin_clasificar');
+    const nuevoIdx = btn.dataset.dir === 'next' ? idx + 1 : idx - 1;
+    return ORDEN[nuevoIdx];
+  }
+
+  function col(etapa) {
+    const items = leads.filter(l => (l.etiqueta || 'sin_clasificar') === etapa.k && l.status !== 'cerrado');
+    return `
+      <div class="kb-col">
+        <div class="kb-col__head">
+          <span class="kb-col__dot" style="background:${etapa.c}"></span>
+          <span class="kb-col__title">${etapa.t}</span>
+          <span class="kb-col__count">${items.length}</span>
+        </div>
+        <div class="kb-col__body" data-etapa="${etapa.k}">
+          ${items.length ? items.map(card).join('') : '<div class="kb-empty">Sin leads aquí — arrastra una tarjeta</div>'}
+        </div>
+      </div>`;
+  }
+
+  function card(l) {
+    const idx = ORDEN.indexOf(l.etiqueta || 'sin_clasificar');
+    const score = l.score || 0;
+    const scoreColor = score >= 70 ? 'var(--green)' : score >= 40 ? 'var(--amber)' : 'var(--text-3)';
+    const scoreBar = `<div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+      <div style="flex:1;height:3px;border-radius:2px;background:var(--bg-4);overflow:hidden"><div style="height:100%;border-radius:2px;background:${scoreColor};width:${score}%"></div></div>
+      <span style="font-size:10px;font-weight:600;color:${scoreColor};font-variant-numeric:tabular-nums">${score}</span>
+    </div>`;
+    return `
+      <div class="kb-card" draggable="true" data-id="${l.id}">
+        <div class="kb-card__top">
+          <div class="avatar avatar--sm" style="background:${avatarColor(l.customer_name)};width:30px;height:30px;font-size:11px">${initials(l.customer_name)}</div>
+          <span class="kb-card__name">${esc(l.customer_name || 'Sin nombre')}</span>
+          ${score >= 70 ? '<span title="Lead caliente" style="font-size:12px">🔥</span>' : ''}
+        </div>
+        <div class="kb-card__meta">
+          <span>${esc(fmtPhone(l.customer_phone))}</span>
+          <span>${timeago(l.updated_at)}</span>
+        </div>
+        <div class="kb-card__meta">
+          <span>${esc(l.assigned_to_nombre || 'Sin asignar')}</span>
+        </div>
+        ${scoreBar}
+        <div class="kb-card__actions" style="margin-top:8px">
+          <button class="kb-move" data-id="${l.id}" data-dir="prev" ${idx <= 0 ? 'disabled' : ''} title="Etapa anterior">‹</button>
+          <a class="kb-chat" href="/os/inbox.html">Chat</a>
+          <button class="kb-move" data-id="${l.id}" data-dir="next" ${idx >= ORDEN.length - 1 ? 'disabled' : ''} title="Siguiente etapa">›</button>
+        </div>
+      </div>`;
+  }
+
+  // Drag-and-drop nativo HTML5: arrastrar una tarjeta a otra columna mueve el lead
+  // a esa etapa directamente (sin pasar por las etapas intermedias, a diferencia de
+  // los botones ‹ › que solo avanzan/retroceden un paso).
+  function wireDragAndDrop() {
+    ctx.content.querySelectorAll('.kb-card').forEach(cardEl => {
+      cardEl.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', cardEl.dataset.id);
+        e.dataTransfer.effectAllowed = 'move';
+        cardEl.style.opacity = '.4';
+      });
+      cardEl.addEventListener('dragend', () => { cardEl.style.opacity = ''; });
+    });
+    ctx.content.querySelectorAll('.kb-col__body').forEach(colEl => {
+      colEl.addEventListener('dragover', e => { e.preventDefault(); colEl.style.background = 'var(--bg-2)'; });
+      colEl.addEventListener('dragleave', () => { colEl.style.background = ''; });
+      colEl.addEventListener('drop', e => {
+        e.preventDefault(); colEl.style.background = '';
+        const id = Number(e.dataTransfer.getData('text/plain'));
+        if (id) mover(id, colEl.dataset.etapa);
+      });
+    });
+  }
+
+  async function mover(id, nueva) {
+    const lead = leads.find(l => l.id === id); if (!lead || !nueva) return;
+    if ((lead.etiqueta || 'sin_clasificar') === nueva) return;
+    const nuevoIdx = ORDEN.indexOf(nueva);
+    const anterior = lead.etiqueta;
+    lead.etiqueta = nueva; render(); // optimista: se ve el movimiento de inmediato
+    const r = await api('/api/leads/' + id + '/etiqueta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ etiqueta: nueva }) });
+    if (r !== null) {
+      toast(`${lead.customer_name || 'Lead'} → ${ETAPAS[nuevoIdx].t}`, 'ok');
+    } else {
+      lead.etiqueta = anterior; render(); // revertir si falló
+      toast('Error al mover el lead', 'err');
+    }
+  }
+
+  await cargar();
+
+  // Refresco al llegar mensajes nuevos
+  try {
+    const es = new EventSource('/api/stream');
+    es.addEventListener('nuevo_mensaje', () => cargar());
+    es.onerror = () => es.close();
+  } catch (e) { }
+})();
+</script>
+</body>
+</html>

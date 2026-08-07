@@ -1,0 +1,33 @@
+{
+  "name": "vid-a",
+  "version": "0.1.0",
+  "description": "Vid.a — Plataforma multi-empresa: motor CRM + control plane. SP Leons Group = empresa #1 (fundador, conexión directa).",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "migrate": "node src/db/migrate.js",
+    "migrate:os": "node scripts/migrate-legacy-to-os.js",
+    "reopen": "node scripts/reopen-lead.js",
+    "release:apk": "node scripts/release-apk.js"
+  },
+  "dependencies": {
+    "archiver": "^8.0.0",
+    "axios": "^1.7.0",
+    "better-sqlite3": "^9.4.0",
+    "dotenv": "^17.4.2",
+    "express": "^4.21.0",
+    "express-rate-limit": "^8.5.2",
+    "firebase-admin": "^14.1.0",
+    "form-data": "^4.0.0",
+    "multer": "^2.2.0",
+    "node-cron": "^3.0.0",
+    "openai": "^4.0.0",
+    "sql.js": "^1.14.1",
+    "twilio": "^5.0.0",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.3"
+  }
+}

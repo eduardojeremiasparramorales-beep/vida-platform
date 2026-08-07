@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Vid.a · Plataforma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  body { overflow-y: auto; }
+  .vp-shell { max-width: 980px; margin: 0 auto; padding: var(--s4) var(--s3); }
+  .vp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s4); }
+  .vp-brand { font-family: var(--f-title); font-size: 20px; letter-spacing: .08em; }
+  .vp-brand span { color: var(--gold-ink, var(--gold)); }
+  .vp-login { max-width: 380px; margin: 15vh auto; }
+  .vp-sec { background: var(--bg-1); border: 1px solid var(--border-soft); border-radius: var(--r); padding: var(--s3); margin-bottom: var(--s3); }
+  .vp-field { margin-bottom: 14px; }
+  .vp-field label { display: block; font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
+  .vp-field input, .vp-field select { width: 100%; background: var(--bg-3); border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--text); padding: 10px 12px; font-family: var(--f-ui); font-size: 13.5px; outline: none; }
+  .vp-btn { height: 38px; padding: 0 20px; background: var(--gold); color: #000; border: none; border-radius: var(--r-sm); font-weight: 600; font-size: 13px; cursor: pointer; font-family: var(--f-ui); }
+  .vp-btn--ghost { background: var(--bg-3); color: var(--text); border: 1px solid var(--border); }
+  .vp-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border-soft); gap: 12px; }
+  .vp-row:last-child { border-bottom: none; }
+  .vp-empresa__name { font-size: 14px; font-weight: 600; }
+  .vp-empresa__meta { font-size: 11.5px; color: var(--text-3); margin-top: 3px; }
+  .vp-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .vp-dot--on { background: #57C168; } .vp-dot--off { background: var(--text-4); }
+  .vp-err { color: var(--red); font-size: 12.5px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+  'use strict';
+  var esc = function(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+  function api(path, opts) {
+    return fetch(path, Object.assign({ headers: { 'Content-Type': 'application/json' }, credentials: 'include' }, opts || {}))
+      .then(function(r) { return r.json().then(function(body) { return { ok: r.ok, status: r.status, body: body }; }); })
+      .catch(function(e) { return { ok: false, status: 0, body: { error: e.message } }; });
+  }
+
+  function renderLogin() {
+    document.getElementById('app').innerHTML =
+      '<div class="vp-shell"><div class="vp-login vp-sec">' +
+        '<div class="vp-brand" style="text-align:center;margin-bottom:20px">VID<span>.</span>A</div>' +
+        '<div class="vp-field"><label>Email</label><input id="lEmail" type="email"></div>' +
+        '<div class="vp-field"><label>Contraseña</label><input id="lPass" type="password"></div>' +
+        '<button class="vp-btn" id="lBtn" style="width:100%">Entrar</button>' +
+        '<div class="vp-err" id="lErr" style="display:none"></div>' +
+      '</div></div>';
+    document.getElementById('lBtn').addEventListener('click', function() {
+      api('/api/plataforma/login', { method: 'POST', body: JSON.stringify({ email: document.getElementById('lEmail').value, password: document.getElementById('lPass').value }) })
+        .then(function(r) {
+          if (r.ok) { renderApp(); return; }
+          var err = document.getElementById('lErr');
+          err.textContent = (r.body && r.body.error) || 'Error al iniciar sesión';
+          err.style.display = 'block';
+        });
+    });
+  }
+
+  function fmtBytes(n) { if (!n) return '0 MB'; var mb = n / (1024*1024); return mb >= 1024 ? (mb/1024).toFixed(2) + ' GB' : mb.toFixed(1) + ' MB'; }
+
+  function renderApp() {
+    document.getElementById('app').innerHTML =
+      '<div class="vp-shell">' +
+        '<div class="vp-head"><div class="vp-brand">VID<span>.</span>A · Plataforma</div>' +
+        '<button class="vp-btn vp-btn--ghost" id="logoutBtn">Cerrar sesión</button></div>' +
+        '<div class="vp-sec"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+        '<h3 style="font-family:var(--f-title);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-ink, var(--gold))">Negocios</h3>' +
+        '<button class="vp-btn" id="nuevoBtn">+ Nuevo negocio</button></div>' +
+        '<div id="listaEmpresas"><div class="empty"><span>Cargando…</span></div></div></div>' +
+        '<div class="vp-sec" id="formNuevo" style="display:none"></div>' +
+      '</div>';
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+      api('/api/plataforma/logout', { method: 'POST' }).then(renderLogin);
+    });
+    document.getElementById('nuevoBtn').addEventListener('click', toggleFormNuevo);
+    cargarEmpresas();
+  }
+
+  function cargarEmpresas() {
+    api('/api/plataforma/empresas').then(function(r) {
+      var box = document.getElementById('listaEmpresas');
+      if (!r.ok) { box.innerHTML = '<div class="vp-err">Error cargando negocios</div>'; return; }
+      var empresas = r.body;
+      if (!empresas.length) { box.innerHTML = '<div class="empty"><span>Sin negocios todavía — crea el primero.</span></div>'; return; }
+      box.innerHTML = empresas.map(function(e) {
+        return '<div class="vp-row">' +
+          '<div><div class="vp-empresa__name"><span class="vp-dot ' + (e.activo ? 'vp-dot--on' : 'vp-dot--off') + '"></span>' + esc(e.nombre) + '</div>' +
+          '<div class="vp-empresa__meta">' + esc(e.slug) + ' · plan ' + esc(e.plan_status) + ' · BD ' + fmtBytes(e.db_size_bytes) + ' · creado ' + esc(String(e.created_at).slice(0,10)) + '</div></div>' +
+          '<button class="vp-btn vp-btn--ghost" data-toggle="' + e.id + '" data-activo="' + e.activo + '">' + (e.activo ? 'Suspender' : 'Activar') + '</button>' +
+        '</div>';
+      }).join('');
+      box.querySelectorAll('[data-toggle]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var nuevoEstado = btn.dataset.activo === '1' ? false : true;
+          api('/api/plataforma/empresas/' + btn.dataset.toggle + '/estado', { method: 'POST', body: JSON.stringify({ activo: nuevoEstado }) })
+            .then(function() { cargarEmpresas(); });
+        });
+      });
+    });
+  }
+
+  function toggleFormNuevo() {
+    var box = document.getElementById('formNuevo');
+    if (box.style.display === 'block') { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    box.innerHTML =
+      '<h3 style="font-family:var(--f-title);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-ink, var(--gold));margin-bottom:12px">Nuevo negocio</h3>' +
+      '<div class="vp-field"><label>Nombre del negocio</label><input id="nNombre" placeholder="Ej: Finca Raíz del Valle"></div>' +
+      '<div class="vp-field"><label>Nombre del primer admin</label><input id="nAdminNombre" placeholder="Ej: Juan Pérez"></div>' +
+      '<div class="vp-field"><label>Teléfono del admin (+57...)</label><input id="nAdminTel" placeholder="+573001234567"></div>' +
+      '<div class="vp-field"><label>PIN de 4 dígitos</label><input id="nAdminPin" maxlength="4" inputmode="numeric" placeholder="1234"></div>' +
+      '<button class="vp-btn" id="crearBtn">Crear negocio</button>' +
+      '<div class="vp-err" id="nErr" style="display:none"></div>';
+    document.getElementById('crearBtn').addEventListener('click', function() {
+      var body = {
+        nombre: document.getElementById('nNombre').value.trim(),
+        admin_nombre: document.getElementById('nAdminNombre').value.trim(),
+        admin_telefono: document.getElementById('nAdminTel').value.trim(),
+        admin_pin: document.getElementById('nAdminPin').value.trim(),
+      };
+      var btn = document.getElementById('crearBtn'); btn.disabled = true; btn.textContent = 'Creando…';
+      api('/api/plataforma/empresas', { method: 'POST', body: JSON.stringify(body) }).then(function(r) {
+        btn.disabled = false; btn.textContent = 'Crear negocio';
+        if (r.ok) { box.style.display = 'none'; cargarEmpresas(); return; }
+        var err = document.getElementById('nErr');
+        err.textContent = (r.body && (r.body.detalle || r.body.error)) || 'Error al crear';
+        err.style.display = 'block';
+      });
+    });
+  }
+
+  api('/api/plataforma/me').then(function(r) { r.ok ? renderApp() : renderLogin(); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Instagram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS, api, toast } = SPOS;
+  const ctx = await SPOS.mount({ active:'integrations', title:'Configuración de Instagram', crumb:'Integraciones · Instagram', padded:true, adminOnly:true });
+  if (!ctx) return;
+
+  const st = await api('/api/channels/status') || {};
+  const on = st.instagram === true;
+
+  ctx.content.innerHTML = `<div class="os-content__max" style="max-width:760px">
+    <div class="card card--pad rise rise-1" style="margin-bottom:var(--s3)">
+      <div class="u-between" style="margin-bottom:var(--s3)">
+        <div class="u-row u-gap2">
+          <div class="metric__icon" style="background:rgba(200,164,90,.14);color:#C8A45A">${ICONS.msg}</div>
+          <div><div class="t-h3">Instagram Direct</div><div class="t-dim3" style="font-size:13px">Mensajes directos de Instagram Business</div></div>
+        </div>
+        ${on ? `<span class="badge badge--green"><span class="dot dot--green"></span>Conectado</span>`
+             : `<span class="badge badge--amber"><span class="dot dot--gold"></span>Sin token</span>`}
+      </div>
+      <div class="surface" style="padding:14px">
+        <div class="t-label" style="margin-bottom:8px">Estado</div>
+        <div class="u-row u-gap1"><span class="dot dot--${on?'green':'mute'}"></span><span style="font-size:14px;font-weight:500">${on?'Operativo — token y cuenta configurados':'Pendiente: configura el token de Instagram y el ID de la cuenta'}</span></div>
+      </div>
+    </div>
+
+    <div class="card card--pad rise rise-2">
+      <div class="t-h3" style="margin-bottom:4px">Configuración del token</div>
+      <div class="t-dim3" style="font-size:12px;margin-bottom:14px">Genera un token en Meta for Developers → tu app → Instagram → Generar token. Necesita el permiso <code>instagram_basic</code> y <code>instagram_manage_messages</code>.</div>
+      <form id="tokenForm" style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <label class="t-label" style="margin-bottom:6px;display:block">Token de acceso</label>
+          <input name="token" id="tokenInput" placeholder="EAAxxxx..." required class="input" style="width:100%">
+        </div>
+        <div>
+          <label class="t-label" style="margin-bottom:6px;display:block">ID de la cuenta de Instagram Business</label>
+          <input name="igUserId" id="igUserIdInput" placeholder="Ej: 17841400123456789" required class="input" style="width:100%">
+        </div>
+        <div class="u-row u-gap2" style="margin-top:6px;justify-content:flex-end">
+          <a class="btn btn--ghost btn--sm" href="/os/integraciones.html">Volver</a>
+          <button type="submit" class="btn btn--gold btn--sm">${ICONS.check}Guardar token</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+
+  document.getElementById('tokenForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const token = document.getElementById('tokenInput').value.trim();
+    const igUserId = document.getElementById('igUserIdInput').value.trim();
+    if (!token || !igUserId) { toast('Todos los campos son requeridos', 'err'); return; }
+    try {
+      const r = await api('/api/channels/instagram/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, igUserId }),
+      });
+      if (r && r.ok) {
+        toast('Instagram conectado correctamente', 'ok');
+        setTimeout(() => location.reload(), 800);
+      } else {
+        toast(r?.error || 'Error al guardar', 'err');
+      }
+    } catch (err) {
+      toast('Error de conexión', 'err');
+    }
+  });
+})();
+</script>
+</body>
+</html>

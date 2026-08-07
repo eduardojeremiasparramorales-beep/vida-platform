@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Calendario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  .cal-head { display: flex; align-items: center; gap: 12px; margin-bottom: var(--s3); }
+  .cal-head h2 { font-family: var(--f-title); font-size: 17px; color: var(--text); text-transform: capitalize; flex: 1; }
+  .cal-nav { background: var(--bg-3); border: 1px solid var(--border); color: var(--text-2); width: 30px; height: 30px; border-radius: var(--r-sm); cursor: pointer; font-size: 15px; }
+  .cal-nav:hover { color: var(--gold); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cal-wd { font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em; text-align: center; padding: 4px 0; }
+  .cal-day { background: var(--bg-1); border: 1px solid var(--border-soft); border-radius: 10px; min-height: 90px; padding: 7px; display: flex; flex-direction: column; gap: 4px; }
+  .cal-day.otro { opacity: .35; }
+  .cal-day.hoy { border-color: var(--gold-line); background: var(--gold-soft); }
+  .cal-day__n { font-size: 11.5px; color: var(--text-3); font-weight: 600; }
+  .cal-day.hoy .cal-day__n { color: var(--gold); }
+  .cal-ev { border-radius: 6px; padding: 3px 7px; font-size: 10.5px; font-weight: 500; cursor: pointer; background: var(--bg-3); color: var(--text-2); border-left: 2px solid var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-ev.hecha { border-left-color: var(--green); opacity: .55; text-decoration: line-through; }
+  .cal-ev.cancelada { border-left-color: var(--red); opacity: .4; text-decoration: line-through; }
+  .prox-item { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border-soft); }
+  .prox-item__fecha { font-size: 11px; color: var(--gold); min-width: 88px; font-variant-numeric: tabular-nums; }
+  .prox-item__info { flex: 1; min-width: 0; }
+  .prox-item__t { font-size: 13px; font-weight: 600; color: var(--text); }
+  .prox-item__s { font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
+  .prox-btn { background: var(--bg-3); border: 1px solid var(--border); color: var(--text-2); height: 26px; padding: 0 10px; border-radius: var(--r-sm); font-size: 11px; cursor: pointer; font-family: var(--f-ui); }
+  .prox-btn:hover { color: var(--green); border-color: var(--green); }
+  .prox-btn.rojo:hover { color: var(--red); border-color: var(--red); }
+  /* Modal crear cita */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.42); z-index: 300; display: none; align-items: center; justify-content: center; backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); }
+  .modal-bg.show { display: flex; }
+  .modal { background: var(--bg-1); border: 1px solid var(--border-strong); border-radius: var(--r); width: min(420px, calc(100vw - 32px)); padding: var(--s3); }
+  .modal h3 { font-family: var(--f-title); font-size: 15px; margin-bottom: var(--s3); color: var(--text); }
+  .m-field { margin-bottom: 12px; }
+  .m-field label { display: block; font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 5px; }
+  .m-field input, .m-field select, .m-field textarea { width: 100%; background: var(--bg-3); border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--text); padding: 9px 12px; font-family: var(--f-ui); font-size: 13px; outline: none; }
+  .m-field input:focus, .m-field select:focus, .m-field textarea:focus { border-color: var(--gold-line); }
+  .m-actions { display: flex; gap: 8px; margin-top: var(--s2); }
+  .m-actions button { flex: 1; height: 38px; border-radius: var(--r-sm); font-weight: 600; font-size: 13px; cursor: pointer; font-family: var(--f-ui); border: none; }
+  .m-ok { background: var(--gold); color: #000; }
+  .m-cancel { background: var(--bg-3); color: var(--text-2); border: 1px solid var(--border) !important; }
+  @media (max-width: 720px) { .cal-day { min-height: 64px; } }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const { ICONS, api, toast } = SPOS;
+
+  const ctx = await SPOS.mount({
+    active: 'calendar', title: 'Calendario', crumb: 'Citas y seguimientos', padded: true,
+    action: `<button class="btn btn--gold btn--sm" id="nueva">${ICONS.plus}Nueva cita</button>`
+  });
+  if (!ctx) return;
+
+  let citas = [], leads = [];
+  let vista = new Date(); vista.setDate(1);
+
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const DIAS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function fechaLocal(ts) { const d = new Date(String(ts).replace(' ', 'T')); return isNaN(d) ? null : d; }
+  function fmtFecha(d) { return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }) + ' · ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }); }
+  function mismoDia(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+
+  ctx.content.innerHTML = `
+   <div class="os-content__max">
+    <div class="cal-head">
+      <button class="cal-nav" id="prev">‹</button>
+      <h2 id="mesTitulo"></h2>
+      <button class="cal-nav" id="next">›</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="t-label" style="margin:var(--s4) 0 var(--s2)">Próximas citas</div>
+    <div id="proximas"></div>
+   </div>
+   <div class="modal-bg" id="modalBg">
+     <form class="modal" id="fCita">
+       <h3>Nueva cita</h3>
+       <div class="m-field"><label>Título</label><input id="cTitulo" required maxlength="120" placeholder="Visita al lote, llamada de seguimiento…"></div>
+       <div class="m-field"><label>Lead (opcional)</label><select id="cLead"><option value="">— Sin lead —</option></select></div>
+       <div class="m-field"><label>Fecha y hora</label><input id="cFecha" type="datetime-local" required></div>
+       <div class="m-field"><label>Notas</label><textarea id="cNotas" rows="2" maxlength="500"></textarea></div>
+       <div class="m-actions">
+         <button type="button" class="m-cancel" id="cCancelar">Cancelar</button>
+         <button type="submit" class="m-ok">Agendar</button>
+       </div>
+     </form>
+   </div>`;
+
+  async function cargar() {
+    const [rc, rl] = await Promise.all([
+      api('/api/citas'),
+      api(ctx.me.rol === 'admin' ? '/api/leads' : '/api/mis-leads'),
+    ]);
+    citas = Array.isArray(rc) ? rc : [];
+    leads = Array.isArray(rl) ? rl : [];
+    render();
+  }
+
+  function render() {
+    document.getElementById('mesTitulo').textContent = MESES[vista.getMonth()] + ' ' + vista.getFullYear();
+    const grid = document.getElementById('calGrid');
+    const hoy = new Date();
+
+    // Lunes = inicio de semana
+    const primerDia = new Date(vista);
+    let offset = (primerDia.getDay() + 6) % 7;
+    const inicio = new Date(primerDia); inicio.setDate(1 - offset);
+
+    let html = DIAS.map(d => `<div class="cal-wd">${d}</div>`).join('');
+    const dia = new Date(inicio);
+    for (let i = 0; i < 42; i++) {
+      const esMes = dia.getMonth() === vista.getMonth();
+      const esHoy = mismoDia(dia, hoy);
+      const delDia = citas.filter(c => { const f = fechaLocal(c.fecha); return f && mismoDia(f, dia); });
+      html += `<div class="cal-day${esMes ? '' : ' otro'}${esHoy ? ' hoy' : ''}">
+        <div class="cal-day__n">${dia.getDate()}</div>
+        ${delDia.map(c => `<div class="cal-ev ${c.estado}" title="${esc(c.titulo)}">${esc(c.titulo)}</div>`).join('')}
+      </div>`;
+      dia.setDate(dia.getDate() + 1);
+    }
+    grid.innerHTML = html;
+
+    // Próximas (pendientes desde hoy)
+    const ahora = new Date();
+    const prox = citas
+      .filter(c => c.estado === 'pendiente' && fechaLocal(c.fecha) >= new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()))
+      .slice(0, 15);
+    const cont = document.getElementById('proximas');
+    if (!prox.length) {
+      cont.innerHTML = `<div class="t-dim3" style="font-size:12.5px;padding:8px 0">No hay citas pendientes. Agenda la primera con "Nueva cita".</div>`;
+    } else {
+      cont.innerHTML = prox.map(c => {
+        const f = fechaLocal(c.fecha);
+        return `<div class="prox-item">
+          <span class="prox-item__fecha">${f ? fmtFecha(f) : '—'}</span>
+          <div class="prox-item__info">
+            <div class="prox-item__t">${esc(c.titulo)}</div>
+            <div class="prox-item__s">${esc(c.customer_name || 'Sin lead')} ${c.vendedor_nombre ? '· ' + esc(c.vendedor_nombre) : ''}${c.notas ? ' · ' + esc(c.notas) : ''}</div>
+          </div>
+          <button class="prox-btn" data-id="${c.id}" data-e="hecha">✓ Hecha</button>
+          <button class="prox-btn rojo" data-id="${c.id}" data-e="cancelada">✕</button>
+        </div>`;
+      }).join('');
+      cont.querySelectorAll('.prox-btn').forEach(b =>
+        b.addEventListener('click', () => cambiarEstado(Number(b.dataset.id), b.dataset.e)));
+    }
+  }
+
+  async function cambiarEstado(id, estado) {
+    const r = await api('/api/citas/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado }) });
+    if (r) { toast(estado === 'hecha' ? 'Cita completada' : 'Cita cancelada', 'ok'); await cargar(); }
+    else toast('Error al actualizar', 'err');
+  }
+
+  /* Modal */
+  const modalBg = document.getElementById('modalBg');
+  document.getElementById('nueva').addEventListener('click', () => {
+    const sel = document.getElementById('cLead');
+    sel.innerHTML = '<option value="">— Sin lead —</option>' +
+      leads.map(l => `<option value="${l.id}">${esc(l.customer_name || l.customer_phone)}</option>`).join('');
+    const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0);
+    document.getElementById('cFecha').value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    modalBg.classList.add('show');
+    document.getElementById('cTitulo').focus();
+  });
+  document.getElementById('cCancelar').addEventListener('click', () => modalBg.classList.remove('show'));
+  modalBg.addEventListener('click', e => { if (e.target === modalBg) modalBg.classList.remove('show'); });
+
+  document.getElementById('fCita').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const body = {
+      titulo: document.getElementById('cTitulo').value.trim(),
+      leadId: document.getElementById('cLead').value || null,
+      fecha: document.getElementById('cFecha').value.replace('T', ' ') + ':00',
+      notas: document.getElementById('cNotas').value.trim(),
+    };
+    const r = await api('/api/citas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (r && r.ok) {
+      toast('Cita agendada', 'ok');
+      modalBg.classList.remove('show');
+      document.getElementById('fCita').reset();
+      await cargar();
+    } else toast('Error al agendar', 'err');
+  });
+
+  document.getElementById('prev').addEventListener('click', () => { vista.setMonth(vista.getMonth() - 1); render(); });
+  document.getElementById('next').addEventListener('click', () => { vista.setMonth(vista.getMonth() + 1); render(); });
+
+  await cargar();
+})();
+</script>
+</body>
+</html>

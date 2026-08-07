@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · SP Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+.insight { border-left: 3px solid var(--gold); padding-left: var(--s2); margin-bottom: var(--s2); }
+.insight.critica { border-color: var(--red); }
+.insight.alta { border-color: var(--amber); }
+.insight.media { border-color: var(--blue); }
+.insight.baja { border-color: var(--text-3); }
+.insight__tipo { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+.insight__tipo.oportunidad { color: var(--green); }
+.insight__tipo.alerta { color: var(--red); }
+.insight__tipo.tendencia { color: var(--blue); }
+.insight__tipo.recomendacion { color: var(--gold); }
+.insight__titulo { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.insight__desc { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+.insight__accion { font-size: 12px; color: var(--gold); margin-top: 6px; font-weight: 500; }
+.resumen { background: var(--gold-soft); border: 1px solid var(--gold-line); border-radius: var(--r); padding: var(--s3); margin-bottom: var(--s3); }
+.resumen__text { font-size: 14px; color: var(--gold); font-weight: 500; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+.loading-pulse { animation: pulse 1.5s infinite; }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS, api } = SPOS;
+  const ctx = await SPOS.mount({ active: 'intelligence', title: 'SP Intelligence', crumb: 'Motor predictivo de la operación', padded: true });
+
+  const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  ctx.content.innerHTML = `
+   <div class="os-content__max">
+    <div class="u-between" style="margin-bottom:var(--s3)">
+      <div>
+        <div class="t-h2">SP Intelligence</div>
+        <div class="t-dim3" style="font-size:13px;margin-top:4px">Análisis predictivo de la operación</div>
+      </div>
+      <div class="u-row u-gap2">
+        <button class="btn btn--ghost btn--sm" id="btnRefresh">${ICONS.refresh || '↻'} Actualizar</button>
+        <button class="btn btn--gold btn--sm" id="btnNew">Generar nuevos insights</button>
+      </div>
+    </div>
+    <div id="resumenBox" class="resumen" style="display:none"><div class="resumen__text" id="resumenText"></div></div>
+    <div class="grid grid--4" style="margin-bottom:var(--s3)" id="statsGrid"></div>
+    <div id="insightsList"><div class="empty loading-pulse">Analizando la operación…</div></div>
+   </div>`;
+
+  document.getElementById('btnRefresh').addEventListener('click', cargar);
+  document.getElementById('btnNew').addEventListener('click', async () => {
+    document.getElementById('insightsList').innerHTML = '<div class="empty loading-pulse">Generando nuevos insights…</div>';
+    await api('/api/intelligence/insights', { method: 'POST' }); // force refresh
+    await cargar();
+  });
+
+  async function cargar() {
+    const [insights, datos] = await Promise.all([
+      api('/api/intelligence/insights'),
+      api('/api/intelligence/datos'),
+    ]);
+
+    // Stats
+    const op = datos ? datos.operacion : {};
+    const grid = document.getElementById('statsGrid');
+    grid.innerHTML = `
+      <div class="metric card--float"><div class="metric__label">Leads activos</div><div class="metric__value">${op.totalLeads || 0}</div></div>
+      <div class="metric card--float"><div class="metric__label">Sin respuesta >24h</div><div class="metric__value" style="color:var(--red)">${op.sinRespuestaCount || 0}</div></div>
+      <div class="metric card--float"><div class="metric__label">Mensajes 24h</div><div class="metric__value">${(op.mensajesEntrantes24h || 0) + (op.mensajesSalientes24h || 0)}</div></div>
+      <div class="metric card--float"><div class="metric__label">Leads fríos >7d</div><div class="metric__value" style="color:var(--amber)">${op.leadsFriosCount || 0}</div></div>
+    `;
+
+    // Resumen
+    const resumenBox = document.getElementById('resumenBox');
+    if (insights && insights.resumen) {
+      resumenBox.style.display = '';
+      document.getElementById('resumenText').textContent = insights.resumen;
+    }
+
+    // Insights
+    const list = document.getElementById('insightsList');
+    if (!insights || !insights.insights || !insights.insights.length) {
+      list.innerHTML = '<div class="empty">No hay insights disponibles. Haz clic en "Generar nuevos insights".</div>';
+      return;
+    }
+
+    list.innerHTML = insights.insights.map(i => `
+      <div class="card insight ${i.prioridad}" style="padding:var(--s3);margin-bottom:var(--s2)">
+        <div class="insight__tipo ${i.tipo}">${esc(i.tipo)}</div>
+        <div class="insight__titulo">${esc(i.titulo)}</div>
+        <div class="insight__desc">${esc(i.descripcion)}</div>
+        ${i.accion ? `<div class="insight__accion">→ ${esc(i.accion)}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  await cargar();
+})();
+</script>
+</body>
+</html>

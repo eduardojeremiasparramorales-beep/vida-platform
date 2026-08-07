@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Chat IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+.ia-wrap { display:flex; flex-direction:column; height:100%; min-height:520px; }
+.ia-bar { display:flex; gap:10px; align-items:center; padding:12px 20px; border-bottom:1px solid var(--border-soft); background:var(--bg-0); flex-wrap:wrap; }
+.ia-bar select, .ia-bar input { background:var(--bg-2); border:1px solid var(--border); border-radius:10px; color:var(--text); padding:9px 12px; font-family:var(--f-ui); font-size:12.5px; outline:none; }
+.ia-bar select { min-width:100px; cursor:pointer; }
+.ia-bar .ia-model { flex:1; min-width:100px; }
+.ia-bar label { font-size:11px; color:var(--text-3); letter-spacing:.04em; }
+.ia-gear { background:var(--bg-3); border:1px solid var(--border); border-radius:10px; color:var(--text-2); padding:9px 13px; font-size:12.5px; cursor:pointer; white-space:nowrap; }
+.ia-gear:hover { color:var(--gold); border-color:var(--gold); }
+.ia-warn { padding:8px 20px; background:rgba(200,164,90,.1); border-bottom:1px solid var(--border-soft); color:var(--gold); font-size:12px; display:none; }
+.ia-warn a { color:var(--gold); text-decoration:underline; cursor:pointer; }
+#chatBox { flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:14px; min-height:0; }
+.msg { max-width:78%; padding:12px 16px; border-radius:14px; font-size:13.5px; line-height:1.5; word-wrap:break-word; white-space:pre-wrap; animation:msgIn .2s ease; }
+.msg.user { align-self:flex-end; background:var(--gold); color:#000; border-bottom-right-radius:4px; }
+.msg.bot { align-self:flex-start; background:var(--bg-2); color:var(--text); border:1px solid var(--border-soft); border-bottom-left-radius:4px; }
+.msg .msg-meta { display:block; font-size:10px; opacity:.5; margin-top:6px; }
+@keyframes msgIn { from { opacity:0; transform:translateY(8px) scale(.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+.typing { align-self:flex-start; display:flex; gap:4px; padding:14px 20px; background:var(--bg-2); border:1px solid var(--border-soft); border-radius:14px; border-bottom-left-radius:4px; }
+.typing span { width:7px; height:7px; border-radius:50%; background:var(--text-3); animation:blink 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay:.2s; } .typing span:nth-child(3) { animation-delay:.4s; }
+@keyframes blink { 0%,100% { opacity:.3; } 50% { opacity:1; } }
+.empty-chat { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-3); text-align:center; gap:12px; padding:20px; }
+.empty-chat h3 { font-family:var(--f-title); font-size:14px; letter-spacing:.12em; color:var(--text-2); }
+.ia-composer { padding:14px 20px; border-top:1px solid var(--border-soft); background:var(--bg-0); display:flex; gap:10px; align-items:flex-end; }
+.ia-composer textarea { width:100%; background:var(--bg-2); border:1px solid var(--border); border-radius:12px; color:var(--text); padding:12px 14px; font-family:var(--f-ui); font-size:13.5px; outline:none; resize:none; max-height:140px; line-height:1.4; }
+.ia-btn { height:42px; width:42px; border-radius:12px; border:none; display:grid; place-items:center; flex-shrink:0; cursor:pointer; font-size:18px; }
+.ia-btn.send { background:var(--gold); color:#000; } .ia-btn.clear { background:var(--bg-3); color:var(--text-3); border:1px solid var(--border); }
+/* Modal proveedores */
+.pm-ov { position:fixed; inset:0; background:rgba(0,0,0,.42); backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+.pm-ov.show { display:flex; }
+.pm { background:var(--bg-1); border:1px solid var(--border); border-radius:18px; width:100%; max-width:560px; max-height:88vh; overflow-y:auto; padding:22px; }
+.pm h3 { font-family:var(--f-title); font-size:15px; margin-bottom:4px; }
+.pm .pm-sub { font-size:12px; color:var(--text-3); margin-bottom:16px; }
+.pm-presets { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.pm-preset { background:var(--bg-3); border:1px solid var(--border); border-radius:9px; color:var(--text-2); padding:7px 12px; font-size:12px; cursor:pointer; }
+.pm-preset:hover { border-color:var(--gold); color:var(--gold); }
+.pm-card { border:1px solid var(--border-soft); border-radius:12px; padding:14px; margin-bottom:12px; background:var(--bg-2); }
+.pm-card .pm-row { display:flex; gap:10px; align-items:center; margin-bottom:8px; }
+.pm-card input { width:100%; background:var(--bg-0); border:1px solid var(--border); border-radius:9px; color:var(--text); padding:9px 11px; font-size:12.5px; outline:none; }
+.pm-card label { font-size:10.5px; color:var(--text-3); display:block; margin-bottom:3px; letter-spacing:.04em; }
+.pm-fld { flex:1; }
+.pm-del { background:none; border:none; color:var(--red); cursor:pointer; font-size:12px; padding:4px 8px; }
+.pm-def { display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-2); cursor:pointer; }
+.pm-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:8px; }
+.pm-btn { border:none; border-radius:10px; padding:10px 18px; font-size:13px; cursor:pointer; font-family:var(--f-ui); }
+.pm-btn.save { background:var(--gold); color:#000; font-weight:600; }
+.pm-btn.ghost { background:var(--bg-3); color:var(--text-2); border:1px solid var(--border); }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  // Helpers locales defensivos (no dependen de que SPOS los exporte en una versión cacheada)
+  const S = window.SPOS || {};
+  const api = S.api || (async (path, opts) => {
+    try { const r = await fetch(path, Object.assign({ headers: { Accept: 'application/json' }, credentials: 'include' }, opts || {})); if (r.status === 401) return null; if (!r.ok) throw 0; return await r.json(); } catch (e) { return null; }
+  });
+  const toast = S.toast || ((m) => console.log('[toast]', m));
+  const esc = S.esc || ((s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
+
+  const ctx = S.mount ? await S.mount({ active: 'ia-chat', title: 'Chat IA', crumb: 'Copiloto SP — cualquier modelo, tu API key', padded: false }) : null;
+  if (!ctx || !ctx.content) { if (S.mount && !ctx) return; document.body.innerHTML = '<div style="color:#fff;padding:40px;font-family:sans-serif">No se pudo cargar el shell. Recarga con Ctrl+Shift+R.</div>'; return; }
+
+  // ── UI: se dibuja SIEMPRE primero, antes de cualquier await ──
+  ctx.content.innerHTML =
+    '<div class="ia-wrap">' +
+      '<div class="ia-bar">' +
+        '<label>Proveedor</label>' +
+        '<select id="provSel"><option value="">(cargando…)</option></select>' +
+        '<label>Modelo</label>' +
+        '<input class="ia-model" id="modelInp" list="modelList" placeholder="ej: openai/gpt-4o" autocomplete="off">' +
+        '<datalist id="modelList"></datalist>' +
+        '<button class="ia-gear" id="btnProv">⚙ Proveedores</button>' +
+      '</div>' +
+      '<div class="ia-warn" id="iaWarn"></div>' +
+      '<div id="chatBox"><div class="empty-chat">' +
+        '<h3>✦ Copiloto SP</h3>' +
+        '<p style="font-size:13px;max-width:340px" id="emptyMsg">Elige un proveedor y un modelo arriba, y pregúntame lo que necesites: redactar mensajes, analizar leads, estrategias de venta o cualquier duda.</p>' +
+        '<button id="emptyAddBtn" style="display:none;margin-top:8px;background:var(--gold);color:#000;border:none;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--f-ui)">+ Agregar proveedor</button>' +
+      '</div></div>' +
+      '<div class="ia-composer">' +
+        '<textarea id="chatInput" rows="1" placeholder="Escribe un mensaje…" ' +
+          'oninput="this.style.height=\'auto\';this.style.height=Math.min(this.scrollHeight,140)+\'px\'" ' +
+          'onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();window.__aiEnviar&&window.__aiEnviar()}"></textarea>' +
+        '<button id="btnSend" class="ia-btn send" title="Enviar">➤</button>' +
+        '<button id="btnClear" class="ia-btn clear" title="Limpiar conversación">✕</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="pm-ov" id="pmOv"><div class="pm">' +
+      '<h3>Proveedores de IA</h3>' +
+      '<div class="pm-sub">Agrega cualquier proveedor compatible con OpenAI. Haz clic en un preset para añadirlo y pega tu API Key.</div>' +
+      '<div class="pm-presets" id="pmPresets"></div>' +
+      '<div id="pmList"></div>' +
+      '<div class="pm-actions"><button class="pm-btn ghost" id="pmCancel">Cancelar</button><button class="pm-btn save" id="pmSave">Guardar</button></div>' +
+    '</div></div>';
+
+  const $ = (id) => document.getElementById(id);
+  const chatBox = $('chatBox'), chatInput = $('chatInput'), btnSend = $('btnSend'), btnClear = $('btnClear');
+  const provSel = $('provSel'), modelInp = $('modelInp'), modelList = $('modelList'), iaWarn = $('iaWarn');
+
+  let history = [], providers = [], presets = {}, defaultId = '';
+
+  /* ── Chat ── */
+  function addMsg(role, text, meta) {
+    const empty = chatBox.querySelector('.empty-chat'); if (empty) empty.remove();
+    const div = document.createElement('div');
+    div.className = 'msg ' + role; div.textContent = text;
+    if (meta) { const s = document.createElement('span'); s.className = 'msg-meta'; s.textContent = meta; div.appendChild(s); }
+    chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight;
+    history.push({ role: role === 'user' ? 'Usuario' : 'Asistente', content: text });
+  }
+  function showTyping() { const d = document.createElement('div'); d.className = 'typing'; d.id = 'typingIndicator'; d.innerHTML = '<span></span><span></span><span></span>'; chatBox.appendChild(d); chatBox.scrollTop = chatBox.scrollHeight; }
+  function hideTyping() { const el = $('typingIndicator'); if (el) el.remove(); }
+
+  async function enviar() {
+    const msg = (chatInput.value || '').trim(); if (!msg) return;
+    const model = (modelInp.value || '').trim();
+    if (!model) { toast('Elige o escribe un modelo', 'err'); modelInp.focus(); return; }
+    if (provSel.value) try { localStorage.setItem('sp_ai_model_' + provSel.value, model); } catch (e) {}
+    chatInput.value = ''; chatInput.style.height = 'auto';
+    addMsg('user', msg); btnSend.disabled = true; showTyping();
+    try {
+      const r = await api('/api/nlp/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, history: history.slice(0, -1), providerId: provSel.value, model }) });
+      hideTyping();
+      if (r && r.ok && r.reply) addMsg('bot', r.reply, r.model || model);
+      else addMsg('bot', 'Error: ' + ((r && r.error) || 'No se pudo conectar con la IA. ¿API key configurada para este proveedor?'));
+    } catch (e) { hideTyping(); addMsg('bot', 'Error de conexión: ' + e.message); }
+    btnSend.disabled = false; chatInput.focus();
+  }
+  window.__aiEnviar = enviar;
+  btnSend.addEventListener('click', enviar);
+  btnClear.addEventListener('click', () => {
+    if (!confirm('¿Limpiar la conversación?')) return;
+    history = [];
+    chatBox.innerHTML = '<div class="empty-chat"><h3>✦ Copiloto SP</h3><p style="font-size:13px;max-width:340px">Elige un proveedor y un modelo arriba, y pregúntame lo que necesites.</p></div>';
+  });
+
+  /* ── Proveedores / modelos ── */
+  const emptyMsg = $('emptyMsg'), emptyAddBtn = $('emptyAddBtn');
+  if (emptyAddBtn) emptyAddBtn.onclick = openModal;
+
+  // Aviso con campo rápido para pegar la API key de OpenRouter sin abrir el modal.
+  function quickKeyBanner(msg) {
+    iaWarn.style.display = 'block';
+    iaWarn.innerHTML = esc(msg) +
+      ' <span style="display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:6px">' +
+        '<input id="quickKey" type="password" autocomplete="off" placeholder="Pega tu API key de OpenRouter (sk-or-…)" ' +
+          'style="background:var(--bg-2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 10px;font-size:12px;min-width:180px;width:100%">' +
+        '<button id="quickSave" class="ia-gear" style="padding:6px 12px">Guardar y activar</button>' +
+        '<a id="warnCfg" style="cursor:pointer">más opciones →</a>' +
+      '</span>';
+    const wc = $('warnCfg'); if (wc) wc.onclick = openModal;
+    const qs = $('quickSave'); if (qs) qs.onclick = saveQuickKey;
+    const qk = $('quickKey'); if (qk) qk.addEventListener('keydown', e => { if (e.key === 'Enter') saveQuickKey(); });
+  }
+  async function saveQuickKey() {
+    const k = (($('quickKey') && $('quickKey').value) || '').trim();
+    if (!k) { toast('Pega tu API key primero', 'err'); return; }
+    const orBase = (presets.openrouter && presets.openrouter.baseUrl) || 'https://openrouter.ai/api/v1';
+    const list = (providers || []).map(p => ({ id: p.id, name: p.name, baseUrl: p.baseUrl, apiKey: '', models: p.models || [] }));
+    let or = list.find(p => p.id === 'openrouter' || String(p.baseUrl).includes('openrouter'));
+    if (or) or.apiKey = k; else { or = { id: 'openrouter', name: 'OpenRouter', baseUrl: orBase, apiKey: k, models: [] }; list.push(or); }
+    const r = await api('/api/ai/providers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ providers: list, defaultId: 'openrouter' }) });
+    if (r && r.ok) { toast('API key activada ✓', 'ok'); try { localStorage.setItem('sp_ai_provider', 'openrouter'); } catch (e) {} await loadProviders(); }
+    else toast('Error al guardar la key', 'err');
+  }
+
+  async function loadProviders() {
+    let r;
+    try { r = await api('/api/ai/providers'); } catch (e) { r = null; }
+    if (!r || !r.providers) {
+      iaWarn.style.display = 'block';
+      iaWarn.innerHTML = 'No se pudieron cargar los proveedores. <a id="warnCfg">Configurar ahora →</a>';
+      const wc = $('warnCfg'); if (wc) wc.onclick = openModal;
+      provSel.innerHTML = '<option value="">(sin proveedores)</option>';
+      if (emptyMsg) emptyMsg.textContent = 'No hay conexión con el servidor. Haz clic en "Configurar" para agregar un proveedor manualmente.';
+      if (emptyAddBtn) emptyAddBtn.style.display = 'none';
+      return;
+    }
+    providers = r.providers || []; presets = r.presets || {};
+    defaultId = r.defaultId || (providers[0] && providers[0].id) || '';
+    if (!providers.length || !providers.some(p => p.hasKey)) {
+      quickKeyBanner('Activa la IA en segundos:');
+      if (emptyMsg) emptyMsg.textContent = 'Pega tu API key de OpenRouter arriba y podrás usar todos los modelos gratis.';
+      if (emptyAddBtn) emptyAddBtn.style.display = 'none';
+    } else {
+      iaWarn.style.display = 'none';
+      if (emptyMsg) emptyMsg.textContent = 'Elige un proveedor y modelo arriba, o escribe un modelo personalizado.';
+      if (emptyAddBtn) emptyAddBtn.style.display = 'none';
+    }
+    provSel.innerHTML = providers.length
+      ? providers.map(p => `<option value="${esc(p.id)}">${esc(p.name)}${p.hasKey ? '' : ' (sin key)'}</option>`).join('')
+      : '<option value="">(sin proveedores)</option>';
+    let savedProv = ''; try { savedProv = localStorage.getItem('sp_ai_provider') || ''; } catch (e) {}
+    provSel.value = (savedProv && providers.some(p => p.id === savedProv)) ? savedProv : defaultId;
+    await onProviderChange(false);
+  }
+
+  async function onProviderChange(resetModel) {
+    const p = providers.find(x => x.id === provSel.value);
+    try { localStorage.setItem('sp_ai_provider', provSel.value); } catch (e) {}
+    const isOR = p && String(p.baseUrl || '').includes('openrouter.ai');
+    const suggested = (p && p.models) || [];
+    modelList.innerHTML = suggested.map(m => `<option value="${esc(m)}">`).join('');
+    let savedModel = ''; try { savedModel = localStorage.getItem('sp_ai_model_' + provSel.value) || ''; } catch (e) {}
+    if (resetModel || !modelInp.value) modelInp.value = savedModel || suggested[0] || '';
+    if (p && p.hasKey) {
+      const mr = await api('/api/ai/models?providerId=' + encodeURIComponent(provSel.value));
+      const list = (mr && mr.models) || [];
+      if (list.length) {
+        // list = [{ id, free }]. En OpenRouter mostramos primero los GRATIS (marcados).
+        const free = list.filter(m => m && m.free).map(m => m.id);
+        const all = list.map(m => (m && m.id) || m).filter(Boolean);
+        const ordered = isOR ? free.concat(all.filter(id => free.indexOf(id) === -1)) : all;
+        modelList.innerHTML = ordered.map(id =>
+          `<option value="${esc(id)}"${free.indexOf(id) !== -1 ? ' label="⚡ gratis"' : ''}>`).join('');
+        // Por defecto en OpenRouter, un modelo GRATIS que sí funcione.
+        const wantDefault = resetModel || !modelInp.value || (isOR && free.length && free.indexOf(modelInp.value) === -1 && !savedModel);
+        if (wantDefault) modelInp.value = savedModel || (isOR && free.length ? free[0] : ordered[0]) || modelInp.value;
+      }
+    }
+  }
+  provSel.addEventListener('change', () => onProviderChange(true));
+  modelInp.addEventListener('change', () => { try { localStorage.setItem('sp_ai_model_' + provSel.value, (modelInp.value || '').trim()); } catch (e) {} });
+
+  /* ── Modal de proveedores ── */
+  const pmOv = $('pmOv'), pmList = $('pmList'), pmPresets = $('pmPresets');
+  let editing = [];
+  function renderPresets() {
+    const keys = Object.keys(presets);
+    pmPresets.innerHTML = keys.map(k => `<button class="pm-preset" data-preset="${esc(k)}">+ ${esc(presets[k].name)}</button>`).join('') +
+      '<button class="pm-preset" data-preset="__custom">+ Personalizado</button>';
+    pmPresets.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
+      const k = b.dataset.preset;
+      if (k === '__custom') { editing.push({ id: 'custom-' + (editing.length + 1) + '-' + Math.floor(performance.now()), name: 'Nuevo proveedor', baseUrl: '', apiKey: '', keyMask: '', models: [], hasKey: false }); renderList(); return; }
+      if (editing.some(e => e.id === k)) { toast('Ya está agregado', 'err'); return; }
+      const pr = presets[k];
+      editing.push({ id: k, name: pr.name, baseUrl: pr.baseUrl, apiKey: '', keyMask: '', models: [], hasKey: false });
+      renderList();
+    });
+  }
+  function renderList() {
+    pmList.innerHTML = editing.map((p, i) =>
+      '<div class="pm-card">' +
+        '<div class="pm-row"><div class="pm-fld"><label>Nombre</label><input data-f="name" data-i="' + i + '" value="' + esc(p.name || '') + '"></div><button class="pm-del" data-del="' + i + '">Quitar</button></div>' +
+        '<div class="pm-row"><div class="pm-fld"><label>Base URL</label><input data-f="baseUrl" data-i="' + i + '" value="' + esc(p.baseUrl || '') + '" placeholder="https://api.openai.com/v1"></div></div>' +
+        '<div class="pm-row"><div class="pm-fld"><label>API Key</label><input data-f="apiKey" data-i="' + i + '" type="password" autocomplete="off" value="" placeholder="' + (p.hasKey ? esc(p.keyMask) + ' (deja vacío para conservar)' : 'sk-...') + '"></div></div>' +
+        '<div class="pm-row"><div class="pm-fld"><label>Modelos sugeridos (coma, opcional)</label><input data-f="models" data-i="' + i + '" value="' + esc((p.models || []).join(', ')) + '" placeholder="openai/gpt-4o, anthropic/claude-3.5-sonnet"></div></div>' +
+        '<label class="pm-def"><input type="radio" name="pmdef" data-def="' + esc(p.id) + '" ' + (p.id === defaultId ? 'checked' : '') + '> Usar como predeterminado</label>' +
+      '</div>').join('') || '<div style="color:var(--text-3);font-size:12.5px;padding:8px 0">Sin proveedores. Agrégalos con los botones de arriba.</div>';
+    pmList.querySelectorAll('input[data-f]').forEach(inp => inp.oninput = () => {
+      const i = +inp.dataset.i, f = inp.dataset.f;
+      if (f === 'models') editing[i][f] = inp.value.split(',').map(s => s.trim()).filter(Boolean);
+      else editing[i][f] = inp.value;
+    });
+    pmList.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { editing.splice(+b.dataset.del, 1); renderList(); });
+    pmList.querySelectorAll('[data-def]').forEach(rb => rb.onchange = () => { defaultId = rb.dataset.def; });
+  }
+  function openModal() { editing = providers.map(p => Object.assign({}, p, { apiKey: '' })); renderPresets(); renderList(); pmOv.classList.add('show'); }
+  $('btnProv').onclick = openModal;
+  $('pmCancel').onclick = () => pmOv.classList.remove('show');
+  pmOv.onclick = e => { if (e.target === pmOv) pmOv.classList.remove('show'); };
+  $('pmSave').onclick = async () => {
+    const payload = editing.map(p => ({ id: p.id, name: p.name, baseUrl: p.baseUrl, apiKey: p.apiKey, models: p.models }));
+    const r = await api('/api/ai/providers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ providers: payload, defaultId }) });
+    if (r && r.ok) { toast('Proveedores guardados', 'ok'); pmOv.classList.remove('show'); await loadProviders(); }
+    else toast('Error al guardar', 'err');
+  };
+
+  // Carga de datos DESPUÉS de que la UI ya está visible; si falla, la UI sigue usable.
+  try { await loadProviders(); } catch (e) { console.error('loadProviders', e); }
+  chatInput.focus();
+})();
+</script>
+</body>
+</html>

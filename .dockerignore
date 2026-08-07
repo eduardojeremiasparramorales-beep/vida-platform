@@ -1,0 +1,19 @@
+# Dependencias (se reinstalan con npm ci dentro de la imagen)
+node_modules/
+
+# Datos y base SQLite (se persisten por volumen, no van en la imagen)
+data/
+*.db
+
+# Credenciales (se inyectan con env_file en docker-compose)
+.env
+
+# Historial y artefactos locales
+.git/
+.gitignore
+logs/
+*.log
+
+# Documentación y scripts que no afectan el runtime
+*.md
+deploy/

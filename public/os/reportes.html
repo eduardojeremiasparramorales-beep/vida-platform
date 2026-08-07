@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Reportes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  .rp-grid{ display:grid; grid-template-columns:1fr 1fr; gap:var(--s3); }
+  @media(max-width:900px){ .rp-grid{ grid-template-columns:1fr; } }
+  .rp-card{ padding:var(--s3); }
+  .rp-card h3{ font-size:13px; text-transform:uppercase; letter-spacing:.1em; color:var(--text-3); margin-bottom:var(--s2); }
+  .chart-bar{ display:flex; align-items:flex-end; gap:3px; height:140px; padding-top:8px; }
+  .chart-bar__col{ flex:1; min-width:4px; border-radius:3px 3px 0 0; background:var(--gold-line); position:relative; transition:height .6s var(--ease-out); cursor:pointer; }
+  .chart-bar__col:hover{ opacity:.7; }
+  .chart-bar__col .tip{ position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:var(--bg-1); border:1px solid var(--border); border-radius:6px; padding:2px 6px; font-size:10px; white-space:nowrap; color:var(--text); opacity:0; transition:opacity .15s; pointer-events:none; }
+  .chart-bar__col:hover .tip{ opacity:1; }
+  .chart-pie{ display:flex; align-items:center; gap:var(--s3); flex-wrap:wrap; }
+  .chart-pie__svg{ width:140px; height:140px; flex-shrink:0; }
+  .chart-pie__legend{ display:flex; flex-direction:column; gap:6px; font-size:12px; }
+  .chart-pie__item{ display:flex; align-items:center; gap:8px; }
+  .chart-pie__dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .rp-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  .rp-table th{ text-align:left; padding:8px 10px; color:var(--text-3); font-weight:500; border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+  .rp-table td{ padding:8px 10px; border-bottom:1px solid var(--border-soft); }
+  .rp-metric{ text-align:center; padding:var(--s2); background:var(--bg-3); border-radius:12px; }
+  .rp-metric__v{ font-size:28px; font-weight:700; color:var(--gold); }
+  .rp-metric__l{ font-size:11px; color:var(--text-3); margin-top:2px; text-transform:uppercase; letter-spacing:.06em; }
+  .hora-grid{ display:grid; grid-template-columns:repeat(24,1fr); gap:2px; }
+  .hora-cell{ text-align:center; font-size:9px; color:var(--text-3); padding:4px 0; border-radius:4px; background:var(--bg-3); }
+  .hora-cell.hot{ background:var(--gold-line); color:#0A0A0A; font-weight:600; }
+  .hora-cell.warm{ background:rgba(200,164,90,.3); color:var(--gold); }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS, api, fmt, avatarColor, initials } = SPOS;
+  const ctx = await SPOS.mount({
+    active: 'reportes', title: 'Reportes', crumb: 'Leons Group · Analítica avanzada',
+    padded: true,
+  });
+
+  let r = await api('/api/reportes');
+  if (!r) { ctx.content.innerHTML = '<div class="os-content__max"><div class="card" style="padding:var(--s4);text-align:center;color:var(--text-3)">Error al cargar reportes</div></div>'; return; }
+
+  const COLORS = ['var(--gold-line)','var(--blue)','var(--green)','var(--amber)','var(--red)','var(--text-3)','var(--gold)','var(--purple)'];
+  const ETQ_COLORS = { sin_clasificar:'var(--text-3)', interesado:'var(--blue)', negociacion:'var(--gold)', cita:'var(--amber)', vendido:'var(--green)' };
+
+  function barChart(data, valKey, labelKey, height, color){
+    const max = Math.max(1, ...data.map(d => d[valKey]));
+    return `<div class="chart-bar" style="height:${height}px">${data.map(d => {
+      const h = Math.max(2, (d[valKey] / max) * height);
+      return `<div class="chart-bar__col" style="height:${h}px;background:${color||'var(--gold-line)'}"><span class="tip">${d[labelKey]}: ${d[valKey]}</span></div>`;
+    }).join('')}</div>`;
+  }
+
+  function pieChart(data, valKey, labelKey, colors){
+    const total = data.reduce((s,d) => s + d[valKey], 0) || 1;
+    let cum = 0;
+    const slices = data.map((d,i) => {
+      const pct = d[valKey] / total;
+      const offset = cum * 360;
+      const angle = pct * 360;
+      const large = angle > 180 ? 1 : 0;
+      const startA = (offset - 90) * Math.PI / 180;
+      const endA = (offset + angle - 90) * Math.PI / 180;
+      const x1 = 70 + 60 * Math.cos(startA);
+      const y1 = 70 + 60 * Math.sin(startA);
+      const x2 = 70 + 60 * Math.cos(endA);
+      const y2 = 70 + 60 * Math.sin(endA);
+      cum += pct;
+      const c = colors[i % colors.length];
+      return { path: `M70 70 L${x1.toFixed(1)} ${y1.toFixed(1)} A60 60 0 ${large} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`, color: c, label: d[labelKey], val: d[valKey], pct: Math.round(pct * 100) };
+    });
+    return `<div class="chart-pie"><svg class="chart-pie__svg" viewBox="0 0 140 140">${slices.map(s => `<path d="${s.path}" fill="${s.color}" stroke="var(--bg-1)" stroke-width="1.5"/>`).join('')}</svg><div class="chart-pie__legend">${slices.map(s => `<div class="chart-pie__item"><span class="chart-pie__dot" style="background:${s.color}"></span>${s.label}: ${s.val} (${s.pct}%)</div>`).join('')}</div></div>`;
+  }
+
+  // Origen distribution
+  const origenEntries = Object.entries(r.origen).map(([k,v]) => ({ k, v })).sort((a,b) => b.v - a.v);
+
+  // Etiquetas para pastel
+  const etqEntries = Object.entries(r.porEtiqueta).filter(([,v]) => v > 0).map(([k,v]) => ({ k, v, label: { sin_clasificar:'Nuevo', interesado:'Interesado', negociacion:'Negociación', cita:'Cita', vendido:'Vendido' }[k] || k }));
+
+  // Horas pico
+  const maxHora = Math.max(1, ...r.horaDist.map(h => h.total));
+  const horaMap = {};
+  r.horaDist.forEach(h => horaMap[h.h] = h.total);
+
+  // Tabla vendedores
+  const vendRows = r.vendData.map(v => `
+    <tr>
+      <td><div class="u-row u-gap2"><div class="avatar avatar--sm" style="background:${avatarColor(v.nombre)}">${initials(v.nombre)}</div><div><div style="font-weight:500">${v.nombre}</div><div style="font-size:11px;color:var(--text-3)">${v.estado}</div></div></div></td>
+      <td class="t-num">${v.total}</td>
+      <td class="t-num">${v.activos}</td>
+      <td class="t-num">${v.vendidos}</td>
+      <td class="t-num">${v.respondidos}</td>
+      <td><span class="badge badge--${v.conversion>=15?'green':v.conversion>=8?'gold':'mute'}">${v.conversion}%</span></td>
+      <td class="t-num">${v.tiempoRespuesta != null ? v.tiempoRespuesta + ' min' : '—'}</td>
+    </tr>`).join('');
+
+  ctx.content.innerHTML = `
+    <div class="os-content__max">
+      <div class="u-between" style="margin-bottom:var(--s3);flex-wrap:wrap;gap:10px">
+        <div style="font-size:13px;color:var(--text-3)">Datos en vivo del CRM</div>
+        <a class="btn btn--ghost btn--sm" href="/api/leads/export.csv" download="reporte-leons-group.csv">${ICONS.download||''} Exportar CSV</a>
+      </div>
+      <!-- Métricas rápidas -->
+      <div class="grid grid--4 rise" style="margin-bottom:var(--s3)">
+        <div class="rp-metric rise"><div class="rp-metric__v">${fmt.n(r.totalLeads)}</div><div class="rp-metric__l">Leads totales</div></div>
+        <div class="rp-metric rise"><div class="rp-metric__v">${fmt.n(r.totalVendidos)}</div><div class="rp-metric__l">Vendidos</div></div>
+        <div class="rp-metric rise"><div class="rp-metric__v">${r.totalLeads ? Math.round(r.totalVendidos / r.totalLeads * 100) : 0}%</div><div class="rp-metric__l">Conversión global</div></div>
+        <div class="rp-metric rise"><div class="rp-metric__v">${r.vendData.length}</div><div class="rp-metric__l">Asesores</div></div>
+      </div>
+
+      <!-- Gráficos principales -->
+      <div class="rp-grid">
+        <div class="card rp-card rise rise-1">
+          <h3>Leads por día (últimos 30)</h3>
+          ${r.leadsDiarios.length ? barChart(r.leadsDiarios, 'total', 'dia', 140, 'var(--gold-line)') : '<div class="t-dim3" style="padding:var(--s3);text-align:center">Sin datos</div>'}
+        </div>
+        <div class="card rp-card rise rise-1">
+          <h3>Mensajes por día (últimos 30)</h3>
+          ${r.msgsDiarios.length ? barChart(r.msgsDiarios, 'total', 'dia', 140, 'var(--blue)') : '<div class="t-dim3" style="padding:var(--s3);text-align:center">Sin datos</div>'}
+        </div>
+      </div>
+
+      <div class="rp-grid" style="margin-top:var(--s3)">
+        <div class="card rp-card rise rise-2">
+          <h3>Origen de leads</h3>
+          ${origenEntries.length ? pieChart(origenEntries.map(({k,v}) => ({k,v,label:k})), 'v', 'label', COLORS) : '<div class="t-dim3" style="padding:var(--s3);text-align:center">Sin datos</div>'}
+        </div>
+        <div class="card rp-card rise rise-2">
+          <h3>Pipeline (etapa actual)</h3>
+          ${etqEntries.length ? pieChart(etqEntries, 'v', 'label', Object.values(ETQ_COLORS)) : '<div class="t-dim3" style="padding:var(--s3);text-align:center">Sin datos</div>'}
+        </div>
+      </div>
+
+      <!-- Horas pico -->
+      <div class="card rp-card rise rise-2" style="margin-top:var(--s3)">
+        <h3>Mejores horas para leads</h3>
+        <p class="t-dim3" style="font-size:11px;margin-bottom:var(--s2)">Distribución de creación de leads por hora del día</p>
+        <div class="hora-grid">
+          ${Array.from({length:24}, (_,h) => {
+            const v = horaMap[h] || 0;
+            const cls = v >= maxHora * 0.7 ? 'hot' : v >= maxHora * 0.3 ? 'warm' : '';
+            return `<div class="hora-cell ${cls}" title="${h}:00 — ${v} leads">${h}${v ? `<br><b>${v}</b>` : ''}</div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Tabla vendedores -->
+      <div class="card rise rise-3" style="overflow:hidden;margin-top:var(--s3)">
+        <div class="u-between card--pad" style="padding-bottom:var(--s2)">
+          <div class="t-h3">Rendimiento por asesor</div>
+        </div>
+        <table class="rp-table">
+          <thead><tr><th>Asesor</th><th data-sort-type="num">Leads</th><th data-sort-type="num">Activos</th><th data-sort-type="num">Vendidos</th><th data-sort-type="num">Respondidos</th><th data-sort-type="num">Conversión</th><th data-sort-type="num">T. Respuesta</th></tr></thead>
+          <tbody>${vendRows || '<tr><td colspan="7" class="t-dim3" style="text-align:center;padding:var(--s4)">Sin datos</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+  SPOS.sortTable(ctx.content.querySelector('.rp-table'));
+})();
+</script>
+</body>
+</html>

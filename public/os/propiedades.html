@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Propiedades</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+.prop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; padding:4px 0; }
+.prop-card { background:var(--bg-2); border:1px solid var(--border-soft); border-radius:14px; overflow:hidden; transition:border-color .2s; }
+.prop-card:hover { border-color:var(--gold-line); }
+.prop-card__body { padding:16px; }
+.prop-card__name { font-family:var(--f-title); font-size:14px; color:var(--text); margin-bottom:4px; }
+.prop-card__meta { font-size:12px; color:var(--text-3); margin-bottom:8px; }
+.prop-card__price { font-size:16px; font-weight:700; color:var(--gold); margin-bottom:10px; }
+.prop-card__status { display:inline-block; font-size:10px; padding:2px 10px; border-radius:999px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+.st-disponible { background:var(--green-soft); color:var(--green); }
+.st-reservado { background:rgba(200,164,90,.15); color:var(--gold); }
+.st-vendido { background:rgba(255,80,80,.15); color:#ff5050; }
+.prop-card__actions { display:flex; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft); }
+.prop-empty { grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--text-3); background:var(--bg-2); border-radius:16px; border:1px dashed var(--border); }
+.prop-empty h3 { font-family:var(--f-title); font-size:15px; color:var(--text-2); margin-bottom:6px; }
+
+/* Modal */
+.pm-ov { position:fixed; inset:0; background:rgba(0,0,0,.42); backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+.pm-ov.show { display:flex; }
+.pm { background:var(--bg-1); border:1px solid var(--border); border-radius:18px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; padding:24px; }
+.pm h3 { font-family:var(--f-title); font-size:15px; margin-bottom:4px; }
+.pm-row { margin-bottom:14px; }
+.pm-row label { display:block; font-size:10.5px; color:var(--text-3); text-transform:uppercase; letter-spacing:.1em; margin-bottom:5px; }
+.pm-row input, .pm-row select, .pm-row textarea { width:100%; background:var(--bg-3); border:1px solid var(--border); border-radius:9px; color:var(--text); padding:10px 12px; font-family:var(--f-ui); font-size:13.5px; outline:none; }
+.pm-row input:focus, .pm-row select:focus, .pm-row textarea:focus { border-color:var(--gold-line); }
+.pm-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:8px; }
+.pm-btn { border:none; border-radius:10px; padding:10px 18px; font-size:13px; cursor:pointer; font-family:var(--f-ui); }
+.pm-btn.save { background:var(--gold); color:#000; font-weight:600; }
+.pm-btn.ghost { background:var(--bg-3); color:var(--text-2); border:1px solid var(--border); }
+.pm-del { background:rgba(255,80,80,.15); color:#ff5050; }
+
+/* Empty state header */
+.os-header-actions { display:flex; gap:10px; align-items:center; }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { api, toast, esc, ICONS } = SPOS;
+  const ctx = await SPOS.mount({ active: 'properties', title: 'Propiedades', crumb: 'Catálogo de lotes e inmuebles', padded: true, adminOnly: true });
+  if (!ctx) return;
+
+  let propiedades = [];
+
+  async function cargar() {
+    const r = await api('/api/propiedades');
+    if (Array.isArray(r)) propiedades = r;
+    else propiedades = [];
+    render();
+  }
+
+  function statusClass(est) { return est === 'disponible' ? 'st-disponible' : est === 'reservado' ? 'st-reservado' : 'st-vendido'; }
+
+  function render() {
+    const h = document.querySelector('.os-header');
+    if (h) h.querySelector('.os-header-actions')?.remove();
+    if (h) {
+      const div = document.createElement('div');
+      div.className = 'os-header-actions';
+      div.innerHTML = '<button id="btnAdd" class="btn btn--gold btn--sm">' + ICONS.plus + 'Agregar propiedad</button>';
+      h.appendChild(div);
+    }
+    if (!propiedades.length) {
+      ctx.content.innerHTML = '<div class="prop-empty"><h3>✦ Inventario de propiedades</h3><p>Aún no hay propiedades cargadas. Agrega la primera para que los asesores puedan recomendarlas a los clientes.</p></div>';
+    } else {
+      ctx.content.innerHTML = '<div class="prop-grid">' + propiedades.map((p, i) =>
+        '<div class="prop-card">' +
+          '<div class="prop-card__body">' +
+            '<div class="prop-card__name">' + esc(p.nombre) + '</div>' +
+            '<div class="prop-card__meta">' + esc(p.ciudad || '') + (p.ciudad && p.m2 ? ' · ' : '') + (p.m2 ? p.m2 + ' m²' : '') + (p.tipo ? ' · ' + esc(p.tipo) : '') + '</div>' +
+            '<div class="prop-card__price">' + SPOS.fmt.money(p.precio) + '</div>' +
+            '<span class="prop-card__status ' + statusClass(p.estado) + '">' + esc(p.estado) + '</span>' +
+            '<div class="prop-card__actions">' +
+              '<button class="btn btn--ghost btn--sm" data-edit="' + i + '">Editar</button>' +
+              '<button class="btn btn--ghost btn--sm" data-del="' + i + '" style="color:#ff5050">Eliminar</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>'
+      ).join('') + '</div>';
+    }
+    document.getElementById('btnAdd')?.addEventListener('click', () => abrirModal(null));
+    ctx.content.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => abrirModal(propiedades[+b.dataset.edit])));
+    ctx.content.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => eliminar(+b.dataset.del)));
+  }
+
+  function abrirModal(p) {
+    const ov = document.createElement('div');
+    ov.className = 'pm-ov show';
+    ov.innerHTML =
+      '<div class="pm">' +
+        '<h3>' + (p ? 'Editar propiedad' : 'Nueva propiedad') + '</h3>' +
+        '<div class="pm-row"><label>Nombre</label><input id="fNombre" value="' + esc(p ? p.nombre : '') + '" placeholder="Lote Campestre Tocaima"></div>' +
+        '<div class="pm-row"><label>Descripción</label><textarea id="fDesc" rows="2" placeholder="Opcional">' + esc(p ? p.descripcion : '') + '</textarea></div>' +
+        '<div style="display:flex;gap:12px">' +
+          '<div class="pm-row" style="flex:1"><label>Ciudad</label><input id="fCiudad" value="' + esc(p ? p.ciudad : '') + '" placeholder="Tocaima"></div>' +
+          '<div class="pm-row" style="flex:1"><label>Tipo</label><select id="fTipo"><option value="lote" ' + ((p && p.tipo === 'lote') ? 'selected' : '') + '>Lote</option><option value="casa" ' + ((p && p.tipo === 'casa') ? 'selected' : '') + '>Casa</option><option value="apartamento" ' + ((p && p.tipo === 'apartamento') ? 'selected' : '') + '>Apartamento</option><option value="finca" ' + ((p && p.tipo === 'finca') ? 'selected' : '') + '>Finca</option><option value="local" ' + ((p && p.tipo === 'local') ? 'selected' : '') + '>Local</option></select></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:12px">' +
+          '<div class="pm-row" style="flex:1"><label>Precio ($)</label><input id="fPrecio" type="number" value="' + (p ? p.precio : '') + '" placeholder="48000000"></div>' +
+          '<div class="pm-row" style="flex:1"><label>Área (m²)</label><input id="fM2" type="number" step="0.1" value="' + (p ? p.m2 : '') + '" placeholder="250"></div>' +
+        '</div>' +
+        '<div class="pm-row"><label>Estado</label><select id="fEstado"><option value="disponible" ' + ((!p || p.estado === 'disponible') ? 'selected' : '') + '>Disponible</option><option value="reservado" ' + ((p && p.estado === 'reservado') ? 'selected' : '') + '>Reservado</option><option value="vendido" ' + ((p && p.estado === 'vendido') ? 'selected' : '') + '>Vendido</option></select></div>' +
+        '<div class="pm-row"><label>URL de imagen (opcional)</label><input id="fImg" value="' + esc(p ? p.imagen_url : '') + '" placeholder="https://..."></div>' +
+        '<div class="pm-actions">' +
+          '<button class="pm-btn ghost" id="pmCancel">Cancelar</button>' +
+          '<button class="pm-btn save" id="pmSave">' + (p ? 'Guardar cambios' : 'Crear propiedad') + '</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.getElementById('pmCancel').onclick = () => ov.remove();
+    document.getElementById('pmSave').onclick = async () => {
+      const data = {
+        nombre: document.getElementById('fNombre').value.trim(),
+        descripcion: document.getElementById('fDesc').value.trim(),
+        ciudad: document.getElementById('fCiudad').value.trim(),
+        tipo: document.getElementById('fTipo').value,
+        precio: Number(document.getElementById('fPrecio').value) || 0,
+        m2: Number(document.getElementById('fM2').value) || 0,
+        estado: document.getElementById('fEstado').value,
+        imagen_url: document.getElementById('fImg').value.trim(),
+      };
+      if (!data.nombre) { toast('El nombre es requerido', 'err'); return; }
+      const r = p
+        ? await api('/api/propiedades/' + p.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+        : await api('/api/propiedades', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      if (r && r.ok) { toast('Propiedad ' + (p ? 'actualizada' : 'creada'), 'ok'); ov.remove(); await cargar(); }
+      else toast('Error al guardar', 'err');
+    };
+  }
+
+  async function eliminar(i) {
+    const p = propiedades[i];
+    if (!p) return;
+    if (!confirm('¿Eliminar "' + p.nombre + '" permanentemente?')) return;
+    const r = await api('/api/propiedades/' + p.id, { method: 'DELETE' });
+    if (r && r.ok) { toast('Propiedad eliminada', 'ok'); await cargar(); }
+    else toast('Error al eliminar', 'err');
+  }
+
+  await cargar();
+})();
+</script>
+</body>
+</html>

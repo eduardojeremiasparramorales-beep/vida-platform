@@ -1,0 +1,952 @@
+/* ============================================================================
+   SP OS — Luxury Business Operating System · Design System
+   Núcleo visual único para todos los módulos.
+   Filosofía: lujo silencioso · claridad · espacio · un solo producto.
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   1. TOKENS
+   ---------------------------------------------------------------------------- */
+:root {
+  /* Superficies (negros por capas — dirección Fusión: negro profundo + glow) */
+  --bg-0: #060606;   /* fondo raíz */
+  --bg-1: #101010;   /* paneles */
+  --bg-2: #161616;   /* cards */
+  --bg-3: #1B1B1B;   /* cards elevadas / hover */
+  --bg-4: #232323;   /* inputs, chips */
+  --border: #252525;
+  --border-soft: #1E1E1E;
+  --border-strong: #313131;
+
+  /* Marca — Oro ejecutivo encendido (radical + orgánico) */
+  --gold: #FFD76A;
+  --gold2: #FFE08A;
+  --gold-deep: #C07F1E;
+  --gold-soft: rgba(255, 215, 106, .16);
+  --gold-line: rgba(255, 215, 106, .38);
+  --green: #4E7B46;
+  --green-soft: rgba(78, 123, 70, .14);
+
+  /* Texto */
+  --text: #F8F8F8;
+  --text-2: rgba(248, 248, 248, .62);
+  --text-3: rgba(248, 248, 248, .38);
+  --text-4: rgba(248, 248, 248, .20);
+
+  /* Semántica */
+  --red: #E5484D;
+  --red-soft: rgba(229, 72, 77, .14);
+  --amber: #E0A44A;
+  --amber-soft: rgba(224, 164, 74, .14);
+  --blue: #5B8DEF;
+  --blue-soft: rgba(91, 141, 239, .14);
+
+  /* Espaciado (múltiplos de 8) */
+  --s1: 8px;  --s2: 16px; --s3: 24px; --s4: 32px; --s5: 48px; --s6: 64px;
+
+  /* Radios (generosos, estilo glassmorphism minimal → Fusión: orgánico) */
+  --r-sm: 14px; --r: 20px; --r-lg: 26px; --r-xl: 30px; --r-full: 999px;
+
+  /* Sombras (muy suaves, con tinte cálido para la profundidad glass) */
+  --sh-1: 0 1px 2px rgba(0,0,0,.30);
+  --sh-2: 0 4px 18px rgba(0,0,0,.36), 0 1px 3px rgba(0,0,0,.28);
+  --sh-3: 0 12px 44px rgba(0,0,0,.52), 0 4px 14px rgba(0,0,0,.30);
+  --sh-pop: 0 8px 32px rgba(0,0,0,.5), 0 0 0 1px var(--glass-border);
+
+  /* Glass — vidrio premium ultra-transparente (calibrado en preview A/B:
+     transparencia 10% · desenfoque 10px — cristal casi puro, frost sutil).
+     Aurora visible nítidamente a través de cada superficie.
+     Edge superior reforzado para que el cristal se perciba. */
+  --glass:        rgba(42, 38, 30, .10);
+  --glass-2:      rgba(50, 45, 35, .16);
+  --glass-border: rgba(248, 244, 230, .14);
+  --glass-edge:   inset 0 1px 0 rgba(255,255,255,.42), inset 0 -1px 0 rgba(255,255,255,.06), inset 1px 0 0 rgba(255,255,255,.08), inset -1px 0 0 rgba(255,255,255,.08);
+  --glass-gold:   rgba(212, 175, 55, .14);
+  --glass-deep:   rgba(12, 11, 9, .14);
+  --glass-light:  linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0) 42%);
+  --glass-sheen:  linear-gradient(115deg, rgba(255,255,255,.11) 0%, rgba(255,255,255,.03) 26%, rgba(255,255,255,0) 46%);
+  --blur:    saturate(1.7) blur(10px);
+  --blur-sm: saturate(1.6) blur(10px);
+
+  /* Tipografía */
+  --f-title: 'Cinzel', Georgia, serif;
+  --f-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --f-num: 'SF Pro Display', 'Inter', sans-serif;
+  --track-display: -0.024em;  /* .t-h1, .metric__value — SF Display */
+  --track-title:  -0.018em;  /* .t-h2 */
+  --track-body:   -0.012em;  /* body (heredado) */
+
+  /* Gradientes oro (token único reemplaza ~15 duplicados en todo el sistema) */
+  --grad-gold:      linear-gradient(140deg, #FFE08A, var(--gold) 52%, #E8A93E);
+  --grad-gold-deep: linear-gradient(140deg, #FFE08A, var(--gold) 50%, #C07F1E);
+  --grad-gold-text: linear-gradient(135deg, #FFE08A, var(--gold) 55%, #C07F1E);
+  --grad-gold-bar:  linear-gradient(90deg, #C07F1E, var(--gold));
+  --grad-surface:   linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,0) 48%);
+
+  /* Movimiento */
+  --ease: cubic-bezier(.4, 0, .2, 1);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --dur: 180ms;
+
+  /* Layout */
+  --nav-w: 248px;
+  --nav-w-collapsed: 72px;
+  --panel-w: 340px;
+  --topbar-h: 60px;
+
+  /* Aurora — orbes difusos detrás del vidrio (ver body{background} en §2).
+     Tokenizados para que el tema claro pueda invertirlos sin duplicar el gradiente
+     completo: mismas 6 formas/posiciones, solo cambian los colores. */
+  --aurora-1a: rgba(248,248,248,.15); --aurora-1b: rgba(248,248,248,.05);
+  --aurora-2a: rgba(248,248,248,.11); --aurora-2b: rgba(248,248,248,.04);
+  --aurora-3a: rgba(248,248,248,.08); --aurora-3b: rgba(248,248,248,.03);
+  /* Aurora — orbes difusos detrás del vidrio (ver body{background} en §2).
+     Tokenizados para que el tema claro pueda invertirlos sin duplicar el gradiente
+     completo: mismas 6 formas/posiciones, solo cambian los colores. */
+  --aurora-1a: rgba(248,248,248,.15); --aurora-1b: rgba(248,248,248,.05);
+  --aurora-2a: rgba(248,248,248,.11); --aurora-2b: rgba(248,248,248,.04);
+  --aurora-3a: rgba(248,248,248,.08); --aurora-3b: rgba(248,248,248,.03);
+  --aurora-gold-1: rgba(255,215,106,.30);
+  --aurora-green: rgba(78,123,70,.18);
+  --aurora-gold-2: rgba(255,215,106,.14);
+  --aurora-gold-3: rgba(255,223,140,.09);
+  color-scheme: dark;
+}
+
+/* ----------------------------------------------------------------------------
+   1B. TEMA CLARO — mismo lenguaje "glass premium", superficies invertidas.
+   Se activa con <html data-theme="light"> (ver /os/theme.js — decide Sistema/
+   Claro/Oscuro y fija el atributo ANTES del primer paint para no parpadear).
+   Sin el atributo, :root de arriba sigue siendo la única fuente de verdad
+   (oscuro), así que esto es 100% aditivo — nada cambia si nunca se activa.
+   ---------------------------------------------------------------------------- */
+:root[data-theme="light"] {
+  /* Superficies — Champagne Ivory: marfil dorado profundo, blancos crema
+     (nada de blanco puro) para profundidad cálida premium. */
+  --bg-0: #F4EFE3;
+  --bg-1: #FAF6ED;
+  --bg-2: #FFFCF4;
+  --bg-3: #F3EDDC;
+  --bg-4: #E9E1CC;
+  --border: #E0D7BF;
+  --border-soft: #E9E1CD;
+  --border-strong: #D2C7A7;
+
+  /* Marca — el oro en sí "se mantiene" (fondos/acentos/gradientes no cambian);
+     gold-ink es la variante de texto con contraste AA sobre marfil (ver §7/§8
+     más abajo, los selectores que sí lo necesitan). */
+  --gold-ink: #7D5F24; /* verificado: 5.3:1 sobre --bg-0 y 5.9:1 sobre --bg-1, ambos > 4.5:1 AA */
+  --green: #3F6538;
+  --green-soft: rgba(63, 101, 56, .13);
+
+  /* Texto — espresso cálido (más suave que negro puro sobre marfil) */
+  --text: #221C10;
+  --text-2: rgba(34, 28, 16, .66);
+  --text-3: rgba(34, 28, 16, .47);
+  --text-4: rgba(34, 28, 16, .26);
+
+  /* Semántica — mismo matiz, afinado para que el texto sobre marfil pase AA */
+  --red: #C23A40;
+  --red-soft: rgba(194, 58, 64, .13);
+  --amber: #8F5E14; /* verificado AA sobre marfil */
+  --amber-soft: rgba(143, 94, 20, .14);
+  --blue: #3563C9;
+  --blue-soft: rgba(53, 99, 201, .13);
+
+  /* Sombras — tinte cálido (marrón dorado en vez de negro): sobre marfil,
+     las sombras neutrales se ven sucias; las cálidas se ven premium. */
+  --sh-1: 0 1px 2px rgba(120, 98, 58, .08);
+  --sh-2: 0 4px 16px rgba(120, 98, 58, .12);
+  --sh-3: 0 12px 40px rgba(120, 98, 58, .16);
+  --sh-pop: 0 8px 30px rgba(120, 98, 58, .18), 0 0 0 1px var(--border);
+
+  /* Glass — velo champagne translúcido; mismo blur, misma doble-edge.
+     La aurora dorada se asoma a través del vidrio. */
+  --glass:        rgba(255, 251, 241, .30);
+  --glass-2:      rgba(255, 252, 245, .44);
+  --glass-border: rgba(168, 138, 78, .15);
+  --glass-edge:   inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(160,128,64,.10);
+  --glass-gold:   rgba(212, 175, 55, .14);
+  --glass-deep:   rgba(255, 251, 240, .50);
+  --glass-light:  linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,0) 45%);
+  --glass-sheen:  linear-gradient(115deg, rgba(255,255,255,.6) 0%, rgba(255,255,255,.22) 26%, rgba(255,255,255,0) 46%);
+
+  --grad-surface: linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,0) 48%);
+
+  /* Aurora — orbes dorados/salvia visibles detrás del velo champagne:
+     la misma profundidad esmerilada que el oscuro, en tonos cálidos. */
+  --aurora-1a: rgba(212,175,55,.14); --aurora-1b: rgba(212,175,55,.04);
+  --aurora-2a: rgba(200,160,80,.09); --aurora-2b: rgba(200,160,80,.03);
+  --aurora-3a: rgba(63,101,56,.09); --aurora-3b: rgba(63,101,56,.03);
+  --aurora-gold-1: rgba(212,175,55,.20);
+  --aurora-green: rgba(78,123,70,.13);
+  --aurora-gold-2: rgba(237,204,96,.12);
+  --aurora-gold-3: rgba(214,178,96,.09);
+
+  color-scheme: light;
+}
+
+/* Oro como texto plano sobre marfil no pasa AA (ver --gold-ink arriba) — estos son
+   los puntos donde --gold se usa como color de TEXTO directo, no de fondo/acento
+   (--gold-soft, --gold-line, --grad-gold* siguen igual: son fondos/degradados
+   translúcidos, no letras, y ahí el --gold original sigue leyéndose bien). */
+:root[data-theme="light"] .t-gold,
+:root[data-theme="light"] .os-workspace__plan,
+:root[data-theme="light"] .os-nav__badge,
+:root[data-theme="light"] .metric__icon,
+:root[data-theme="light"] .chip.active,
+:root[data-theme="light"] .badge--gold {
+  color: var(--gold-ink);
+}
+
+/* ----------------------------------------------------------------------------
+   2. RESET / BASE
+   ---------------------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--f-ui);
+  /* Aurora + orbes: formas grandes y difusas detrás del vidrio (estilo
+     glassmorphism minimal) — le dan al frosted algo que esmerilar. */
+  background:
+    radial-gradient(circle 420px at 14% 16%, var(--aurora-1a), var(--aurora-1b) 52%, transparent 62%),
+    radial-gradient(circle 300px at 78% 38%, var(--aurora-2a), var(--aurora-2b) 54%, transparent 64%),
+    radial-gradient(circle 500px at 55% 108%, var(--aurora-3a), var(--aurora-3b) 54%, transparent 64%),
+    radial-gradient(800px 600px at 80% -15%, var(--aurora-gold-1), transparent 60%),
+    radial-gradient(700px 650px at -10% 100%, var(--aurora-green), transparent 60%),
+    radial-gradient(600px 500px at 50% 50%, var(--aurora-gold-2), transparent 70%),
+    radial-gradient(560px 460px at 50% 92%, var(--aurora-gold-3), transparent 62%),
+    var(--bg-0);
+  background-attachment: fixed;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  font-optical-sizing: auto;
+  letter-spacing: var(--track-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+/* Alternar tema: transición suave de 200ms SOLO mientras dura el cambio (clase
+   temporal que pone/quita theme.js) — un transition permanente en background-color
+   penaliza scroll en móviles de gama baja, por eso no vive en la regla base de body. */
+body.theming, body.theming .card, body.theming .surface, body.theming .metric,
+body.theming .os-nav, body.theming .os-topbar, body.theming .os-panel, body.theming .input {
+  transition: background-color 200ms var(--ease), border-color 200ms var(--ease), color 200ms var(--ease);
+}
+
+/* Grano premium: textura de ruido sutil sobre todo el sistema — elimina el
+   aspecto "plano" dándole al vidrio un acabado táctil. Pointer-events none:
+   nunca interfiere con la interacción. */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: .04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E");
+}
+:root[data-theme="light"] body::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.14 0 0 0 0 0.11 0 0 0 0 0.06 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E");
+  opacity: .04;
+}
+
+/* Modo claro — la separación lateral pesada del shell se vuelve innecesaria
+   (el velo champagne ya define los bordes); el sombreado interno de las
+   superficies pasa a tinte cálido en vez de negro. */
+:root[data-theme="light"] .os-nav,
+:root[data-theme="light"] .os-panel { box-shadow: none; }
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .surface,
+:root[data-theme="light"] .metric,
+:root[data-theme="light"] .kan-col { box-shadow: var(--glass-edge), inset 0 -14px 26px rgba(160,128,64,.06), var(--sh-1); }
+::selection { background: var(--gold-soft); color: var(--text); }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input, textarea, select { font-family: inherit; }
+svg { display: block; flex-shrink: 0; }
+
+/* Scrollbar minimal */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; transition: background .2s; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-line); background-clip: content-box; }
+
+/* ----------------------------------------------------------------------------
+   3. TIPOGRAFÍA / UTILIDADES
+   ---------------------------------------------------------------------------- */
+.t-brand { font-family: var(--f-title); font-weight: 600; letter-spacing: .06em; }
+.t-num   { font-family: var(--f-num); font-variant-numeric: tabular-nums lining-nums; font-feature-settings: 'tnum' on; }
+.t-h1 { font-size: 28px; font-weight: 600; letter-spacing: var(--track-display); }
+.t-h2 { font-size: 20px; font-weight: 600; letter-spacing: var(--track-title); }
+.t-h3 { font-size: 16px; font-weight: 600; letter-spacing: -0.012em; }
+.t-label { font-size: 11px; font-weight: 600; letter-spacing: .10em; text-transform: uppercase; color: var(--text-3); }
+.t-dim { color: var(--text-2); }
+.t-dim3 { color: var(--text-3); }
+.t-gold { color: var(--gold); }
+.t-green { color: var(--green); }
+
+/* Guardarraíl Cinzel: el tracking negativo del body hereda y aplasta serifas.
+   Selectores con --f-title sin letter-spacing explícito → .02em mínimo.
+   (Los que ya tienen .03em+ se dejan intactos.) */
+.sheet__title, .lp-name,
+.pm h3, .prop-card__name, .prop-empty h3,
+.cal-head h2, .modal h3,
+.donut .dv, .lote-tip b, .cc-stage-empty h3, .mm h3,
+.pj-pct__big,
+.m-empty h3, #calMes
+{ letter-spacing: .02em; }
+
+.u-row { display: flex; align-items: center; }
+.u-col { display: flex; flex-direction: column; }
+.u-between { display: flex; align-items: center; justify-content: space-between; }
+.u-gap1 { gap: var(--s1); } .u-gap2 { gap: var(--s2); } .u-gap3 { gap: var(--s3); }
+.u-grow { flex: 1; } .u-wrap { flex-wrap: wrap; }
+.u-hide { display: none !important; }
+
+/* ----------------------------------------------------------------------------
+   4. APP SHELL — Workspace de 3 zonas
+   ---------------------------------------------------------------------------- */
+.os-app {
+  display: grid;
+  grid-template-columns: var(--nav-w) 1fr;
+  height: 100vh; height: 100dvh;
+  background: transparent;
+}
+.os-app.has-panel { grid-template-columns: var(--nav-w) 1fr var(--panel-w); }
+
+/* --- Sidebar --- */
+.os-nav {
+  grid-column: 1;
+  background: var(--glass-sheen), var(--glass-deep);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: 1px 0 26px rgba(0,0,0,.38);
+  display: flex; flex-direction: column;
+  min-height: 0;
+  padding: var(--s2) 0;
+}
+.os-brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px var(--s2) var(--s3);
+}
+.os-brand__mark {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: var(--sh-1), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.os-brand__mark img { width: 100%; height: 100%; object-fit: cover; }
+.os-brand__name { font-family: var(--f-title); font-weight: 600; font-size: 15px; letter-spacing: .10em; }
+.os-brand__sub { font-size: 10px; color: var(--text-3); letter-spacing: .18em; text-transform: uppercase; margin-top: 1px; }
+
+.os-workspace {
+  margin: 0 var(--s2) var(--s2);
+  padding: 10px 12px;
+  background: var(--glass-sheen), var(--glass-light), var(--glass);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; transition: background var(--dur) var(--ease);
+}
+.os-workspace:hover { background: var(--glass-sheen), var(--glass-light), var(--glass-2); }
+.os-workspace__logo { width: 26px; height: 26px; border-radius: 7px; background: var(--bg-4); display: grid; place-items: center; font-size: 13px; }
+.os-workspace__name { font-size: 13px; font-weight: 600; }
+.os-workspace__plan { font-size: 10px; color: var(--gold); letter-spacing: .04em; }
+
+.os-nav__scroll { flex: 1; overflow-y: auto; min-height: 0; padding: 0 12px; }
+.os-nav__group { margin-bottom: var(--s2); }
+.os-nav__title { font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--text-4); padding: 8px 12px 4px; }
+
+.os-nav__item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 8px 12px; border-radius: 10px;
+  color: var(--text-2); font-size: 13.5px; font-weight: 500;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+  position: relative; cursor: pointer; user-select: none;
+}
+.os-nav__item svg { width: 18px; height: 18px; opacity: .85; }
+.os-nav__item:hover { background: var(--bg-2); color: var(--text); }
+.os-nav__item.active { background: var(--gold-soft); color: var(--text); border-left: 3px solid var(--gold); box-shadow: inset 3px 0 0 var(--gold), 0 0 18px rgba(212,175,55,.12); }
+.os-nav__item.active::before { display: none; }
+.os-nav__badge { margin-left: auto; font-size: 10.5px; font-weight: 600; color: var(--gold); background: var(--gold-soft); padding: 1px 7px; border-radius: 999px; }
+.os-nav__foot { padding: 12px 12px 0; border-top: 1px solid var(--border-soft); margin: 0 12px; }
+
+/* --- Sidebar colapsable --- */
+.os-app { transition: grid-template-columns var(--dur) var(--ease-out); }
+.os-app.nav-collapsed { grid-template-columns: var(--nav-w-collapsed) 1fr; }
+.os-app.has-panel.nav-collapsed { grid-template-columns: var(--nav-w-collapsed) 1fr var(--panel-w); }
+.os-nav { transition: padding var(--dur) var(--ease); }
+
+.os-app.nav-collapsed .os-brand { padding: 6px 0 var(--s3); justify-content: center; gap: 0; }
+.os-app.nav-collapsed .os-brand > div:not(.os-brand__mark) { display: none; }
+.os-app.nav-collapsed .os-workspace { margin: 0 var(--s2) var(--s2); padding: 10px 0; justify-content: center; gap: 0; }
+.os-app.nav-collapsed .os-workspace > :not(.os-workspace__logo) { display: none; }
+
+/* Ocultar textos: títulos de grupo + spans de items (excepto badge) + brand/workspace texto */
+.os-app.nav-collapsed .os-nav__title,
+.os-app.nav-collapsed .os-nav__item > span:not(.os-nav__badge),
+.os-app.nav-collapsed .os-brand__name,
+.os-app.nav-collapsed .os-brand__sub,
+.os-app.nav-collapsed .os-workspace__name,
+.os-app.nav-collapsed .os-workspace__plan { display: none; }
+.os-app.nav-collapsed .os-nav__item { justify-content: center; padding: 8px 0; gap: 0; }
+.os-app.nav-collapsed .os-nav__item.active { border-left: none; border-top: 3px solid var(--gold); }
+.os-app.nav-collapsed .os-nav__badge { position: absolute; top: 4px; right: 8px; margin: 0; min-width: 16px; height: 16px; font-size: 9px; line-height: 16px; padding: 0 4px; }
+.os-app.nav-collapsed .os-nav__item { position: relative; }
+.os-app.nav-collapsed .os-nav__scroll { padding: 0 8px; }
+.os-app.nav-collapsed .os-nav__foot { margin: 0 8px; padding: 12px 0 0; }
+.os-app.nav-collapsed .os-nav__foot .os-nav__item { justify-content: center; padding: 8px 0; gap: 0; }
+
+/* Tooltip lateral custom (solo visible en colapsado) */
+.os-nav__tip {
+  position: fixed;
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  box-shadow: var(--sh-2);
+  z-index: 9000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .12s var(--ease-out);
+  white-space: nowrap;
+  font-family: var(--f-ui);
+}
+.os-nav__tip.show { opacity: 1; }
+
+/* --- Main --- */
+.os-main { grid-column: 2; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.os-topbar {
+  height: var(--topbar-h); flex-shrink: 0;
+  display: flex; align-items: center; gap: var(--s2);
+  padding: 0 var(--s3);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-sheen), var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+}
+.os-topbar__title { font-size: 15px; font-weight: 600; }
+.os-topbar__crumb { font-size: 12px; color: var(--text-3); }
+.os-content { flex: 1; overflow-y: auto; min-height: 0; padding: var(--s3); }
+.os-content--pad { padding: var(--s4) var(--s5) 80px var(--s5); }
+.os-content__max { max-width: 1180px; margin: 0 auto; }
+
+/* --- Right contextual panel --- */
+.os-panel {
+  grid-column: 3;
+  background: var(--glass-sheen), var(--glass-deep);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border-left: 1px solid var(--glass-border);
+  box-shadow: -1px 0 26px rgba(0,0,0,.38);
+  display: flex; flex-direction: column; min-height: 0;
+}
+.os-panel__head { padding: var(--s2) var(--s3); border-bottom: 1px solid var(--border-soft); display: flex; align-items: center; justify-content: space-between; }
+.os-panel__body { flex: 1; overflow-y: auto; min-height: 0; padding: var(--s3); }
+
+/* Search (topbar) */
+.os-search {
+  display: flex; align-items: center; gap: 9px;
+  background: var(--glass-sheen), var(--glass-light), var(--glass);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-full); padding: 7px 14px; min-width: 220px;
+  color: var(--text-3); transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.os-search:focus-within { border-color: var(--gold-line); background: var(--glass-sheen), var(--glass-light), var(--glass-2); box-shadow: 0 0 0 3px var(--gold-soft), 0 4px 14px rgba(212,175,55,.14); }
+.os-search input { background: none; border: none; outline: none; color: var(--text); font-size: 13px; width: 100%; }
+.os-search kbd { font-size: 10px; color: var(--text-3); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; font-family: var(--f-num); }
+
+/* ----------------------------------------------------------------------------
+   5. PRIMITIVAS — Botones
+   ---------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 38px; padding: 0 16px; border-radius: var(--r-sm);
+  font-size: 13.5px; font-weight: 600; white-space: nowrap;
+  transition: transform var(--dur) var(--ease), background var(--dur) var(--ease), border-color var(--dur) var(--ease), opacity var(--dur) var(--ease);
+  border: 1px solid transparent;
+}
+.btn svg { width: 16px; height: 16px; }
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .45; pointer-events: none; }
+.btn--gold { background: var(--grad-gold); color: #0A0A0A; box-shadow: 0 4px 24px rgba(212,175,55,.28), inset 0 1px 0 rgba(255,255,255,.3); position: relative; overflow: hidden; }
+.btn--gold:hover { filter: brightness(1.08); box-shadow: 0 6px 30px rgba(212,175,55,.42), inset 0 1px 0 rgba(255,255,255,.3); }
+.btn--gold:active { transform: scale(.95); box-shadow: 0 2px 8px rgba(212,175,55,.2), inset 0 1px 0 rgba(255,255,255,.3); }
+.btn--ghost {
+  background: var(--glass-sheen), var(--glass-light), var(--glass);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+}
+.btn--ghost:hover { background: var(--glass-sheen), var(--glass-light), var(--glass-2); border-color: var(--gold-line); }
+.btn--quiet { background: transparent; color: var(--text-2); }
+.btn--quiet:hover { background: var(--bg-2); color: var(--text); }
+.btn--danger { background: var(--red-soft); color: #FF8A8E; border-color: rgba(229,72,77,.25); }
+.btn--danger:hover { background: rgba(229,72,77,.2); }
+.btn--sm { height: 32px; padding: 0 12px; font-size: 12.5px; }
+.btn--icon { width: 38px; padding: 0; }
+.btn--icon.btn--sm { width: 32px; }
+.btn--block { width: 100%; }
+
+/* ----------------------------------------------------------------------------
+   6. PRIMITIVAS — Cards / Surfaces
+   ---------------------------------------------------------------------------- */
+.card {
+  background: var(--glass-sheen), var(--glass-light), var(--glass);
+  border: 1px solid var(--glass-border);
+  border-top: 1px solid var(--gold-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--glass-edge), inset 0 -14px 26px rgba(0,0,0,.08), var(--sh-1);
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.card--pad { padding: var(--s3); }
+.card--hover:hover { border-color: var(--gold-line); background: var(--glass-sheen), var(--glass-light), var(--glass); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(212,175,55,.16), 0 0 0 1px var(--gold-line); }
+.card--float:hover { transform: translateY(-2px); border-color: var(--gold-line); box-shadow: var(--glass-edge), 0 10px 34px rgba(212,175,55,.14); }
+.surface { background: var(--glass-sheen), var(--glass-light), var(--glass); border: 1px solid var(--glass-border); border-radius: var(--r); box-shadow: var(--glass-edge), inset 0 -14px 26px rgba(0,0,0,.08); }
+
+/* Metric card */
+.metric {
+  background: var(--glass-sheen), var(--glass-light), var(--glass); border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg); padding: var(--s3);
+  box-shadow: var(--glass-edge), inset 0 -14px 26px rgba(0,0,0,.08), var(--sh-1);
+  display: flex; flex-direction: column; gap: 14px;
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.metric { border-top: 1px solid var(--gold-soft); }
+.metric:hover { border-color: var(--gold-line); transform: translateY(-3px); box-shadow: 0 8px 32px rgba(212,175,55,.16), 0 0 0 1px var(--gold-line); }
+.metric__top { display: flex; align-items: center; justify-content: space-between; }
+.metric__icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--gold-soft); color: var(--gold); }
+.metric__icon svg { width: 18px; height: 18px; }
+.metric__label { font-size: 12px; color: var(--text-3); font-weight: 500; }
+.metric__value { font-family: var(--f-num); font-size: 30px; font-weight: 600; letter-spacing: var(--track-display); line-height: 1; }
+.metric__delta { font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.metric__delta.up { color: var(--green); } .metric__delta.down { color: #FF8A8E; } .metric__delta.flat { color: var(--text-3); }
+
+/* ----------------------------------------------------------------------------
+   7. PRIMITIVAS — Chips / Badges / Pills
+   ---------------------------------------------------------------------------- */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 11px; border-radius: var(--r-full);
+  font-size: 12px; font-weight: 600;
+  background: var(--glass-sheen), var(--glass-light), var(--glass);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  border: 1px solid var(--glass-border);
+  color: var(--text-2);
+  transition: all var(--dur) var(--ease); cursor: pointer; white-space: nowrap;
+}
+.chip:hover { color: var(--text); background: var(--glass-sheen), var(--glass-light), var(--glass-2); }
+.chip.active { background: var(--gold-soft); color: var(--gold); border-color: var(--gold-line); }
+.badge { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 7px; font-size: 11.5px; font-weight: 600; }
+.badge--gold { background: var(--gold-soft); color: var(--gold); }
+.badge--green { background: var(--green-soft); color: #83B778; }
+.badge--red { background: var(--red-soft); color: #FF8A8E; }
+.badge--amber { background: var(--amber-soft); color: var(--amber); }
+.badge--blue { background: var(--blue-soft); color: var(--blue); }
+.badge--mute { background: var(--bg-4); color: var(--text-3); }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot--green { background: #57C168; box-shadow: 0 0 8px rgba(87,193,104,.6); }
+.dot--gold { background: var(--gold); }
+.dot--red { background: var(--red); }
+.dot--mute { background: var(--text-4); }
+
+/* ----------------------------------------------------------------------------
+   8. PRIMITIVAS — Inputs
+   ---------------------------------------------------------------------------- */
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field__label { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.input {
+  height: 40px; padding: 0 14px; border-radius: var(--r-sm);
+  background: var(--glass-sheen), var(--glass-light), var(--glass);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  border: 1px solid var(--glass-border);
+  color: var(--text); font-size: 14px; outline: none;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  width: 100%;
+}
+.input:focus { border-color: var(--gold-line); box-shadow: 0 0 0 3px var(--gold-soft), 0 4px 14px rgba(212,175,55,.14); }
+.input::placeholder { color: var(--text-4); }
+textarea.input { height: auto; padding: 11px 14px; resize: vertical; min-height: 88px; line-height: 1.5; }
+select.input { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 34px; }
+
+/* ----------------------------------------------------------------------------
+   9. TABLES
+   ---------------------------------------------------------------------------- */
+.table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.table thead th {
+  text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-3); padding: 12px var(--s2); border-bottom: 1px solid var(--border-soft); white-space: nowrap;
+}
+.table tbody td { padding: 13px var(--s2); border-bottom: 1px solid var(--border-soft); color: var(--text); vertical-align: middle; }
+.table tbody tr { transition: background var(--dur) var(--ease); }
+.table tbody tr:hover { background: var(--bg-2); }
+.table tbody tr:last-child td { border-bottom: none; }
+.table th[aria-sort] { cursor: pointer; user-select: none; }
+.sort-ar { display: inline-block; margin-left: 4px; font-size: 10px; color: var(--gold); }
+
+/* --- Tabs unificados — reemplaza .cp-tabs / .rp-tabs duplicados --- */
+.tabs { display: flex; gap: 4px; margin-bottom: var(--s3); border-bottom: 1px solid var(--border-soft); }
+.tabs__item { padding: 8px 14px; font-family: var(--f-ui); font-size: 12.5px; font-weight: 500; color: var(--text-3); cursor: pointer; background: none; border: none; border-bottom: 2px solid transparent; transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), background var(--dur) var(--ease); user-select: none; }
+.tabs__item:hover { color: var(--text); background: var(--bg-2); border-radius: var(--r-sm) var(--r-sm) 0 0; }
+.tabs__item.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tabs__pane { display: none; }
+.tabs__pane.active { display: block; }
+.tabs--pill { gap: 4px; border-bottom: none; margin-bottom: var(--s3); }
+.tabs--pill .tabs__item { padding: 6px 14px; border: 1px solid var(--border); border-bottom: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg-2); color: var(--text-2); }
+.tabs--pill .tabs__item:hover { color: var(--text); }
+.tabs--pill .tabs__item.active { background: var(--gold-line); color: #0A0A0A; border-color: var(--gold-line); }
+
+/* ----------------------------------------------------------------------------
+   10. KANBAN / PIPELINE
+   ---------------------------------------------------------------------------- */
+.kanban { display: flex; gap: var(--s2); height: 100%; overflow-x: auto; padding-bottom: var(--s2); }
+.kan-col { flex: 0 0 300px; display: flex; flex-direction: column; background: var(--glass-sheen), var(--glass-light), var(--glass); border: 1px solid var(--glass-border); border-radius: var(--r); box-shadow: var(--glass-edge), inset 0 -14px 26px rgba(0,0,0,.08); min-height: 0; }
+.kan-col__head { padding: 13px var(--s2); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-soft); }
+.kan-col__title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.kan-col__count { font-size: 11px; color: var(--text-3); background: var(--bg-3); padding: 1px 8px; border-radius: 999px; }
+.kan-col__body { flex: 1; overflow-y: auto; min-height: 0; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+.kan-card { background: var(--glass-sheen), var(--glass-light), var(--glass-2); border: 1px solid var(--glass-border); border-radius: var(--r-sm); padding: 13px; box-shadow: var(--glass-edge), inset 0 -10px 18px rgba(0,0,0,.06); cursor: grab; transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.kan-card:hover { border-color: var(--gold-line); transform: translateY(-1px); }
+
+/* Frosted real: con el vidrio ultra-transparente (alpha .15) el blur es lo que
+   convierte los orbes del fondo en esmerilado legible (estilo referencia).
+   glass-lite lo anula globalmente en gama baja (§19). */
+.card, .surface, .metric, .kan-col, .kan-card {
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+}
+
+/* ----------------------------------------------------------------------------
+   11. TIMELINE
+   ---------------------------------------------------------------------------- */
+.tl { display: flex; flex-direction: column; }
+.tl-item { display: flex; gap: 13px; padding-bottom: var(--s3); position: relative; }
+.tl-item::before { content: ''; position: absolute; left: 12px; top: 26px; bottom: 0; width: 1px; background: var(--border); }
+.tl-item:last-child::before { display: none; }
+.tl-item__dot { width: 25px; height: 25px; border-radius: 50%; background: var(--bg-3); border: 1px solid var(--border-strong); display: grid; place-items: center; flex-shrink: 0; z-index: 1; color: var(--text-3); }
+.tl-item__dot svg { width: 13px; height: 13px; }
+.tl-item__body { flex: 1; padding-top: 2px; }
+.tl-item__title { font-size: 13.5px; font-weight: 500; }
+.tl-item__time { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+
+/* ----------------------------------------------------------------------------
+   12. AVATAR
+   ---------------------------------------------------------------------------- */
+.avatar { border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 600; flex-shrink: 0; letter-spacing: .01em; }
+.avatar--sm { width: 30px; height: 30px; font-size: 12px; }
+.avatar--md { width: 40px; height: 40px; font-size: 15px; }
+.avatar--lg { width: 52px; height: 52px; font-size: 19px; }
+
+/* ----------------------------------------------------------------------------
+   13. AI COPILOT (dock flotante)
+   ---------------------------------------------------------------------------- */
+.ai-dock {
+  position: fixed; right: var(--s3); bottom: var(--s3); z-index: 60;
+  display: flex; align-items: center; gap: 10px;
+  height: 46px; padding: 0 8px 0 16px; border-radius: var(--r-full);
+  background: var(--glass-sheen), var(--glass-light), var(--glass-2); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--gold-line); box-shadow: 0 8px 34px rgba(212,175,55,.22), var(--sh-3);
+  cursor: pointer; transition: transform var(--dur) var(--ease-out), border-color var(--dur) var(--ease);
+}
+.ai-dock:hover { transform: translateY(-2px); border-color: var(--gold); }
+.ai-dock__spark { width: 30px; height: 30px; border-radius: 50%; background: var(--grad-gold-deep); display: grid; place-items: center; color: #000; }
+.ai-dock__label { font-size: 13px; font-weight: 600; }
+.ai-dock__hint { font-size: 10px; color: var(--text-3); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; font-family: var(--f-num); }
+/* En móvil el dock tapa el botón de enviar del chat: se oculta */
+@media (max-width: 860px) { .ai-dock { display: none; } }
+
+/* ----------------------------------------------------------------------------
+   14. TOAST
+   ---------------------------------------------------------------------------- */
+.os-toasts { position: fixed; bottom: var(--s3); left: 50%; transform: translateX(-50%); z-index: 90; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+.os-toast {
+  display: flex; align-items: center; gap: 10px; padding: 11px 18px;
+  background: var(--glass-sheen), var(--glass-light), var(--glass-2); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border); border-radius: var(--r-full);
+  font-size: 13px; font-weight: 500; box-shadow: var(--sh-3);
+  animation: toastIn .32s var(--ease-out);
+}
+.os-toast--ok { border-color: rgba(78,123,70,.4); }
+.os-toast--err { border-color: rgba(229,72,77,.4); }
+@keyframes toastIn { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+
+/* ----------------------------------------------------------------------------
+   15. EMPTY / SKELETON
+   ---------------------------------------------------------------------------- */
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: var(--s6) var(--s3); text-align: center; color: var(--text-3); }
+.empty svg { width: 42px; height: 42px; opacity: .4; }
+.skel { background: linear-gradient(100deg, var(--bg-2) 30%, var(--bg-3) 50%, var(--bg-2) 70%); background-size: 200% 100%; animation: skel 1.4s infinite linear; border-radius: 8px; }
+@keyframes skel { to { background-position: -200% 0; } }
+
+/* ----------------------------------------------------------------------------
+   16. GRIDS
+   ---------------------------------------------------------------------------- */
+.grid { display: grid; gap: var(--s2); }
+.grid--4 { grid-template-columns: repeat(4, 1fr); }
+.grid--3 { grid-template-columns: repeat(3, 1fr); }
+.grid--2 { grid-template-columns: repeat(2, 1fr); }
+.grid--main { grid-template-columns: 2fr 1fr; gap: var(--s3); align-items: start; }
+
+/* ----------------------------------------------------------------------------
+   17. ANIMACIÓN DE ENTRADA
+   ---------------------------------------------------------------------------- */
+.rise { animation: rise .5s var(--ease-out) both; }
+.rise-1 { animation-delay: .04s; } .rise-2 { animation-delay: .08s; }
+.rise-3 { animation-delay: .12s; } .rise-4 { animation-delay: .16s; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
+
+/* ----------------------------------------------------------------------------
+   17B. FOCUS-VISIBLE — Ring dorado accesible AA en navegación con teclado.
+   Las decenas de `outline: none` inline en inputs/btn se mantienen para el clic
+   con mouse; este :focus-visible restaurado solo aparece con Tab, cumpliendo WCAG.
+   ---------------------------------------------------------------------------- */
+.input:focus-visible, textarea:focus-visible, select:focus-visible,
+.os-search input:focus-visible, .btn:focus-visible,
+.os-nav__item:focus-visible, .chip:focus-visible, .tabs__item:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* ----------------------------------------------------------------------------
+   18. RESPONSIVE
+   ---------------------------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .os-app.has-panel { grid-template-columns: var(--nav-w) 1fr; }
+  .os-panel { display: none; }
+  .grid--4 { grid-template-columns: repeat(2, 1fr); }
+  .grid--main { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .os-app, .os-app.has-panel { grid-template-columns: 1fr; }
+  .os-app.nav-collapsed { grid-template-columns: 1fr; }
+  .os-nav { position: fixed; left: 0; top: 0; bottom: 0; width: var(--nav-w); z-index: 80; transform: translateX(-100%); transition: transform .28s var(--ease-out); box-shadow: var(--sh-3); }
+  .os-nav.open { transform: none; }
+  #osCollapseBtn { display: none !important; }
+  .os-content--pad { padding: var(--s3) var(--s2); }
+  .grid--4, .grid--3, .grid--2 { grid-template-columns: 1fr; }
+  .os-search { min-width: 0; }
+}
+@media (max-width: 480px) {
+  .t-h1 { font-size: 22px; }
+  .t-h2 { font-size: 17px; }
+  :root { --topbar-h: 50px; }
+  .os-content--pad { padding: 12px; }
+  .os-topbar__title { font-size: 14px; }
+  .os-topbar__crumb { font-size: 11px; }
+}
+
+/* Tablas dentro de cards: scroll horizontal en vez de recorte */
+.card > .table, .card > div > .table,
+.card[style*="overflow"] > .table,
+.card[style*="overflow"] > div > .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ----------------------------------------------------------------------------
+   19. GLASS-LITE — escape de rendimiento para dispositivos de gama baja.
+   Anula todos los blur (lo más costoso del vidrio) y devuelve fondos sólidos
+   a las superficies principales. Activar con: document.body.classList.add('glass-lite')
+   p. ej. cuando navigator.deviceMemory < 4.
+   ---------------------------------------------------------------------------- */
+body.glass-lite * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+body.glass-lite { background: var(--bg-0); }
+body.glass-lite .os-nav, body.glass-lite .os-panel { background: var(--bg-1); }
+body.glass-lite .os-topbar { background: var(--bg-0); }
+body.glass-lite .card, body.glass-lite .surface, body.glass-lite .metric,
+body.glass-lite .kan-col { background: var(--bg-2); }
+body.glass-lite .kan-card { background: var(--bg-3); }
+body.glass-lite .os-search { background: var(--bg-2); border-color: var(--border-soft); }
+body.glass-lite .input { background: var(--bg-2); border-color: var(--border); }
+body.glass-lite .os-workspace { background: var(--bg-2); border-color: var(--border-soft); }
+body.glass-lite .chip { background: var(--bg-4); border-color: transparent; }
+body.glass-lite .btn--ghost { background: var(--bg-2); border-color: var(--border); }
+
+/* ----------------------------------------------------------------------------
+   20. SQUIRCLE (Progressive Enhancement — Chrome/WebView 139+)
+   ---------------------------------------------------------------------------- */
+@supports (corner-shape: squircle) {
+  *, *::before, *::after { corner-shape: squircle; }
+
+  /* Círculos puros → redondo */
+  .avatar, .dot, .tl-item__dot, .ai-dock__spark,
+  .m-headbtn, .m-ptr .spin, .m-unread-dot,
+  .c-back, .c-act, .c-plus, .c-send, .sheet__x,
+  .sel-check, .sch-del, .toggle-sw::after,
+  .c-reply__x, .c-search__x, .audio-player__btn,
+  .sp-progress-lg__stages span,
+  .rec-bar .rec-dot, .rec-bar .rec-send, .rec-bar .rec-cancel,
+  .pin-dot .circ,
+  .m-avatar__st,
+  [style*="border-radius:50%"], [style*="border-radius: 50%"]
+  { corner-shape: round; }
+
+  /* Cápsulas 999px → redondo */
+  .chip, .os-search, .os-nav__badge, .kan-col__count, .os-toast, .ai-dock,
+  ::-webkit-scrollbar-thumb,
+  .m-chip, .m-badge, .m-tag, .m-vendor, .m-nav__dot,
+  .sp-pbar, .sp-pbar i, .m-card__progress .sp-pbar,
+  .sp-progress-lg__track, .sp-progress-lg__track i,
+  .cop-badge, .bub-reaction, .m-toast, .m-arch-btn .badge,
+  .perm-banner button, .perm-row .perm-act, .upd-bar, .upd-bar__fill,
+  .c-date, .c-quick button,
+  [style*="border-radius:999"], [style*="border-radius: 999"]
+  { corner-shape: round; }
+
+  /* PLAN B (solo si el anillo mask de .m-card.unread::after baila):
+     .m-card.unread::after { corner-shape: round; } */
+}
+
+/* ----------------------------------------------------------------------------
+   21. SP FEED EN TIEMPO REAL (Supervisor Center + admin)
+   Feed social interno: tarjetas cronológicas con icono, actor, hora relativa,
+   descripción, acciones por tipo y reacciones. Colores por categoría:
+   operaciones=verde · leads=azul · ventas=oro · ia=ámbar · alertas=rojo ·
+   equipo=gris · capacitación=violeta.
+   ---------------------------------------------------------------------------- */
+.feed-wrap { max-width: 760px; margin: 0 auto; padding-bottom: var(--s6); }
+
+.feed-filters {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  position: sticky; top: calc(var(--topbar-h) + 10px); z-index: 40;
+  padding: 10px 0; margin-bottom: var(--s2);
+}
+
+.feed-composer { margin-bottom: var(--s3); }
+
+.feed-pill {
+  position: sticky; top: calc(var(--topbar-h) + 58px); z-index: 41;
+  display: flex; justify-content: center; margin-bottom: var(--s2);
+  animation: feed-in .35s ease both;
+}
+.feed-pill .btn { box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+
+.feed-list { display: flex; flex-direction: column; gap: var(--s2); }
+
+.feed-card {
+  display: grid; grid-template-columns: 46px 1fr; gap: 12px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-top: 1px solid var(--gold-line);
+  border-radius: var(--r); padding: var(--s3);
+  transition: border-color .25s, transform .25s, box-shadow .25s;
+}
+.feed-card:hover { border-color: var(--border-strong); transform: translateY(-1px); box-shadow: 0 14px 40px rgba(0,0,0,.25); }
+
+.feed-card__side { display: flex; justify-content: center; }
+
+.feed-card__icon {
+  width: 44px; height: 44px; border-radius: 14px;
+  display: grid; place-items: center; flex-shrink: 0;
+}
+
+.feed-card__top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.feed-card__avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.feed-card__who { font-size: 13px; font-weight: 600; line-height: 1.2; }
+.feed-card__time { font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
+
+.feed-card__title { font-size: 14.5px; font-weight: 650; color: var(--text); letter-spacing: .01em; }
+.feed-card__desc { font-size: 13px; color: var(--text-2); line-height: 1.55; margin-top: 3px; }
+
+.feed-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
+.feed-card__foot {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px; margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
+}
+.feed-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.feed-reacts { display: flex; gap: 4px; flex-wrap: wrap; }
+.feed-emoji {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 26px; padding: 0 9px; border-radius: 999px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-2); font-size: 13px; cursor: pointer;
+  transition: .2s;
+}
+.feed-emoji span { font-size: 10.5px; color: var(--text-3); font-weight: 600; }
+.feed-emoji:hover { border-color: var(--gold-line); color: var(--text); transform: translateY(-1px); }
+.feed-emoji.mine { background: var(--gold-soft); border-color: var(--gold-line); color: var(--gold); }
+.feed-emoji.mine span { color: var(--gold); }
+
+.feed-cat {
+  margin-left: auto; flex-shrink: 0;
+  height: 20px; padding: 0 9px; border-radius: 999px;
+  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; display: inline-flex; align-items: center;
+}
+
+/* Colores por categoría (icono, avatar de sistema y badge) */
+.feed--operaciones { background: var(--green-soft); color: #83B778; }
+.feed--leads       { background: var(--blue-soft);  color: var(--blue); }
+.feed--ventas      { background: var(--gold-soft);  color: var(--gold); }
+.feed--ia          { background: var(--amber-soft); color: var(--amber); }
+.feed--alertas     { background: var(--red-soft);   color: #FF8A8E; }
+.feed--equipo      { background: var(--bg-4);       color: var(--text-3); }
+.feed--capacitacion { background: rgba(140,107,176,.16); color: #A98AC9; }
+
+.feed-sentinel { height: 4px; }
+
+/* Entrada de tarjetas nuevas (tiempo real) */
+@keyframes feed-in {
+  from { opacity: 0; transform: translateY(-14px) scale(.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.feed-in { animation: feed-in .45s cubic-bezier(.2,.7,.3,1) both; }
+
+/* Variante light */
+:root[data-theme="light"] .feed-card { background: var(--bg-2); }
+:root[data-theme="light"] .feed-emoji { background: var(--bg-3); }
+
+@media (max-width: 720px) {
+  .feed-card { grid-template-columns: 38px 1fr; gap: 10px; padding: var(--s2) var(--s2) var(--s3); }
+  .feed-card__icon { width: 36px; height: 36px; border-radius: 11px; }
+  .feed-card__icon svg { width: 16px !important; height: 16px !important; }
+  .feed-filters { top: 8px; }
+  .feed-pill { top: 56px; }
+  .feed-card__foot { align-items: flex-start; }
+}
+
+/* ----------------------------------------------------------------------------
+   22. DIRECCIÓN FUSIÓN — radical + orgánico (aprobada en redesign-compare.html)
+   Aplicada como capa final para todos los módulos. Negro profundo + oro
+   encendido + glow, con formas redondeadas/pill. 100% aditiva: solo refuerza
+   los tokens — el tema claro conserva su champagne con acentos actualizados.
+   ---------------------------------------------------------------------------- */
+/* Edges dorados superiores en superficies (hero/cards/columnas) */
+:root:not([data-theme="light"]) .card,
+:root:not([data-theme="light"]) .surface,
+:root:not([data-theme="light"]) .metric,
+:root:not([data-theme="light"]) .kan-col,
+:root:not([data-theme="light"]) .kan-card,
+:root:not([data-theme="light"]) .feed-card { border-top: 1px solid rgba(255,215,106,.30); }
+
+:root:not([data-theme="light"]) .btn--gold,
+:root:not([data-theme="light"]) .tabs--pill .tabs__item.active,
+:root:not([data-theme="light"]) .os-search:focus-within,
+:root:not([data-theme="light"]) .input:focus {
+  box-shadow: 0 0 22px rgba(255,215,106,.22), 0 4px 18px rgba(212,175,55,.18);
+}
+
+.badge { border-radius: var(--r-full); }
+
+/* Nav: item activo con glow dorado + edge */
+:root:not([data-theme="light"]) .os-nav__item.active {
+  box-shadow: inset 3px 0 0 var(--gold), 0 0 22px rgba(255,215,106,.18);
+}
+
+/* Gradientes radiales de hover más cálidos */
+:root:not([data-theme="light"]) .card--hover:hover,
+:root:not([data-theme="light"]) .card--float:hover,
+:root:not([data-theme="light"]) .metric:hover {
+  box-shadow: 0 10px 40px rgba(255,215,106,.22), 0 0 0 1px var(--gold-line);
+}

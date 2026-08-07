@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Inbox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  /* ── 2-pane layout ── */
+  .ibx { display: flex; height: 100%; min-height: 0; }
+
+  /* ── Lista ── */
+  .ibx-list { width: 320px; flex-shrink: 0; border-right: 1px solid var(--border-soft); display: flex; flex-direction: column; min-height: 0; background: var(--bg-0); }
+  .ibx-list__top { padding: var(--s2) var(--s2) 8px; border-bottom: 1px solid var(--border-soft); }
+  .ibx-list__top h3 { font-family: var(--f-title); font-size: 11.5px; color: var(--text-2); letter-spacing: .14em; text-transform: uppercase; font-weight: 500; margin-bottom: 10px; }
+  .ibx-chips { display: flex; gap: 5px; padding: 6px var(--s2) 5px; overflow-x: auto; scrollbar-width: none; }
+  .ibx-chips::-webkit-scrollbar { display: none; }
+  .ibx-chip { height: 26px; padding: 0 11px; border: none; border-radius: 999px; font-size: 11.5px; font-weight: 500; cursor: pointer; white-space: nowrap; background: var(--bg-3); color: var(--text-3); font-family: var(--f-ui); transition: all .12s; }
+  .ibx-chip.active { background: var(--gold-soft); color: var(--gold); border: 1px solid var(--gold-line); }
+  .ibx-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+
+  /* Conversación en lista */
+  .ibx-item { display: flex; gap: 11px; padding: 11px var(--s2); cursor: pointer; border-bottom: 1px solid var(--border-soft); transition: background .12s; position: relative; }
+  .ibx-item:hover { background: var(--bg-1); }
+  .ibx-item.active { background: var(--bg-2); }
+  .ibx-item.active::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--gold); border-radius: 0 2px 2px 0; }
+  .ibx-item__av { position: relative; flex-shrink: 0; }
+  .ibx-item__ch { position: absolute; right: -2px; bottom: -2px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--bg-0); font-size: 9px; display: grid; place-items: center; }
+  .ibx-item__info { flex: 1; min-width: 0; }
+  .ibx-item__top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+  .ibx-item__name { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+  .ibx-item.unread .ibx-item__name { font-weight: 700; }
+  .ibx-item__time { font-size: 11px; color: var(--text-3); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .ibx-item__bot { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 2px; }
+  .ibx-item__prev { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  .ibx-item.unread .ibx-item__prev { color: var(--text-2); font-weight: 500; }
+  .ibx-badge { background: var(--gold); color: #000; font-size: 10px; font-weight: 700; min-width: 18px; height: 18px; border-radius: 999px; display: flex; align-items: center; justify-content: center; padding: 0 5px; flex-shrink: 0; }
+
+  /* ── Hilo de chat ── */
+  .ibx-thread { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg-0); }
+  .ibx-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s2); color: var(--text-3); text-align: center; }
+  .ibx-empty svg { width: 48px; height: 48px; opacity: .2; }
+
+  /* Header del hilo */
+  .ibx-thead { height: 62px; flex-shrink: 0; display: flex; align-items: center; gap: 11px; padding: 0 var(--s3); border-bottom: 1px solid var(--border-soft); background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
+  .ibx-thead__name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .ibx-thead__sub { font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
+
+  /* Tools bar */
+  .ibx-tools { padding: 7px var(--s3); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--border-soft); background: var(--bg-1); }
+  .ibx-tools label { font-size: 11px; color: var(--text-3); letter-spacing: .04em; }
+  .ibx-tools select { background: var(--bg-3); color: var(--text); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 4px 10px; font-family: var(--f-ui); font-size: 12px; outline: none; cursor: pointer; }
+  .ibx-tools select:focus { border-color: var(--gold-line); }
+  .ibx-tools-btn { background: var(--bg-3); border: 1px solid var(--border); color: var(--text-2); height: 28px; padding: 0 11px; border-radius: var(--r-sm); font-size: 12px; font-family: var(--f-ui); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: color .12s; }
+  .ibx-tools-btn:hover { color: var(--text); }
+
+  /* Notas */
+  .ibx-notas { display: none; padding: 10px var(--s3); background: var(--bg-1); border-bottom: 1px solid var(--border-soft); }
+  .ibx-notas.show { display: block; }
+  .nota-item { background: var(--bg-2); border-left: 2px solid var(--gold); padding: 8px 12px; border-radius: var(--r-sm); margin-bottom: 6px; font-size: 12.5px; color: var(--text-2); }
+  .nota-item .nota-meta { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-3); margin-top: 5px; }
+  .nota-del { cursor: pointer; color: var(--red); opacity: .5; transition: opacity .12s; }
+  .nota-del:hover { opacity: 1; }
+  .nota-form { display: flex; gap: 8px; margin-top: 8px; }
+  .nota-form input { flex: 1; height: 34px; background: var(--bg-3); border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--text); padding: 0 12px; font-family: var(--f-ui); font-size: 13px; outline: none; }
+  .nota-form input:focus { border-color: var(--gold-line); }
+  .nota-form button { height: 34px; padding: 0 16px; background: var(--gold); color: #000; border: none; border-radius: var(--r-sm); font-weight: 600; font-size: 12px; cursor: pointer; font-family: var(--f-ui); }
+
+  /* Mensajes */
+  .ibx-msgs { flex: 1; overflow-y: auto; min-height: 0; padding: var(--s2) var(--s3); display: flex; flex-direction: column; gap: 4px; }
+  .bubble { max-width: 70%; padding: 9px 13px; border-radius: 16px; font-size: 13.5px; line-height: 1.45; word-wrap: break-word; position: relative; }
+  .bubble--in { align-self: flex-start; background: var(--bg-3); border-bottom-left-radius: 5px; color: var(--text); }
+  .bubble--out { align-self: flex-end; background: linear-gradient(160deg, #2A5C4E, #1E4A3E); color: #F0F5F2; border-bottom-right-radius: 5px; }
+  .bubble--note { align-self: center; background: var(--amber-soft); border: 1px solid rgba(224,164,74,.3); color: var(--amber); font-size: 12.5px; max-width: 82%; border-radius: 10px; }
+  .bubble__time { font-size: 10.5px; opacity: .45; margin-top: 3px; text-align: right; display: block; font-variant-numeric: tabular-nums; }
+  .ibx-daysep { align-self: center; font-size: 11px; color: var(--text-3); background: var(--bg-2); padding: 3px 12px; border-radius: 999px; margin: 6px 0; border: 1px solid var(--border-soft); }
+  .media-img { max-width: 220px; max-height: 280px; border-radius: 10px; display: block; cursor: pointer; }
+  .media-video { max-width: 220px; border-radius: 10px; display: block; }
+  .media-audio { width: 210px; display: block; border-radius: 8px; }
+  .audio-player{ display:inline-flex; align-items:center; gap:8px; padding:4px 10px 4px 4px; border-radius:12px; min-width:190px; max-width:240px; }
+  .bubble--in .audio-player{ background:var(--bg-3); }
+  .bubble--out .audio-player{ background:rgba(200,164,90,.12); }
+  .audio-player__btn{ width:34px; height:34px; border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; padding:0; transition:transform .15s; background:var(--gold); }
+  .audio-player__btn:active{ transform:scale(.92); }
+  .audio-player__btn svg{ width:14px; height:14px; fill:#000; margin-left:2px; }
+  .audio-player__btn.playing svg{ margin-left:0; }
+  .audio-player__wave{ flex:1; display:flex; align-items:center; gap:2px; height:24px; }
+  .audio-player__bar{ width:3px; border-radius:2px; background:var(--text-3); transition:background .12s; }
+  .bubble--out .audio-player__bar{ background:rgba(200,164,90,.3); }
+  .audio-player__bar.active{ background:var(--gold) !important; }
+  .audio-player__time{ font-size:11px; color:var(--text-2); font-variant-numeric:tabular-nums; white-space:nowrap; min-width:32px; text-align:right; }
+  .media-file { color: var(--text-2); text-decoration: none; border-bottom: 1px solid var(--border-soft); word-break: break-all; }
+  .media-cap { margin-top: 4px; font-size: 12.5px; }
+
+  /* Reacciones */
+  .bub-reactions { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+  .bub-reaction { display: inline-flex; align-items: center; gap: 3px; background: rgba(200,164,90,.12); border: 1px solid rgba(200,164,90,.25); border-radius: 999px; padding: 1px 7px; font-size: 13px; cursor: pointer; transition: background .15s; }
+  .bub-reaction:hover { background: rgba(200,164,90,.25); }
+  .bub-reaction.mine { border-color: var(--gold); background: rgba(200,164,90,.2); }
+  .bub-reaction .r-count { font-size: 10px; color: var(--text-2); }
+  .emoji-trigger { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--bg-3); border: 1px solid var(--border); cursor: pointer; font-size: 14px; transition: background .15s; margin-top: 4px; }
+  .emoji-trigger:hover { background: var(--bg-2); }
+  .emoji-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; padding: 8px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; position: absolute; bottom: 100%; right: 0; z-index: 50; min-width: 200px; box-shadow: 0 4px 20px rgba(0,0,0,.3); }
+  .emoji-grid button { background: none; border: none; font-size: 20px; padding: 6px; cursor: pointer; border-radius: 8px; transition: background .12s; }
+  .emoji-grid button:hover { background: rgba(200,164,90,.15); }
+
+  /* Skeleton */
+  .sk { background: linear-gradient(90deg, var(--bg-2) 25%, var(--bg-3) 50%, var(--bg-2) 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+  /* Templates chips */
+  .ibx-tpls { display: flex; gap: 5px; padding: 8px var(--s3) 0; flex-wrap: wrap; }
+  .tpl-chip { background: var(--bg-3); border: 1px solid var(--border); color: var(--text-2); height: 28px; padding: 0 12px; border-radius: 999px; font-size: 11.5px; cursor: pointer; white-space: nowrap; font-family: var(--f-ui); transition: background .12s, color .12s; }
+  .tpl-chip:hover { background: var(--bg-4); color: var(--text); }
+
+  /* Compositor */
+  .ibx-compose { flex-shrink: 0; padding: 10px var(--s3); padding-bottom: calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border-soft); background: var(--bg-1); display: flex; flex-direction: column; gap: 6px; }
+  .compose-row { display: flex; gap: 8px; align-items: flex-end; }
+  .compose-pill { flex: 1; min-width: 0; display: flex; align-items: flex-end; background: var(--bg-3); border: 1px solid var(--border); border-radius: 22px; padding: 2px 4px; min-height: 44px; transition: border-color .15s; }
+  .compose-pill:focus-within { border-color: var(--gold-line); }
+  .compose-pill textarea { flex: 1; min-width: 0; width: 100%; resize: none; background: transparent; border: none; color: var(--text); padding: 10px 8px; font-family: var(--f-ui); font-size: 14px; line-height: 1.35; max-height: 100px; outline: none; }
+  .compose-pill textarea::placeholder { color: var(--text-3); }
+  .icon-btn { background: none; border: none; color: var(--text-3); padding: 9px 8px; cursor: pointer; display: flex; align-items: center; transition: color .12s; flex-shrink: 0; }
+  .icon-btn:hover { color: var(--text-2); }
+  .icon-btn svg { width: 20px; height: 20px; }
+  .fab-send { width: 42px; height: 42px; border-radius: 50%; background: var(--gold); color: #000; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity .12s, transform .1s; }
+  .fab-send:hover { opacity: .85; }
+  .fab-send:active { transform: scale(.92); }
+  .fab-send:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+  .fab-send svg { width: 20px; height: 20px; }
+  .fab-send.grabando { background: var(--red); animation: micPulse 1s infinite; }
+  @keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(229,72,77,.3); } 50% { box-shadow: 0 0 0 10px rgba(229,72,77,0); } }
+
+  /* Rec strip */
+  .rec-strip { display: none; flex: 1; align-items: center; gap: 10px; background: var(--bg-3); border: 1px solid rgba(229,72,77,.3); border-radius: 22px; padding: 0 18px; min-height: 44px; cursor: pointer; }
+  .rec-strip.show { display: flex; }
+  .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: recPulse .8s infinite; }
+  @keyframes recPulse { 0%,100% { opacity:1;transform:scale(1); } 50% { opacity:.4;transform:scale(.8); } }
+  .rec-timer { color: var(--red); font-weight: 600; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .rec-hint { color: var(--text-3); font-size: 11.5px; margin-left: auto; }
+
+  /* Audio preview */
+  .audio-preview { display: none; align-items: center; gap: 10px; }
+  .audio-preview.show { display: flex; }
+  .audio-preview audio { flex: 1; height: 34px; }
+  .btn-ap { height: 34px; padding: 0 14px; border: none; border-radius: var(--r-sm); font-weight: 600; font-size: 12.5px; cursor: pointer; font-family: var(--f-ui); }
+  .btn-ap-send { background: var(--gold); color: #000; }
+  .btn-ap-cancel { background: var(--bg-3); color: var(--text-2); border: 1px solid var(--border); }
+
+  /* Slash menu */
+  .slash-menu { display: none; background: var(--bg-2); border: 1px solid var(--border-strong); border-radius: var(--r-sm); max-height: 200px; overflow-y: auto; box-shadow: var(--sh-3); }
+  .slash-menu.show { display: block; }
+  .slash-item { padding: 9px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; border-bottom: 1px solid var(--border-soft); transition: background .1s; }
+  .slash-item:hover, .slash-item.sel { background: var(--gold-soft); }
+  .slash-item .si-t { color: var(--gold); font-weight: 600; font-size: 12.5px; }
+  .slash-item .si-b { color: var(--text-3); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Emoji panel */
+  .emoji-panel { display: none; grid-template-columns: repeat(8, 1fr); gap: 2px; padding: 8px 12px; max-height: 180px; overflow-y: auto; background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: var(--r-sm); }
+  .emoji-panel.show { display: grid; }
+  .emoji-panel button { background: none; border: none; font-size: 20px; padding: 5px 0; cursor: pointer; border-radius: 6px; line-height: 1; transition: background .1s; }
+  .emoji-panel button:hover { background: var(--bg-3); }
+
+  /* ── Attach menu ── */
+  .attach-menu {
+    display: none; position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 50;
+    background: var(--bg-2); border: 1px solid var(--border-strong); border-radius: 14px;
+    padding: 6px; min-width: 180px; box-shadow: var(--sh-3);
+    animation: menuIn .15s ease;
+  }
+  .attach-menu.show { display: block; }
+  @keyframes menuIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .attach-opt {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: none; border-radius: 10px;
+    background: transparent; color: var(--text); font-size: 13px; font-family: var(--f-ui); cursor: pointer;
+    width: 100%; text-align: left; transition: background .1s;
+  }
+  .attach-opt:hover { background: var(--bg-3); }
+  .attach-opt svg { width: 20px; height: 20px; color: var(--gold); flex-shrink: 0; }
+  .attach-opt .loc-emoji { font-size: 20px; flex-shrink: 0; width: 20px; height: 20px; display:grid; place-items:center; }
+
+  /* ── Location card ── */
+  .loc-card{ display:flex; flex-direction:column; background:var(--bg-3); border-radius:10px; overflow:hidden; cursor:pointer; max-width:280px; border:1px solid var(--border-soft); }
+  .loc-card:hover{ opacity:.85; }
+  .loc-card .loc-map{ width:100%; height:120px; background:var(--bg-4); display:grid; place-items:center; font-size:32px; overflow:hidden; position:relative; }
+  .loc-card .loc-map img{ width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
+  .loc-card .loc-body{ display:flex; align-items:center; gap:8px; padding:8px 10px; }
+  .loc-card .loc-body .loc-ic{ font-size:16px; flex-shrink:0; }
+  .loc-card .loc-body .loc-info{ flex:1; min-width:0; }
+  .loc-card .loc-body .loc-tit{ font-size:12.5px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .loc-card .loc-body .loc-sub{ font-size:10px; color:var(--text-3); margin-top:1px; }
+  .loc-form{ display:flex; flex-direction:column; gap:8px; }
+  .loc-form input{ background:var(--bg-2); border:1px solid var(--border); border-radius:8px; padding:9px 11px; font-size:13px; color:var(--text); outline:none; }
+  .loc-form input:focus{ border-color:var(--gold); }
+  .loc-preset{ display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
+  .loc-preset-btn{ display:flex; align-items:center; gap:8px; background:var(--bg-2); border:1px solid var(--border); border-radius:10px; padding:9px 11px; color:var(--text-2); font-size:12.5px; cursor:pointer; transition:all .1s; text-align:left; width:100%; }
+  .loc-preset-btn:hover{ background:var(--bg-3); }
+  .loc-preset-btn .loc-preset-icon{ font-size:16px; }
+  .loc-search-wrap{ position:relative; margin:8px 0; }
+  .loc-search-wrap input{ width:100%; background:var(--bg-2); border:1px solid var(--border); border-radius:8px; padding:9px 11px; font-size:13px; color:var(--text); outline:none; box-sizing:border-box; }
+  .loc-search-wrap input:focus{ border-color:var(--gold); }
+  .loc-results{ position:absolute; top:100%; left:0; right:0; background:var(--bg-1); border:1px solid var(--border); border-radius:8px; margin-top:4px; max-height:170px; overflow-y:auto; display:none; z-index:10; }
+  .loc-result{ display:flex; align-items:center; gap:8px; width:100%; padding:8px 10px; border:none; border-bottom:1px solid var(--border); background:none; color:var(--text-2); font-size:12px; text-align:left; cursor:pointer; }
+  .loc-result:last-child{ border-bottom:none; }
+  .loc-result:hover{ background:var(--bg-3); }
+  .loc-result .loc-r-icon{ font-size:14px; flex-shrink:0; }
+
+  /* ── Image preview modal ── */
+  .img-preview-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.85); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm);
+    flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px;
+  }
+  .img-preview-overlay.show { display: flex; }
+  .img-preview-overlay img {
+    max-width: 90vw; max-height: 55vh; border-radius: 12px; object-fit: contain;
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  }
+  .img-preview-caption {
+    width: 100%; max-width: 420px; background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 22px; padding: 10px 16px; color: var(--text); font-size: 14px;
+    font-family: var(--f-ui); outline: none; resize: none;
+  }
+  .img-preview-caption::placeholder { color: var(--text-3); }
+  .img-preview-actions { display: flex; gap: 10px; }
+  .img-preview-actions button {
+    padding: 10px 24px; border-radius: 22px; border: none; font-size: 14px;
+    font-weight: 600; font-family: var(--f-ui); cursor: pointer; transition: opacity .12s;
+  }
+  .img-preview-actions .ip-cancel { background: var(--bg-3); color: var(--text-2); }
+  .img-preview-actions .ip-send { background: var(--gold); color: #000; }
+  .img-preview-actions button:active { opacity: .8; }
+
+  /* ── Lightbox ── */
+  .lightbox {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,.92); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm);
+    align-items: center; justify-content: center; cursor: zoom-out;
+  }
+  .lightbox.show { display: flex; }
+  .lightbox img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 6px; }
+  .lightbox-close {
+    position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,.15); border: none; color: #fff; cursor: pointer;
+    display: grid; place-items: center; font-size: 18px; transition: background .12s;
+  }
+  .lightbox-close:hover { background: rgba(255,255,255,.25); }
+
+  /* Conn dot */
+  .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); display: inline-block; transition: background .3s; }
+  .conn-dot.on { background: var(--green); }
+
+  /* Panel lateral (info + notas) */
+  .os-panel__head { padding: 16px var(--s3) 12px; border-bottom: 1px solid var(--border-soft); display: flex; align-items: center; justify-content: space-between; }
+  .os-panel__body { padding: var(--s3); overflow-y: auto; flex: 1; }
+  .panel-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border-soft); font-size: 13px; }
+  .panel-row span { color: var(--text-3); font-size: 12px; }
+  .panel-row strong { color: var(--text); font-weight: 500; text-transform: capitalize; }
+
+  /* Responsive */
+  @media (max-width: 860px) {
+    .ibx-list { width: 100%; }
+    .ibx-list.hide { display: none; }
+    .ibx-thread.hide { display: none; }
+    .btn-back { display: flex !important; }
+  }
+  .btn-back { display: none; }
+  .leaflet-map{ width:100%; height:120px; background:var(--bg-4); border-radius:10px 10px 0 0; overflow:hidden; }
+</style>
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script src="/vendor/leaflet/leaflet.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const { ICONS, api, toast, avatarColor, initials, fmtPhone } = SPOS;
+
+  // Avatar del cliente: usa foto real si existe (Messenger/Instagram la exponen vía
+  // Graph API; WhatsApp no — ahí siempre caemos a iniciales de color).
+  function avatarInner(c) {
+    if (c.customer_avatar) return `<img src="${esc(c.customer_avatar)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+    return initials(c.customer_name);
+  }
+  function avatarBg(c) { return c.customer_avatar ? 'transparent' : avatarColor(c.customer_name); }
+
+  const EMOJIS = ['😀','😂','😊','😍','🥰','😎','🤝','👍','👌','🙏','💪','👏','🎉','🔥','⭐','❤️','💛','💚','✅','❌','⏰','📍','📞','💬','🏡','🏠','🌳','📐','📄','💰','💵','🤑','📈','🔑','🚪','🚗','☀️','🎯','✨','💡','🙌','😅','🤔','😉','🥳','🫡'];
+
+  const CH = {
+    whatsapp:  { t:'WhatsApp',  e:'🟢', bg:'var(--green)' },
+    messenger: { t:'Messenger', e:'🔵', bg:'var(--blue)' },
+    instagram: { t:'Instagram', e:'🟣', bg:'var(--gold)' },
+    webchat:   { t:'Web',       e:'⚪', bg:'var(--text-3)' },
+  };
+  const chan = c => CH[c] || { t: c || 'Canal', e: '💬', bg: 'var(--text-3)' };
+
+  const ETQ = { sin_clasificar:'Nuevo', interesado:'Interesado', negociacion:'Negociación', cita:'Cita', vendido:'Vendido', no_interesado:'No interesado' };
+
+  function I(d, s) {
+    s = s || 20;
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="${s}" height="${s}" aria-hidden="true">${d}</svg>`;
+  }
+  const D = {
+    search: 'M11 17.25a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5zM16 16l3.5 3.5',
+    send: 'm22 2-7 20-4-9-9-4ZM22 2 11 13',
+    mic: 'M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3ZM19 10v2a7 7 0 0 1-14 0v-2M12 19v3',
+    stop: '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/>',
+    clip: 'm21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48',
+    smile: '<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/>',
+    note: 'M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3ZM15 3v6h6',
+    back: 'm12 19-7-7 7-7M19 12H5',
+    x: 'M18 6 6 18M6 6l12 12',
+    inbox: 'M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13l3.5 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z',
+    user: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+    plus: 'M12 5v14M5 12h14',
+  };
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function timeago(ts) { if (!ts) return ''; const d = new Date(String(ts).replace(' ', 'T')); if (isNaN(d)) return ''; const m = Math.floor((Date.now() - d) / 60000); if (m < 1) return 'ahora'; if (m < 60) return m + 'm'; const h = Math.floor(m / 60); if (h < 24) return h + 'h'; return Math.floor(h / 24) + 'd'; }
+  function hhmm(ts) { const d = new Date(String(ts).replace(' ', 'T')); return isNaN(d) ? '' : d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }); }
+  function dayLabel(ts) { if (!ts) return ''; const d = new Date(String(ts).replace(' ', 'T')); if (isNaN(d)) return ''; const hoy = new Date(), ayer = new Date(); ayer.setDate(hoy.getDate() - 1); const sd = (a, b) => a.toDateString() === b.toDateString(); if (sd(d, hoy)) return 'Hoy'; if (sd(d, ayer)) return 'Ayer'; return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+
+  /* ── Shell ── */
+  const ctx = await SPOS.mount({ active: 'inbox', title: 'Inbox omnicanal', crumb: 'Conversaciones unificadas', padded: false, panel: true });
+  if (!ctx) return;
+  ctx.content.style.cssText = 'flex:1;min-height:0;overflow:hidden;padding:0;display:flex';
+
+  /* ── Estado ── */
+  let convs = [], templates = [], waTemplates = [], vendedores = [];
+  let current = null, chanFilter = 'todos', query = '', slashIdx = -1;
+
+  /* ── Cargar datos ── */
+    const [convData, tplData, waTplData, vendData] = await Promise.all([
+      api('/api/inbox/unified-conversations'),
+      api('/api/templates'),
+      api('/api/wa-templates'),
+      api('/api/vendedores'),
+    ]);
+
+  convs = Array.isArray(convData) ? convData : [];
+  templates = tplData || [];
+  waTemplates = waTplData || [];
+  vendedores = vendData || [];
+
+  /* ── DOM ── */
+  const listEl = document.createElement('div'); listEl.className = 'ibx-list'; listEl.id = 'ibxList';
+  const threadEl = document.createElement('div'); threadEl.className = 'ibx-thread'; threadEl.id = 'ibxThread';
+  ctx.content.appendChild(listEl); ctx.content.appendChild(threadEl);
+
+  const CHIPS = [['todos','Todos'],['whatsapp','WhatsApp'],['instagram','Instagram'],['messenger','Messenger']];
+  listEl.innerHTML = `
+    <div class="ibx-list__top">
+      <h3>Inbox · <span id="ibxCount" style="color:var(--gold)">0</span></h3>
+      <button class="btn btn--gold btn--sm" id="btnNewChat" style="margin-left:auto;white-space:nowrap">${I(D.plus,14)} Nuevo chat</button>
+      <div class="os-search" style="width:100%">${I(D.search,14)}<input id="ibxQ" placeholder="Buscar conversación…"></div>
+    </div>
+    <div class="ibx-chips">${CHIPS.map(([k,l],i)=>`<button class="ibx-chip${i===0?' active':''}" data-c="${k}">${l}</button>`).join('')}</div>
+    <div class="ibx-scroll" id="ibxConvs"></div>`;
+
+  threadEl.innerHTML = `<div class="ibx-empty" id="ibxEmpty">${I(D.inbox,48)}<p>Selecciona una conversación</p></div><div id="ibxChat" style="display:none;flex:1;min-height:0;flex-direction:column;height:100%"></div>`;
+
+  panelVacio();
+  renderList();
+  wiring();
+  conectarStream();
+
+  // Auto-abrir modal de nuevo chat si se viene con ?newchat=1
+  if (new URLSearchParams(location.search).get('newchat') === '1') {
+    setTimeout(() => openNewChatModal(), 500);
+  }
+
+  // Deep-link desde el SP Feed: abrir la conversación del lead indicado
+  const leadIdParam = new URLSearchParams(location.search).get('leadId');
+  if (leadIdParam) {
+    const target = convs.find(c => String(c.lead_id) === String(leadIdParam))
+      || convs.find(c => String(c.id) === String(leadIdParam));
+    if (target) setTimeout(() => abrirConv(target.id), 400);
+  }
+
+  /* ── Render lista ── */
+  function convsFiltradas() {
+    return convs.filter(c => {
+      const okC = chanFilter === 'todos' || c.channel === chanFilter;
+      const okQ = !query || (c.customer_name || '').toLowerCase().includes(query) || (c.customer_phone || '').includes(query);
+      return okC && okQ;
+    });
+  }
+
+  function renderList() {
+    const items = convsFiltradas();
+    document.getElementById('ibxCount').textContent = items.length;
+    const box = document.getElementById('ibxConvs');
+    if (!items.length) { box.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-3);font-size:13px">Sin conversaciones</div>`; return; }
+    box.innerHTML = items.map(c => {
+      const ch = chan(c.channel);
+      return `<div class="ibx-item${current === c.id ? ' active' : ''}${c.unread_count > 0 ? ' unread' : ''}" data-id="${c.id}">
+        <div class="ibx-item__av">
+          <div class="avatar avatar--sm" style="background:${avatarBg(c)}">${avatarInner(c)}</div>
+          <div class="ibx-item__ch" style="background:${ch.bg}">${ch.e}</div>
+        </div>
+        <div class="ibx-item__info">
+          <div class="ibx-item__top">
+            <span class="ibx-item__name">${esc(c.customer_name || 'Sin nombre')}</span>
+            <span class="ibx-item__time">${timeago(c.updated_at)}</span>
+          </div>
+          <div class="ibx-item__bot">
+            <span class="ibx-item__prev">${esc(c.last_message || c.last || '—')}</span>
+            ${c.unread_count > 0 ? `<span class="ibx-badge">${c.unread_count > 99 ? '99+' : c.unread_count}</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    box.querySelectorAll('[data-id]').forEach(el => el.addEventListener('click', () => abrirConv(Number(el.dataset.id))));
+    const nb = document.getElementById('navBadgeInbox');
+    if (nb) { const u = convs.reduce((s, c) => s + (c.unread_count || 0), 0); nb.textContent = u || '•'; }
+  }
+
+  /* ── Abrir conversación ── */
+  async function abrirConv(id) {
+    current = id; renderList();
+    const c = convs.find(x => x.id === id); if (!c) return;
+    // Si es legacy lead sin conversación, convertir primero
+    if (c._type === 'lead') {
+      const res = await api('/api/inbox/leads/' + id + '/open', { method: 'POST' });
+      if (!res || !res.conversation) { toast('Error al abrir lead', 'err'); return; }
+      const conv = res.conversation; conv._type = 'conversation';
+      const idx = convs.findIndex(x => x.id === id && x._type === 'lead');
+      if (idx >= 0) convs[idx] = conv;
+      await abrirConv(conv.id); return;
+    }
+    const ch = chan(c.channel);
+    if (window.innerWidth <= 860) { listEl.classList.add('hide'); threadEl.classList.remove('hide'); }
+
+    const $empty = document.getElementById('ibxEmpty');
+    const $chat = document.getElementById('ibxChat');
+    $empty.style.display = 'none'; $chat.style.display = 'flex'; $chat.style.flexDirection = 'column'; $chat.style.flex = '1'; $chat.style.minHeight = '0'; $chat.style.height = '100%';
+
+    const chips = templates.map(t => `<button class="tpl-chip" data-c="${esc(t.cuerpo)}">${esc(t.titulo)}</button>`).join('');
+
+    $chat.innerHTML = `
+      <div class="ibx-thead">
+        <button class="btn btn--icon btn--quiet btn-back" id="btnBack">${I(D.back)}</button>
+        <div class="avatar avatar--sm" style="background:${avatarBg(c)}">${avatarInner(c)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="ibx-thead__name">${esc(c.customer_name || 'Sin nombre')}</div>
+          <div class="ibx-thead__sub">${ch.e} ${ch.t} · ${esc(fmtPhone(c.customer_phone))} · ${esc(c.assigned_to_nombre || 'sin asesor')}${c.assigned_to_foto ? ` <img src="${esc(c.assigned_to_foto)}" style="display:inline-block;width:14px;height:14px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-left:2px" alt="">` : ''}</div>
+        </div>
+        <span class="conn-dot" id="connDot" title="Estado"></span>
+        <span id="windowBadge" style="display:none;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600"></span>
+      </div>
+      <div class="ibx-tools">
+        <label>Etiqueta:</label>
+        <select id="etqSel">
+          ${Object.entries(ETQ).map(([v,t])=>`<option value="${v}" ${(c.etiqueta||'sin_clasificar')===v?'selected':''}>${t}</option>`).join('')}
+        </select>
+        <label style="margin-left:6px">Asesor:</label>
+        <select id="asigSel">
+          <option value="">Sin asignar</option>
+          ${vendedores.map(v=>`<option value="${v.id}" ${Number(c.assigned_to_id)===Number(v.id)?'selected':''}>${esc(v.nombre)}</option>`).join('')}
+        </select>
+        <button class="ibx-tools-btn" id="notasBtn">${I(D.note,14)} Notas</button>
+        ${waTemplates.length ? `<button class="ibx-tools-btn" id="btnReactivar">${I(D.mic,14)} Reactivar</button>` : ''}
+      </div>
+      <div class="ibx-notas" id="notasPanel">
+        <div id="notasList"></div>
+        <form class="nota-form" id="notaForm">
+          <input type="text" id="notaInput" placeholder="Nota interna (solo la ve el equipo)…" maxlength="500">
+          <button type="submit">Guardar</button>
+        </form>
+      </div>
+      ${waTemplates.length ? `<div id="reactivarPanel" style="display:none;padding:8px 20px;background:var(--bg-2);border-bottom:1px solid var(--border-soft);display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px"><span style="color:var(--text-3)">Plantilla:</span>${waTemplates.map(t=>`<button onclick="enviarWATemplate(${c.id},'${esc(t.nombre)}','${esc(t.idioma)}')" class="btn btn--ghost btn--sm" style="font-size:11.5px">${esc(t.nombre)}</button>`).join('')}</div>` : ''}
+      <div class="ibx-msgs" id="ibxMsgs" role="log" aria-live="polite">
+        <div class="sk" style="height:40px;width:58%;border-radius:12px;align-self:flex-start"></div>
+      </div>
+      ${chips ? `<div class="ibx-tpls">${chips}</div>` : ''}
+      <div class="ibx-compose" id="ibxCompose">
+        <div class="emoji-panel" id="emojiPanel"></div>
+        <div class="slash-menu" id="slashMenu"></div>
+        <div class="audio-preview" id="audioPreview">
+          <button class="btn-ap btn-ap-cancel" id="apCancel">${I(D.x,14)}</button>
+          <audio id="audioPlayback" controls></audio>
+          <button class="btn-ap btn-ap-send" id="apSend">Enviar audio</button>
+        </div>
+        <div class="compose-row" style="position:relative">
+          <div class="rec-strip" id="recStrip">
+            <span class="rec-dot"></span>
+            <span class="rec-timer" id="recTimer">0:00</span>
+            <span class="rec-hint">Grabando… toca para detener</span>
+          </div>
+          <div class="compose-pill" id="pill">
+            <button type="button" class="icon-btn" id="emojiBtn">${I(D.smile)}</button>
+            <textarea id="msgInput" rows="1" placeholder="Escribe un mensaje…" aria-label="Mensaje"></textarea>
+            <button type="button" class="icon-btn" id="adjuntar">${I(D.clip)}</button>
+          </div>
+          <div class="attach-menu" id="attachMenu">
+            <button class="attach-opt" data-action="gallery">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+              Galería
+            </button>
+            <button class="attach-opt" data-action="camera">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+              Cámara
+            </button>
+            <button class="attach-opt" data-action="document">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Documento
+            </button>
+            <button class="attach-opt" data-action="location">
+              <span class="loc-emoji">📍</span>
+              Ubicación
+            </button>
+          </div>
+          <input type="file" id="fileInputGallery" accept="image/*,video/*" style="display:none">
+          <input type="file" id="fileInputCamera" accept="image/*" capture="environment" style="display:none">
+          <input type="file" id="fileInputDoc" accept="application/pdf,.doc,.docx,.xls,.xlsx,.txt,audio/*" style="display:none">
+          <button type="button" class="fab-send" id="mainBtn">${I(D.mic)}</button>
+        </div>
+      </div>
+
+      <!-- Image preview modal -->
+      <div class="img-preview-overlay" id="imgPreview">
+        <img id="imgPreviewThumb" src="" alt="Preview">
+        <textarea class="img-preview-caption" id="imgPreviewCaption" rows="1" placeholder="Agrega un caption…"></textarea>
+        <div class="img-preview-actions">
+          <button class="ip-cancel" id="imgPreviewCancel">Cancelar</button>
+          <button class="ip-send" id="imgPreviewSend">Enviar</button>
+        </div>
+      </div>
+
+      <!-- Lightbox -->
+      <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" id="lightboxClose">✕</button>
+        <img id="lightboxImg" src="" alt="">
+      </div>`;
+
+    /* Cargar mensajes */
+    const data = await api('/api/inbox/conversations/' + id + '/timeline');
+    const msgs = data?.messages || [];
+    api('/api/inbox/conversations/' + id + '/leido', { method: 'POST' }).catch(() => { });
+    c.unread_count = 0; renderList();
+    renderMsgs(msgs);
+
+    /* Panel lateral */
+    panelParaConv(c);
+
+    /* Wiring */
+    document.getElementById('btnBack')?.addEventListener('click', () => {
+      listEl.classList.remove('hide'); threadEl.classList.add('hide'); current = null; renderList();
+    });
+
+    document.querySelectorAll('.tpl-chip').forEach(btn =>
+      btn.addEventListener('click', () => {
+        const inp = document.getElementById('msgInput'); if (!inp) return;
+        inp.value = btn.dataset.c; inp.style.height = 'auto'; inp.style.height = inp.scrollHeight + 'px'; inp.focus(); updateMainBtn();
+      }));
+
+    document.getElementById('etqSel')?.addEventListener('change', async e => {
+      const r = await api('/api/inbox/conversations/' + id + '/etiqueta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ etiqueta: e.target.value }) });
+      if (r !== null) { c.etiqueta = e.target.value; toast('Etiqueta actualizada', 'ok'); } else toast('Error al actualizar etiqueta', 'err');
+    });
+
+    document.getElementById('asigSel')?.addEventListener('change', async e => {
+      const vId = e.target.value;
+      if (!vId) return;
+      const r = await api('/api/inbox/conversations/' + id + '/assign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vendedorId: vId }) });
+      if (r !== null) { c.assigned_to_id = vId; toast('Asignado', 'ok'); } else toast('Error al asignar', 'err');
+    });
+
+    document.getElementById('notasBtn')?.addEventListener('click', async () => {
+      const p = document.getElementById('notasPanel');
+      const abre = !p.classList.contains('show');
+      p.classList.toggle('show', abre);
+      if (abre) await cargarNotas(id);
+    });
+
+    document.getElementById('notaForm')?.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const inp = document.getElementById('notaInput');
+      const nota = inp.value.trim(); if (!nota) return;
+      await api('/api/inbox/conversations/' + id + '/notas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nota }) });
+      inp.value = ''; await cargarNotas(id);
+    });
+
+    document.getElementById('btnReactivar')?.addEventListener('click', () => {
+      const p = document.getElementById('reactivarPanel'); if (p) p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+    });
+
+    /* ── Window status check ── */
+    if (c.lead_id && c.channel === 'whatsapp') {
+      try {
+        const ws = await api('/api/leads/' + c.lead_id + '/window-status');
+        const badge = document.getElementById('windowBadge');
+        if (badge) {
+          badge.style.display = 'inline';
+          if (ws.open) {
+            badge.textContent = 'Ventana abierta';
+            badge.style.background = '#2d5a27'; badge.style.color = '#8fe88a';
+          } else {
+            badge.textContent = ws.templateName ? 'Ventana cerrada — se enviará template' : 'Ventana cerrada';
+            badge.style.background = '#5a2727'; badge.style.color = '#e88a8a';
+          }
+        }
+      } catch (e) { /* noop */ }
+    }
+
+    /* Compositor */
+    iniciarCompositor(id, c);
+  }
+
+  /* ── Compositor completo ── */
+  function iniciarCompositor(id, conv) {
+    const input = document.getElementById('msgInput');
+    const mainBtn = document.getElementById('mainBtn');
+    const pill = document.getElementById('pill');
+    const recStrip = document.getElementById('recStrip');
+    const emojiBtn = document.getElementById('emojiBtn');
+    const emojiPanel = document.getElementById('emojiPanel');
+    const adjuntar = document.getElementById('adjuntar');
+    const audioPreview = document.getElementById('audioPreview');
+    const audioPlayback = document.getElementById('audioPlayback');
+    const apSend = document.getElementById('apSend');
+    const apCancel = document.getElementById('apCancel');
+
+    function updateMainBtn() {
+      if (mediaRec && mediaRec.state === 'recording') return;
+      const hay = input.value.trim().length > 0;
+      mainBtn.innerHTML = hay ? I(D.send) : I(D.mic);
+      mainBtn.setAttribute('aria-label', hay ? 'Enviar' : 'Grabar audio');
+    }
+
+    input.addEventListener('input', () => {
+      input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px';
+      updateMainBtn(); actualizarMenuSlash();
+    });
+    input.addEventListener('keydown', e => {
+      if (manejarSlash(e)) return;
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(id, conv); }
+    });
+
+    adjuntar.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const menu = document.getElementById('attachMenu');
+      menu.classList.toggle('show');
+    });
+
+    // Cerrar menú al hacer click fuera
+    document.addEventListener('click', (e) => {
+      const menu = document.getElementById('attachMenu');
+      if (menu && !menu.contains(e.target) && e.target !== adjuntar) menu.classList.remove('show');
+    });
+
+    // Opciones del menú de adjuntos
+    document.querySelectorAll('.attach-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const action = opt.dataset.action;
+        document.getElementById('attachMenu').classList.remove('show');
+        if (action === 'gallery') document.getElementById('fileInputGallery').click();
+        else if (action === 'camera') document.getElementById('fileInputCamera').click();
+        else if (action === 'document') document.getElementById('fileInputDoc').click();
+        else if (action === 'location') abrirEnviarUbicacionInbox(id);
+      });
+    });
+
+    // Gallery / Camera → preview modal; Document → enviar directo
+    document.getElementById('fileInputGallery').addEventListener('change', (e) => {
+      if (e.target.files?.[0]) mostrarPreviewImagen(e.target.files[0]);
+      e.target.value = '';
+    });
+    document.getElementById('fileInputCamera').addEventListener('change', (e) => {
+      if (e.target.files?.[0]) mostrarPreviewImagen(e.target.files[0]);
+      e.target.value = '';
+    });
+    document.getElementById('fileInputDoc').addEventListener('change', (e) => {
+      if (e.target.files?.[0]) enviarMedia(id, e.target.files[0]);
+      e.target.value = '';
+    });
+
+    /* ── Image preview modal ── */
+    let previewFile = null;
+    function mostrarPreviewImagen(file) {
+      if (file.size > 18 * 1024 * 1024) { toast('Archivo muy grande (máx 18 MB)', 'err'); return; }
+      previewFile = file;
+      const overlay = document.getElementById('imgPreview');
+      const thumb = document.getElementById('imgPreviewThumb');
+      const caption = document.getElementById('imgPreviewCaption');
+      thumb.src = URL.createObjectURL(file);
+      caption.value = '';
+      overlay.classList.add('show');
+      setTimeout(() => caption.focus(), 100);
+    }
+    document.getElementById('imgPreviewCancel').addEventListener('click', () => {
+      document.getElementById('imgPreview').classList.remove('show');
+      previewFile = null;
+    });
+    document.getElementById('imgPreviewSend').addEventListener('click', async () => {
+      if (!previewFile) return;
+      const caption = document.getElementById('imgPreviewCaption').value.trim();
+      const file = previewFile;
+      document.getElementById('imgPreview').classList.remove('show');
+      previewFile = null;
+      await enviarMediaConCaption(id, file, caption);
+    });
+    document.getElementById('imgPreview').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('imgPreview')) {
+        document.getElementById('imgPreview').classList.remove('show');
+        previewFile = null;
+      }
+    });
+
+    emojiPanel.innerHTML = EMOJIS.map(e => `<button type="button">${e}</button>`).join('');
+    emojiBtn.addEventListener('click', () => emojiPanel.classList.toggle('show'));
+    emojiPanel.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      const pos = input.selectionStart ?? input.value.length;
+      input.value = input.value.slice(0, pos) + b.textContent + input.value.slice(pos);
+      input.focus(); input.selectionStart = input.selectionEnd = pos + b.textContent.length;
+      updateMainBtn();
+    }));
+
+    let mediaRec = null, recChunks = [], recInterval = null, recBlob = null;
+    const fmtSecs = s => Math.floor(s / 60) + ':' + (s % 60 < 10 ? '0' : '') + s % 60;
+
+    function stopRec() {
+      if (mediaRec && mediaRec.state !== 'inactive') mediaRec.stop();
+      clearInterval(recInterval); mainBtn.classList.remove('grabando');
+      pill.style.display = 'flex'; recStrip.classList.remove('show'); updateMainBtn();
+    }
+
+    async function startRec() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const esHttps = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        toast(esHttps ? 'Tu navegador no soporta grabación de audio' : 'El micrófono solo funciona con HTTPS — usa la dirección https:// del CRM', 'err');
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mime = ['audio/ogg;codecs=opus', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+        mediaRec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+        recChunks = [];
+        mediaRec.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
+        mediaRec.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          recBlob = new Blob(recChunks, { type: mediaRec.mimeType || 'audio/webm' });
+          audioPlayback.src = URL.createObjectURL(recBlob);
+          audioPreview.classList.add('show');
+        };
+        mediaRec.start(200);
+        mainBtn.classList.add('grabando'); mainBtn.innerHTML = I(D.stop);
+        pill.style.display = 'none'; emojiPanel.classList.remove('show'); recStrip.classList.add('show');
+        let secs = 0; document.getElementById('recTimer').textContent = '0:00';
+        recInterval = setInterval(() => { secs++; document.getElementById('recTimer').textContent = fmtSecs(secs); if (secs >= 120) { stopRec(); toast('Máximo 2 min'); } }, 1000);
+      } catch (e) {
+        if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') toast('Permiso de micrófono denegado — actívalo en la configuración del navegador', 'err');
+        else if (e.name === 'NotFoundError') toast('No se encontró micrófono en este dispositivo', 'err');
+        else toast('No se pudo acceder al micrófono: ' + e.message, 'err');
+      }
+    }
+
+    mainBtn.addEventListener('click', () => {
+      if (mediaRec && mediaRec.state === 'recording') { stopRec(); return; }
+      if (input.value.trim()) { enviar(id, conv); return; }
+      startRec();
+    });
+    recStrip.addEventListener('click', () => { if (mediaRec && mediaRec.state === 'recording') stopRec(); });
+    updateMainBtn();
+
+    apCancel.addEventListener('click', () => { audioPreview.classList.remove('show'); audioPlayback.src = ''; recBlob = null; stopRec(); });
+    apSend.addEventListener('click', async () => {
+      if (!recBlob) return;
+      apSend.disabled = true; apSend.textContent = 'Enviando…';
+      try {
+        const ext = recBlob.type.includes('ogg') ? 'ogg' : recBlob.type.includes('mp4') ? 'mp4' : 'webm';
+        const dataBase64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(recBlob); });
+        const r = await api('/api/inbox/conversations/' + id + '/media', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mime: recBlob.type, filename: 'audio.' + ext, dataBase64 }) });
+        if (!r) throw new Error('No se pudo enviar el audio — revisa la conexión con WhatsApp');
+        audioPreview.classList.remove('show'); audioPlayback.src = ''; recBlob = null;
+        await recargarMensajes(id);
+      } catch (e) { toast('Error: ' + e.message, 'err'); }
+      finally { apSend.disabled = false; apSend.textContent = 'Enviar audio'; }
+    });
+  }
+
+  /* ── Enviar texto ── */
+  async function enviar(id, conv) {
+    const input = document.getElementById('msgInput');
+    const txt = (input?.value || '').trim(); if (!txt) return;
+    input.value = ''; input.style.height = 'auto';
+
+    const box = document.getElementById('ibxMsgs');
+    box.insertAdjacentHTML('beforeend', `<div class="bubble bubble--out">${esc(txt)}<span class="bubble__time">${hhmm(new Date().toISOString())}</span></div>`);
+    box.scrollTop = box.scrollHeight;
+    conv.last = txt; conv.updated_at = new Date().toISOString(); renderList();
+
+    const btn = document.getElementById('mainBtn'); if (btn) btn.disabled = true;
+    try {
+      const r = await api('/api/inbox/conversations/' + id + '/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensaje: txt }) });
+      if (!r) throw new Error('Sin respuesta');
+      if (r.templateSent) toast('Template enviado, ventana reabierta. Mensaje entregado.', 'ok');
+      else toast('Enviado', 'ok');
+    } catch (e) {
+      if (e.message && e.message.includes('window_closed_no_template')) toast('Ventana cerrada. Configura un template de reactivación en Configuración.', 'err');
+      else toast('Error: ' + e.message, 'err');
+    }
+    finally { if (btn) btn.disabled = false; updateMainBtn(); }
+  }
+
+  function updateMainBtn() {
+    const input = document.getElementById('msgInput'); const btn = document.getElementById('mainBtn');
+    if (!input || !btn) return;
+    const hay = input.value.trim().length > 0;
+    btn.innerHTML = hay ? I(D.send) : I(D.mic);
+  }
+
+  /* ── Enviar media ── */
+  async function enviarMedia(id, file) { return enviarMediaConCaption(id, file, ''); }
+
+  async function enviarMediaConCaption(id, file, caption) {
+    if (file.size > 18 * 1024 * 1024) { toast('Archivo muy grande (máx 18 MB)', 'err'); return; }
+    toast('Enviando archivo…');
+    try {
+      const dataBase64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(file); });
+      const r = await api('/api/inbox/conversations/' + id + '/media', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mime: file.type || 'application/octet-stream', filename: file.name, dataBase64, caption }) });
+      if (!r) throw new Error('No se pudo enviar el archivo');
+      await recargarMensajes(id);
+    } catch (e) { toast('Error: ' + e.message, 'err'); }
+  }
+
+  window.enviarWATemplate = async function (id, nombre, idioma) {
+    const conv = convs.find(x => x.id === id);
+    if (!conv) return;
+    if (!conv.lead_id) { toast('Esta conversación aún no tiene lead vinculado', 'err'); return; }
+    if (!confirm(`¿Enviar plantilla "${nombre}"?`)) return;
+    const r = await api('/api/leads/' + conv.lead_id + '/enviar-template', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, idioma }) });
+    if (r !== null) { toast('Plantilla enviada', 'ok'); await recargarMensajes(id); }
+    else toast('Error al enviar plantilla', 'err');
+    const p = document.getElementById('reactivarPanel'); if (p) p.style.display = 'none';
+  };
+
+  /* ── Enviar ubicación ── */
+  const UBICACIONES_PREDEFINIDAS_INBOX = [
+    { name:'Proyecto Tocaima', address:'Tocaima, Cundinamarca', lat:4.4577, lng:-74.6329 },
+    { name:'Oficina SP Inmobiliaria', address:'Bogotá', lat:4.7110, lng:-74.0721 },
+  ];
+
+  async function abrirEnviarUbicacionInbox(convId) {
+    const conv = convs.find(x => x.id === convId);
+    const leadId = conv ? conv.lead_id : null;
+    if (!leadId) { toast('Esta conversación no tiene lead vinculado', 'err'); return; }
+    const saved = await api('/api/ubicaciones-guardadas') || [];
+    const savedList = saved.length ? saved.map(p =>
+      `<div style="display:flex;align-items:center;gap:6px"><button class="loc-preset-btn loc-preset-saved" data-sid="${p.id}" style="flex:1"><span class="loc-preset-icon">📍</span><span><strong>${esc(p.nombre)}</strong>${p.direccion ? ' — '+esc(p.direccion) : ''}</span></button><button class="loc-del-saved" data-sid="${p.id}" style="background:none;border:none;color:var(--text-3);font-size:16px;cursor:pointer;padding:4px">✕</button></div>`
+    ).join('') : '<div style="color:var(--text-3);font-size:12.5px;text-align:center;padding:6px 0">Aún no tienes ubicaciones guardadas</div>';
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML = `
+      <div style="background:var(--bg-2);border-radius:14px;padding:20px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+        <h4 style="margin:0 0 14px;font-size:15px;color:var(--gold)">📍 Enviar ubicación</h4>
+        <button class="loc-preset-btn" id="locGpsInbox"><span class="loc-preset-icon">📡</span><span style="color:var(--gold)">Mi ubicación actual</span></button>
+        <div class="loc-search-wrap"><input id="locSearchInbox" placeholder="Buscar lugar…" autocomplete="off"><div class="loc-results" id="locResultsInbox"></div></div>
+        <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin:10px 0 6px">Guardadas</div>
+        <div class="loc-preset" id="locSavedInbox">${savedList}</div>
+        <button id="locCancelInbox" style="margin-top:10px;background:none;border:none;color:var(--text-3);font-size:12.5px;cursor:pointer;width:100%;text-align:center">Cancelar</button>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    // --- GPS ---
+    const gpsBtn = document.getElementById('locGpsInbox');
+    if (gpsBtn) gpsBtn.onclick = () => {
+      if (!navigator.geolocation) { toast('GPS no disponible', 'err'); return; }
+      toast('Obteniendo ubicación…');
+      overlay.remove();
+      navigator.geolocation.getCurrentPosition(async pos => {
+        const { latitude, longitude } = pos.coords;
+        let name = '', address = '';
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&accept-language=es`);
+          const d = await r.json();
+          name = d.name || d.display_name?.split(',')[0] || '';
+          address = d.display_name || '';
+        } catch (e) { }
+        const ok = await enviarUbicacionInbox(leadId, convId, latitude, longitude, name, address);
+        if (ok && name && confirm(`¿Guardar "${name}" en tus ubicaciones?`)) {
+          await api('/api/ubicaciones-guardadas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre: name, direccion: address, lat: latitude, lng: longitude }) });
+          toast('📍 Ubicación guardada', 'ok');
+        }
+      }, err => { toast('Error GPS: ' + err.message, 'err'); }, { enableHighAccuracy: true, timeout: 10000 });
+    };
+
+    // --- Búsqueda ---
+    let searchTimer;
+    const searchInput = document.getElementById('locSearchInbox');
+    const resultsEl = document.getElementById('locResultsInbox');
+    if (searchInput) {
+      searchInput.oninput = () => {
+        clearTimeout(searchTimer);
+        const q = searchInput.value.trim();
+        if (q.length < 3) { resultsEl.style.display = 'none'; return; }
+        searchTimer = setTimeout(async () => {
+          try {
+            const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=5&accept-language=es`);
+            const data = await r.json();
+            if (!resultsEl) return;
+            if (data && data.length) {
+              resultsEl.innerHTML = data.map((res, i) => `<button class="loc-result" data-idx="${i}"><span class="loc-r-icon">📍</span><span>${esc(res.display_name)}</span></button>`).join('');
+              resultsEl.style.display = 'block';
+              resultsEl.querySelectorAll('.loc-result').forEach(btn => btn.onclick = () => {
+                const r2 = data[parseInt(btn.dataset.idx)];
+                overlay.remove();
+                const n = r2.name || ''; const a = r2.display_name || ''; const lt = parseFloat(r2.lat); const ln = parseFloat(r2.lon);
+                enviarUbicacionInbox(leadId, convId, lt, ln, n, a).then(ok => {
+                  if (ok && n && confirm(`¿Guardar "${n}" en tus ubicaciones?`)) {
+                    api('/api/ubicaciones-guardadas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre: n, direccion: a, lat: lt, lng: ln }) });
+                    toast('📍 Ubicación guardada', 'ok');
+                  }
+                });
+              });
+            } else resultsEl.style.display = 'none';
+          } catch (e) { }
+        }, 400);
+      };
+      document.addEventListener('click', e => { if (resultsEl && !resultsEl.contains(e.target) && e.target !== searchInput) resultsEl.style.display = 'none'; });
+    }
+
+    // --- Guardadas: enviar ---
+    overlay.querySelectorAll('.loc-preset-saved').forEach(b => b.onclick = () => {
+      const s = saved.find(x => String(x.id) === b.dataset.sid);
+      if (!s) return;
+      overlay.remove();
+      enviarUbicacionInbox(leadId, convId, s.lat, s.lng, s.nombre, s.direccion);
+    });
+
+    // --- Guardadas: eliminar ---
+    overlay.querySelectorAll('.loc-del-saved').forEach(b => b.onclick = async () => {
+      if (!confirm('¿Eliminar esta ubicación guardada?')) return;
+      await api('/api/ubicaciones-guardadas/' + b.dataset.sid, { method: 'DELETE' });
+      b.closest('div').remove();
+      toast('Ubicación eliminada');
+    });
+
+    document.getElementById('locCancelInbox').onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  }
+
+  async function enviarUbicacionInbox(leadId, convId, lat, lng, name, address) {
+    toast('Enviando ubicación…');
+    try {
+      const r = await api('/api/leads/' + leadId + '/send-location', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude: lat, longitude: lng, name, address }),
+      });
+      if (!r) throw new Error('Error al enviar ubicación');
+      toast('📍 Ubicación enviada', 'ok');
+      await recargarMensajes(convId);
+      return true;
+    } catch (e) { toast('Error: ' + e.message, 'err'); return false; }
+  }
+
+  /* ── Reload mensajes ── */
+  async function recargarMensajes(id) {
+    const data = await api('/api/inbox/conversations/' + id + '/timeline');
+    if (data?.messages) renderMsgs(data.messages);
+  }
+
+  // Autoinicializar mapas Leaflet en mensajes
+  const _inboxObserver = new MutationObserver(() => initLocationMaps());
+  setTimeout(() => {
+    const box = document.getElementById('ibxMsgs');
+    if (box) _inboxObserver.observe(box, { childList: true, subtree: false });
+  }, 500);
+
+  /* ── Render mensajes ── */
+  const REACT_EMOJIS = ['👍','❤️','😂','😮','😢','🙏','🔥','🎉','💯','⭐','👏','💪'];
+  let emojiPickerTarget = null;
+
+  function renderReactions(reactions) {
+    if (!reactions || !reactions.length) return '';
+    const grouped = {};
+    for (const r of reactions) {
+      if (!grouped[r.emoji]) grouped[r.emoji] = { emoji: r.emoji, count: 0, mine: false };
+      grouped[r.emoji].count++;
+      if (r.direction === 'outgoing') grouped[r.emoji].mine = true;
+    }
+    return `<div class="bub-reactions">${Object.values(grouped).map(g =>
+      `<span class="bub-reaction${g.mine ? ' mine' : ''}" data-emoji="${g.emoji}">${g.emoji}${g.count > 1 ? `<span class="r-count">${g.count}</span>` : ''}</span>`
+    ).join('')}</div>`;
+  }
+
+  function renderMsgs(msgs) {
+    const box = document.getElementById('ibxMsgs'); if (!box) return;
+    let lastDay = '';
+    box.innerHTML = msgs.map(m => {
+      const day = dayLabel(m.created_at || m.timestamp);
+      let sep = ''; if (day && day !== lastDay) { lastDay = day; sep = `<div class="ibx-daysep">${day}</div>`; }
+      if (m.event_type === 'note') return sep + `<div class="bubble bubble--note">📝 ${esc(m.body)}</div>`;
+      const out = m.direction === 'outgoing';
+      const media = renderMedia(m);
+      const reacHTML = renderReactions(m.reactions);
+      const msgId = m.id || m._msgId || '';
+      return sep + `<div class="bubble-wrap" data-msgid="${msgId}" style="position:relative;display:flex;flex-direction:column;align-items:${out?'flex-end':'flex-start'};max-width:70%;align-self:${out?'flex-end':'flex-start'}">
+        <div class="bubble bubble--${out ? 'out' : 'in'}">${media || esc(m.body || '')}<span class="bubble__time">${hhmm(m.created_at || m.timestamp)}${out ? ' <span style="opacity:.45;font-size:9.5px">✓✓</span>' : ''}</span></div>
+        ${reacHTML}
+        <button class="emoji-trigger" data-msgid="${msgId}" title="Reaccionar">😀</button>
+      </div>`;
+    }).join('') || `<div style="margin:auto;color:var(--text-3);font-size:13.5px">Sin mensajes todavía.</div>`;
+    box.scrollTop = box.scrollHeight;
+
+    // Wire emoji triggers
+    box.querySelectorAll('.emoji-trigger').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        emojiPickerTarget = btn.dataset.msgid;
+        let grid = box.querySelector('.emoji-grid');
+        if (!grid) {
+          grid = document.createElement('div');
+          grid.className = 'emoji-grid';
+          grid.innerHTML = REACT_EMOJIS.map(em => `<button data-em="${em}">${em}</button>`).join('');
+          grid.addEventListener('click', async (ev2) => {
+            const em = ev2.target.closest('[data-em]');
+            if (!em || !emojiPickerTarget) return;
+            await toggleReaction(emojiPickerTarget, em.dataset.em);
+            grid.remove();
+            emojiPickerTarget = null;
+          });
+          btn.parentElement.appendChild(grid);
+        }
+      };
+    });
+
+    // Wire reaction pill clicks
+    box.querySelectorAll('.bub-reaction').forEach(pill => {
+      pill.onclick = async () => {
+        const wrap = pill.closest('.bubble-wrap');
+        if (wrap && wrap.dataset.msgid) await toggleReaction(wrap.dataset.msgid, pill.dataset.emoji);
+      };
+    });
+  }
+
+  async function toggleReaction(msgId, emoji) {
+    if (!msgId) return;
+    try {
+      const r = await api('/api/messages/' + msgId + '/react', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji }),
+      });
+      if (r && r.ok) await recargarMensajes(current);
+    } catch (e) { console.error('Reaction error:', e); }
+  }
+
+  function renderMedia(m) {
+    if (!m.media_type) return null;
+    if (m.media_type === 'location') {
+      let lat, lng, name, address;
+      try { const d = JSON.parse(m.body); lat = d.latitude; lng = d.longitude; name = d.name; address = d.address; } catch (e) { return '📍 Ubicación'; }
+      const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+      const label = [name, address].filter(Boolean).join(' - ') || 'Ubicación';
+      const mapId = 'lm_' + (m.id || Math.random().toString(36).slice(2, 8));
+      return `<div class="loc-card" onclick="window.open('${mapsUrl}','_blank')"><div class="leaflet-map" id="${mapId}" data-lat="${lat}" data-lng="${lng}"></div><div class="loc-body"><span class="loc-ic">📍</span><div class="loc-info"><div class="loc-tit">${esc(label)}</div><div class="loc-sub">${lat}, ${lng}</div></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="flex-shrink:0;color:var(--gold)"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg></div></div>`;
+    }
+    if (!m.id) return null;
+    const src = '/api/inbox/media/' + m.id;
+    const cap = (m.body && !/^\[(image|audio|video|document|sticker)\]$/.test(m.body) && !m.body.startsWith('{"')) ? `<div class="media-cap">${esc(m.body)}</div>` : '';
+    if (m.media_type === 'image' || m.media_type === 'sticker') return `<a href="${src}" target="_blank" onclick="event.preventDefault();abrirLightbox(this.querySelector('img').src)"><img class="media-img" src="${src}" alt="imagen" loading="lazy"></a>${cap}`;
+    if (m.media_type === 'audio') return renderAudioPlayer(m.id, src) + cap;
+    if (m.media_type === 'video') return `<video class="media-video" controls src="${src}"></video>${cap}`;
+    return `<a class="media-file" href="${src}" target="_blank">📄 ${esc(m.media_filename || 'archivo')}</a>${cap}`;
+  }
+
+  function initLocationMaps() {
+    document.querySelectorAll('.leaflet-map:not(.leaflet-container)').forEach(el => {
+      const lat = parseFloat(el.dataset.lat); const lng = parseFloat(el.dataset.lng);
+      if (isNaN(lat) || isNaN(lng)) return;
+      try {
+        const map = L.map(el, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, touchZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false }).setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OSM' }).addTo(map);
+        L.marker([lat, lng]).addTo(map);
+        setTimeout(() => map.invalidateSize(), 100);
+      } catch (e) { console.error('Leaflet error:', e.message); }
+    });
+  }
+
+  /* ── Lightbox ── */
+  window.abrirLightbox = function(src) {
+    const lb = document.getElementById('lightbox');
+    document.getElementById('lightboxImg').src = src;
+    lb.classList.add('show');
+  };
+  document.getElementById('lightboxClose').addEventListener('click', () => document.getElementById('lightbox').classList.remove('show'));
+  document.getElementById('lightbox').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('lightbox')) document.getElementById('lightbox').classList.remove('show');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.getElementById('lightbox')?.classList.remove('show');
+      document.getElementById('imgPreview')?.classList.remove('show');
+    }
+  });
+
+  /* ── Notas ── */
+  async function cargarNotas(id) {
+    const cont = document.getElementById('notasList'); if (!cont) return;
+    const notas = await api('/api/inbox/conversations/' + id + '/notas') || [];
+    if (!notas.length) { cont.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:4px 0">Sin notas todavía.</div>'; return; }
+    cont.innerHTML = notas.map(n => `
+      <div class="nota-item">
+        <div>${esc(n.nota || n.body || '')}</div>
+        <div class="nota-meta"><span>${esc(n.autor || n.author || 'Equipo')} · ${hhmm(n.created_at)}</span></div>
+      </div>`).join('');
+  }
+
+  /* ── Slash menu ── */
+  function slashItems() {
+    const v = document.getElementById('msgInput')?.value || '';
+    if (!v.startsWith('/')) return [];
+    const term = v.slice(1).toLowerCase();
+    return templates.filter(t => !term || t.titulo.toLowerCase().includes(term));
+  }
+  function actualizarMenuSlash() {
+    const menu = document.getElementById('slashMenu'); if (!menu) return;
+    const items = slashItems();
+    if (!items.length) { menu.classList.remove('show'); slashIdx = -1; return; }
+    if (slashIdx >= items.length) slashIdx = items.length - 1;
+    if (slashIdx < 0) slashIdx = 0;
+    menu.innerHTML = items.map((t, i) => `<div class="slash-item ${i === slashIdx ? 'sel' : ''}" data-i="${i}"><span class="si-t">${esc(t.titulo)}</span><span class="si-b">${esc(t.cuerpo.slice(0, 60))}${t.cuerpo.length > 60 ? '…' : ''}</span></div>`).join('');
+    menu.classList.add('show');
+    menu.querySelectorAll('.slash-item').forEach(el => el.addEventListener('click', () => elegirSlash(Number(el.dataset.i))));
+  }
+  function elegirSlash(i) {
+    const items = slashItems(); const input = document.getElementById('msgInput'); const menu = document.getElementById('slashMenu');
+    if (!items[i] || !input) return;
+    input.value = items[i].cuerpo; input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px';
+    input.focus(); menu?.classList.remove('show'); slashIdx = -1; updateMainBtn();
+  }
+  function manejarSlash(e) {
+    const menu = document.getElementById('slashMenu'); if (!menu?.classList.contains('show')) return false;
+    const items = slashItems();
+    if (e.key === 'ArrowDown') { e.preventDefault(); slashIdx = Math.min(slashIdx + 1, items.length - 1); actualizarMenuSlash(); return true; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); slashIdx = Math.max(slashIdx - 1, 0); actualizarMenuSlash(); return true; }
+    if (e.key === 'Enter') { e.preventDefault(); elegirSlash(slashIdx); return true; }
+    if (e.key === 'Escape') { menu.classList.remove('show'); slashIdx = -1; return true; }
+    return false;
+  }
+
+  /* ── Panel lateral ── */
+  function panelVacio() {
+    if (!ctx.panel) return;
+    ctx.panel.innerHTML = `<div class="os-panel__head"><div class="t-label">Contexto</div></div><div class="os-panel__body"><div class="ibx-empty">${I(D.user,40)}<p>Selecciona una conversación</p></div></div>`;
+  }
+  function panelParaConv(c) {
+    if (!ctx.panel) return;
+    const ch = chan(c.channel);
+    ctx.panel.innerHTML = `
+      <div class="os-panel__head"><div class="t-label">Contexto</div><a class="btn btn--quiet btn--sm" href="/os/crm.html">Ver en CRM</a></div>
+      <div class="os-panel__body">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:var(--s3);text-align:center">
+          <div class="avatar avatar--lg" style="background:${avatarBg(c)}">${avatarInner(c)}</div>
+          <div><div style="font-weight:700;font-size:15px">${esc(c.customer_name || 'Sin nombre')}</div><div style="color:var(--text-3);font-size:12.5px;margin-top:2px">${esc(fmtPhone(c.customer_phone))}</div></div>
+          <span style="font-size:11px;padding:3px 10px;border-radius:999px;background:var(--bg-3);color:var(--text-2)">${ch.e} ${ch.t}</span>
+        </div>
+        <div class="surface" style="padding:12px;margin-bottom:var(--s3);border-radius:var(--r-sm);background:var(--bg-2)">
+          <div class="panel-row"><span>Asesor</span><strong>${esc(c.assigned_to_nombre || 'Sin asignar')}</strong></div>
+          <div class="panel-row"><span>Etiqueta</span><strong>${esc((c.etiqueta || 'sin clasificar').replace('_', ' '))}</strong></div>
+          <div class="panel-row"><span>Actividad</span><strong>${timeago(c.updated_at)} atrás</strong></div>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Copiloto SP</div>
+        <button class="btn btn--ghost btn-ai-suggest" style="width:100%;margin-bottom:8px" data-lead-id="${c.lead_id || ''}" data-name="${esc(c.customer_name || '')}">${ICONS.spark}Sugerir respuesta</button>
+        <div id="aiSuggestions" style="display:none;margin-bottom:8px"></div>
+      </div>`;
+    // Wire AI suggest button
+    const aiBtn = ctx.panel.querySelector('.btn-ai-suggest');
+    if (aiBtn) aiBtn.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const leadId = btn.dataset.leadId;
+      const name = btn.dataset.name;
+      if (!leadId) { toast('Este lead no está vinculado al CRM legacy', 'err'); return; }
+      btn.disabled = true; btn.textContent = 'Pensando...';
+      const suggestions = await SPOS.sugerirRespuesta(leadId, name);
+      btn.disabled = false; btn.innerHTML = `${ICONS.spark}Sugerir respuesta`;
+      const box = document.getElementById('aiSuggestions');
+      if (!box) return;
+      if (!suggestions.length) { box.style.display = 'none'; return; }
+      box.style.display = 'block';
+      box.innerHTML = suggestions.map((s, i) =>
+        `<div style="padding:8px 10px;margin-bottom:4px;background:var(--bg-2);border-radius:var(--r-sm);font-size:12.5px;cursor:pointer;border:1px solid transparent;transition:all .12s"
+              onmouseenter="this.style.borderColor='var(--gold-line)'" onmouseleave="this.style.borderColor='transparent'"
+              onclick="document.getElementById('msgInput').value=SPOS.esc('${esc(s)}')">${esc(s)}</div>`
+      ).join('');
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
+
+  /* ── Wiring filtros ── */
+  function wiring() {
+    document.getElementById('ibxQ').addEventListener('input', e => { query = e.target.value.toLowerCase().trim(); renderList(); });
+    document.querySelectorAll('.ibx-chip').forEach(c => c.addEventListener('click', () => {
+      document.querySelectorAll('.ibx-chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active'); chanFilter = c.dataset.c; renderList();
+    }));
+    document.getElementById('btnNewChat')?.addEventListener('click', () => openNewChatModal());
+  }
+
+  function renderTplVarFields(tpl, nameValue) {
+    const box = document.getElementById('ncVarFields');
+    if (!box) return;
+    if (!tpl) { box.innerHTML = ''; return; }
+    let vars = []; try { vars = JSON.parse(tpl.variables || '[]'); } catch (e) {}
+    let mapping = {}; try { mapping = JSON.parse(tpl.var_mapping || '{}'); } catch (e) {}
+    if (!vars.length) { box.innerHTML = '<div style="font-size:11.5px;color:var(--text-3);margin-bottom:8px">Esta plantilla no tiene variables.</div>'; return; }
+    box.innerHTML = '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:4px 0 6px">Variables de la plantilla</div>' +
+      vars.map(ph => {
+        const prefill = mapping[ph] === 'nombre_cliente' ? esc(nameValue || '') : '';
+        return `<input type="text" data-var="${esc(ph)}" placeholder="{{${esc(ph)}}}${mapping[ph] ? ' — ' + esc(mapping[ph]) : ' (sin asignar en Configuración)'}" value="${prefill}" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-soft);background:var(--bg-2);color:var(--text-1);margin-bottom:8px;font-size:13px">`;
+      }).join('');
+  }
+
+  function openNewChatModal() {
+    const existing = document.getElementById('newChatModal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'newChatModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5)';
+    modal.innerHTML = `
+      <div style="background:var(--bg-1);border-radius:14px;padding:24px;width:90%;max-width:400px;max-height:85vh;overflow:auto;border:1px solid var(--border-soft)">
+        <h3 style="margin:0 0 16px;color:var(--text-1)">Nuevo chat WhatsApp</h3>
+        <form id="newChatForm">
+          <label style="font-size:12px;color:var(--text-3)">Teléfono (ej: 573211234567)</label>
+          <input type="tel" id="ncPhone" required style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-soft);background:var(--bg-2);color:var(--text-1);margin-bottom:12px;font-size:14px">
+          <label style="font-size:12px;color:var(--text-3)">Nombre</label>
+          <input type="text" id="ncName" placeholder="Nombre del cliente" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-soft);background:var(--bg-2);color:var(--text-1);margin-bottom:12px;font-size:14px">
+          <label style="font-size:12px;color:var(--text-3)">Mensaje</label>
+          <textarea id="ncMsg" required rows="3" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-soft);background:var(--bg-2);color:var(--text-1);margin-bottom:12px;font-size:14px;resize:none"></textarea>
+          ${waTemplates.length ? `<label style="font-size:12px;color:var(--text-3)">Plantilla (obligatoria si el número nunca te ha escrito — WhatsApp exige que el primer contacto sea con plantilla aprobada)</label>
+          <select id="ncTemplate" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-soft);background:var(--bg-2);color:var(--text-1);margin-bottom:8px;font-size:14px">
+            <option value="">Sin plantilla</option>
+            ${waTemplates.map(t => `<option value="${t.id}">${esc(t.nombre)}</option>`).join('')}
+          </select>
+          <div id="ncVarFields"></div>` : '<div style="font-size:11.5px;color:var(--text-3);margin-bottom:12px">No hay plantillas sincronizadas — sincroniza en Configuración antes de contactar números nuevos.</div>'}
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+            <button type="button" class="btn btn--ghost" id="ncCancel">Cancelar</button>
+            <button type="submit" class="btn btn--gold">Enviar</button>
+          </div>
+        </form>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    modal.querySelector('#ncCancel').addEventListener('click', () => modal.remove());
+    const tplSel = document.getElementById('ncTemplate');
+    const nameInp = document.getElementById('ncName');
+    tplSel?.addEventListener('change', () => {
+      const tpl = waTemplates.find(t => String(t.id) === tplSel.value);
+      renderTplVarFields(tpl, nameInp.value.trim());
+    });
+    modal.querySelector('#newChatForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const phone = document.getElementById('ncPhone').value.trim();
+      const name = document.getElementById('ncName').value.trim();
+      const message = document.getElementById('ncMsg').value.trim();
+      const templateId = tplSel?.value || '';
+      const templateVars = {};
+      document.querySelectorAll('#ncVarFields [data-var]').forEach(inp => { templateVars[inp.dataset.var] = inp.value.trim(); });
+      if (!phone || !message) return;
+      modal.remove();
+      try {
+        const r = await api('/api/leads/proactive', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, name, message, templateId: templateId || undefined, templateVars }) });
+        if (r && r.ok) toast('Chat enviado a ' + phone, 'ok');
+        else toast('Error: ' + ((r && r.error) || 'desconocido'), 'err');
+        const rr = await api('/api/inbox/unified-conversations');
+        if (Array.isArray(rr)) { convs = rr; renderList(); }
+      } catch (err) {
+        toast('Error: ' + (err.message || err.detalle || 'desconocido'), 'err');
+      }
+    });
+  }
+
+  /* ── Beep de notificación (WebAudio) ──
+     El AudioContext se crea tras el primer gesto del usuario (política de autoplay);
+     si aún no hubo gesto, el beep simplemente no suena esa vez. */
+  let _audioCtx = null;
+  document.addEventListener('pointerdown', () => {
+    if (!_audioCtx) { try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } }
+    if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume().catch(() => { });
+  }, { passive: true });
+  function beepNotificacion() {
+    if (!_audioCtx || _audioCtx.state !== 'running') return;
+    const t = _audioCtx.currentTime;
+    const osc = _audioCtx.createOscillator();
+    const gain = _audioCtx.createGain();
+    osc.type = 'sine'; osc.frequency.setValueAtTime(880, t);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.25, t + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+    osc.connect(gain); gain.connect(_audioCtx.destination);
+    osc.start(t); osc.stop(t + 0.15);
+  }
+
+  /* ── SSE ── */
+  function conectarStream() {
+    const es = new EventSource('/api/stream');
+    const dot = () => document.getElementById('connDot');
+    es.onopen = () => dot()?.classList.add('on');
+    es.addEventListener('conectado', () => dot()?.classList.add('on'));
+    es.addEventListener('nuevo_mensaje', async ev => {
+      try {
+        const data = JSON.parse(ev.data);
+        const r = await api('/api/inbox/unified-conversations');
+        if (Array.isArray(r)) { convs = r; renderList(); }
+        if (current && (data.leadId === current || data.conversationId === current)) await recargarMensajes(current);
+        if (data.tipo === 'mensaje_cliente') {
+          toast('Nuevo mensaje de un cliente');
+          try { beepNotificacion(); } catch (e) { }
+          try { if (navigator.vibrate) navigator.vibrate([100, 50, 100]); } catch (e) { }
+        }
+      } catch (e) { console.error('SSE error:', e); }
+    });
+    es.addEventListener('reaccion', async ev => {
+      try {
+        const data = JSON.parse(ev.data);
+        if (current && (data.leadId == current || data.conversationId == current)) {
+          await recargarMensajes(current);
+        }
+      } catch (e) { console.error('SSE reaccion error:', e); }
+    });
+    es.onerror = () => { dot()?.classList.remove('on'); es.close(); setTimeout(conectarStream, 5000); };
+  }
+
+  /* Auto-poll 30s */
+  setInterval(async () => {
+    if (!current) return;
+    await recargarMensajes(current);
+  }, 30000);
+})();
+const _audioPlayers = {};
+function generateWaveform(id){ let h=0; const s=String(id); for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; } const b=[]; for(let i=0;i<20;i++){ b.push(Math.round(Math.abs(Math.sin(h*(i+1)*137.5))*18+4)); } return b; }
+function formatDuration(s){ const m=Math.floor(s/60); const sec=Math.floor(s%60); return m+':'+(sec<10?'0':'')+sec; }
+function togglePlay(id){ const btn=document.getElementById(id+'_btn'); const wave=document.getElementById(id+'_wave'); const timeEl=document.getElementById(id+'_time'); const errEl=document.getElementById(id+'_err'); if(!btn||!wave) return; const container=btn.closest('.audio-player'); if(!container) return; const src=container.dataset.src; if(!src) return; Object.keys(_audioPlayers).forEach(k=>{ if(k!==id&&_audioPlayers[k]&&!_audioPlayers[k].paused){ _audioPlayers[k].pause(); const ob=document.getElementById(k+'_btn'); if(ob) ob.classList.remove('playing'); } }); if(_audioPlayers[id]){ if(!_audioPlayers[id].paused){ _audioPlayers[id].pause(); btn.classList.remove('playing'); return; } delete _audioPlayers[id]; } const a=new Audio(src); a.addEventListener('timeupdate',()=>{ const bars=wave.querySelectorAll('.audio-player__bar'); bars.forEach((bar,i)=>bar.classList.toggle('active',i<Math.floor((a.currentTime/a.duration)*bars.length))); if(timeEl) timeEl.textContent=formatDuration(a.currentTime); }); a.addEventListener('ended',()=>{ btn.classList.remove('playing'); wave.querySelectorAll('.audio-player__bar').forEach(b=>b.classList.remove('active')); }); a.addEventListener('loadedmetadata',()=>{ if(timeEl) timeEl.textContent=formatDuration(a.duration||0); a.play().then(()=>btn.classList.add('playing')).catch(()=>{ btn.classList.remove('playing'); delete _audioPlayers[id]; if(errEl) errEl.style.display='block'; if(typeof toast==='function') toast('Error al reproducir audio'); }); }); a.addEventListener('error',()=>{ btn.classList.remove('playing'); delete _audioPlayers[id]; if(errEl) errEl.style.display='block'; if(typeof toast==='function') toast('Error al cargar audio'); }); _audioPlayers[id]=a; a.load(); }
+function renderAudioPlayer(id,src){ if(!id||!src) return '🎙️ Audio'; const bars=generateWaveform(id); return `<div class="audio-player" data-src="${src}" data-id="${id}"><button class="audio-player__btn" id="${id}_btn" onclick="togglePlay('${id}')"><svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21"/></svg></button><div class="audio-player__wave" id="${id}_wave">${bars.map(h=>`<div class="audio-player__bar" style="height:${h}px"></div>`).join('')}</div><span class="audio-player__time" id="${id}_time">0:00</span><a href="${src}" target="_blank" download class="audio-player__dl" id="${id}_dl" style="display:none;font-size:10px;color:var(--gold);margin-left:6px;text-decoration:none" title="Descargar audio">⬇</a><span class="audio-player__err" id="${id}_err" style="display:none;font-size:10px;color:#ff5050;margin-left:6px">Error</span></div>`; }
+</script>
+</body>
+</html>

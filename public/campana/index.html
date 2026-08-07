@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campaña — Concejo Municipal</title>
+<style>
+  :root { --verde:#2e7d32; --verde-claro:#4caf50; --crema:#faf7f0; --tinta:#1f2a24; --jardin:#e8f5e9; }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif;}
+  body{background:var(--crema);color:var(--tinta);}
+  header{background:linear-gradient(135deg,var(--verde),var(--verde-claro));color:#fff;padding:56px 20px;text-align:center;}
+  header h1{font-size:2.2rem;margin-bottom:10px;}
+  header .cargo{display:inline-block;background:rgba(255,255,255,.18);padding:6px 18px;border-radius:40px;font-size:.9rem;letter-spacing:.5px;}
+  header .eslogan{margin-top:14px;font-size:1.1rem;font-style:italic;opacity:.95;}
+  .wrap{max-width:960px;margin:0 auto;padding:24px 20px;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin:28px 0;}
+  .stat{background:#fff;border-radius:14px;padding:20px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.05);}
+  .stat .num{font-size:2rem;font-weight:700;color:var(--verde);}
+  .stat .lbl{font-size:.85rem;color:#5a6b60;margin-top:4px;}
+  .zonas{margin:32px 0;}
+  .zonas h2{font-size:1.25rem;margin-bottom:14px;color:var(--verde);}
+  .zona{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:14px 18px;border-radius:10px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+  .zona b{color:var(--verde);}
+  .estado h2{font-size:1.25rem;margin-bottom:14px;color:var(--verde);}
+  .cta{text-align:center;margin:44px 0 20px;}
+  .btn{display:inline-block;background:var(--verde);color:#fff;padding:14px 34px;border-radius:40px;text-decoration:none;font-weight:600;transition:.2s;}
+  .btn:hover{background:var(--verde-claro);transform:translateY(-2px);}
+  footer{background:#eef4ea;padding:24px;text-align:center;font-size:.8rem;color:#5a6a60;margin-top:40px;}
+  .load{text-align:center;padding:60px 0;color:#5a6a60;}
+</style>
+</head>
+<body data-slug="">
+<header>
+  <h1 id="h-nombre">Campaña por la comunidad</h1>
+  <div><span class="cargo" id="h-cargo">Concejal Municipal</span></div>
+  <div class="eslogan" id="h-eslogan"></div>
+</header>
+<main class="wrap">
+  <div id="state-load" class="load">Cargando campaña…</div>
+  <div id="state-ok" style="display:none">
+    <section class="stats">
+      <div class="stat"><div class="num" id="s-total">0</div><div class="lbl">Comunidad registrada</div></div>
+      <div class="stat"><div class="num" id="s-zonas">0</div><div class="lbl">Zonas cubiertas</div></div>
+      <div class="stat"><div class="num" id="s-referidos">0</div><div class="lbl">Referidos sumados</div></div>
+    </section>
+    <section class="estado" id="empujes">
+      <h2>Avance en la comunidad</h2>
+      <div id="estado-lista"></div>
+    </section>
+    <section class="zonas">
+      <h2>Cobertura por zonas</h2>
+      <div id="zonas-lista"></div>
+    </section>
+    <div class="cta"><a class="btn" href="#">Quiero sumarme</a></div>
+  </div>
+</main>
+<footer>Vid.a · Campaña por el Concejo Municipal · Unión por la comunidad</footer>
+<script>
+  const slug = location.pathname.split('/').filter(Boolean).pop() || '';
+  document.body.dataset.slug = slug;
+  async function cargar(){
+    const el=(id)=>document.getElementById(id);
+    try{
+      const r=await fetch('/api/campana-publico/'+slug);
+      if(!r.ok) throw new Error('no encontrada');
+      const d=await r.json();
+      el('h-nombre').textContent = d.info.nombre || d.empresa;
+      if(d.info.cargo) el('h-cargo').textContent = d.info.cargo;
+      if(d.info.eslogan) el('h-eslogan').textContent = d.info.eslogan;
+      el('s-total').textContent = d.stats.total_votantes.toLocaleString('es-CO');
+      el('s-zonas').textContent = d.stats.por_zona.length;
+      el('s-referidos').textContent = d.stats.total_referidos.toLocaleString('es-CO');
+      el('estado-lista').innerHTML = (d.stats.por_estado||[]).map(e=>
+        `<div class="zona"><span>● <span style="color:${e.color||'#2e7d32'}">${e.label}</span></span><b>${e.count.toLocaleString('es-CO')}</b></div>`).join('') || '<div class="zona">Aún sin registro</div>';
+      el('zonas-lista').innerHTML = (d.stats.por_zona||[]).map(z=>
+        `<div class="zona"><span>${z.zona}</span><b>${Number(z.n).toLocaleString('es-CO')}</b></div>`).join('') || '<div class="zona">Sin datos</div>';
+      el('state-load').style.display='none';
+      el('state-ok').style.display='block';
+    }catch(e){ el('state-load').textContent='La campaña no está publicada todavía: '+e.message; }
+  }
+  cargar();
+</script>
+</body>
+</html>

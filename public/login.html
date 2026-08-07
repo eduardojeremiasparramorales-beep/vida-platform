@@ -1,0 +1,584 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Leons Group">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>Leons Group â€” Acceso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<script src="/js/pixel.js"></script>
+<script src="/os/safe-area.js"></script>
+<style>
+  :root{
+    --bg:#060606; --gold:#FFD76A; --gold-ink:#FFD76A; --gold-2:#C07F1E; --gold-3:#FFE08A;
+    --green:#4E7B46; --txt:#F8F8F8; --txt-2:rgba(248,248,248,.5);
+    --txt-3:rgba(248,248,248,.22); --border:#1A1A1A; --surface:#111;
+    --red:#E5484D; --ease:cubic-bezier(.22,1,.36,1); --kb:0px; /* altura del teclado (safe-area.js) */
+    /* Glass (sync sp-os.css) */
+    --glass:rgba(42,38,30,.10); --glass-2:rgba(50,45,35,.16);
+    --glass-border:rgba(248,244,230,.14); --blur-sm:saturate(1.6) blur(10px);
+    --grad-gold:linear-gradient(140deg,var(--gold-3),var(--gold) 52%,#E8A93E);
+    --grad-gold-text:linear-gradient(135deg,var(--gold-3),var(--gold) 55%,var(--gold-2));
+    /* Aurora tokenizada â€” ver nota igual en sp-os.css Â§1B */
+    --aurora-1a:rgba(248,248,248,.15); --aurora-1b:rgba(248,248,248,.05);
+    --aurora-2a:rgba(248,248,248,.11); --aurora-2b:rgba(248,248,248,.04);
+    --aurora-gold-1:rgba(255,215,106,.32); --aurora-green:rgba(78,123,70,.18); --aurora-gold-2:rgba(255,215,106,.16); --aurora-gold-3:rgba(255,223,140,.10);
+  }
+  :root[data-theme="light"]{
+    --bg:#F4EFE3; --gold-ink:#7D5F24; --green:#3F6538;
+    --txt:#221C10; --txt-2:rgba(34,28,16,.66); --txt-3:rgba(34,28,16,.47);
+    --border:#E0D7BF; --surface:#FFFCF4; --red:#C23A40;
+    --glass:rgba(255,251,241,.30); --glass-2:rgba(255,252,245,.44);
+    --glass-border:rgba(168,138,78,.15);
+    --aurora-1a:rgba(212,175,55,.14); --aurora-1b:rgba(212,175,55,.04);
+    --aurora-2a:rgba(200,160,80,.09); --aurora-2b:rgba(200,160,80,.03);
+    --aurora-gold-1:rgba(212,175,55,.20); --aurora-green:rgba(78,123,70,.13); --aurora-gold-2:rgba(237,204,96,.12);
+    --aurora-gold-3:rgba(214,178,96,.09);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}
+  body{
+    font-family:'Inter',system-ui,sans-serif;color:var(--txt);
+    font-optical-sizing:auto;letter-spacing:-0.011em;
+    background:
+      radial-gradient(circle 260px at 15% 18%, var(--aurora-1a), var(--aurora-1b) 52%, transparent 62%),
+      radial-gradient(circle 200px at 85% 60%, var(--aurora-2a), var(--aurora-2b) 54%, transparent 64%),
+      radial-gradient(700px 500px at 80% -15%, var(--aurora-gold-1), transparent 60%),
+      radial-gradient(600px 550px at -10% 105%, var(--aurora-green), transparent 60%),
+      radial-gradient(500px 400px at 50% 50%, var(--aurora-gold-2), transparent 70%),
+      radial-gradient(520px 420px at 50% 92%, var(--aurora-gold-3), transparent 62%),
+      var(--bg);
+    display:flex;flex-direction:column;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  }
+
+  /* â”€â”€ Layout â”€â”€ */
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;padding-bottom:calc(28px + var(--kb,0px));transition:opacity .3s var(--ease),transform .3s var(--ease);z-index:1}
+  .screen.hidden{opacity:0;pointer-events:none;transform:translateY(12px)}
+
+  /* â”€â”€ Logo â”€â”€ */
+  .logo{
+    width:84px;height:84px;border-radius:50%;
+    background:var(--glass-2);
+    backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm);
+    display:grid;place-items:center;margin-bottom:18px;
+    box-shadow:0 8px 32px rgba(0,0,0,.3),0 0 0 4px rgba(255,215,106,.14),0 0 46px rgba(255,215,106,.4);
+  }
+  .logo img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+  .brand{font-family:'Cinzel',serif;font-weight:600;font-size:1.1rem;letter-spacing:.16em;text-align:center;margin-bottom:4px;
+    background:var(--grad-gold-text);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    text-shadow:0 0 40px rgba(200,164,90,.2);
+  }
+  .sub{font-family:'Cormorant Garamond',serif;font-size:.85rem;color:var(--txt-2);letter-spacing:.1em;text-align:center;margin-bottom:24px;font-weight:400}
+  .sp-line{width:40px;height:1.5px;background:var(--gold);opacity:.35;margin-bottom:28px;border-radius:1px}
+
+  /* â”€â”€ Input field â”€â”€ */
+  .field{width:100%;max-width:320px;margin-bottom:14px}
+  .field label{display:block;font-size:.7rem;color:var(--txt-3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;font-weight:500}
+  .field-wrap{position:relative;width:100%}
+  .field-wrap .prefix{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:1rem;color:var(--txt-2);font-weight:500;pointer-events:none;z-index:1}
+  .field input{
+    width:100%;height:54px;border-radius:999px;border:1.5px solid rgba(255,215,106,.4);
+    background:var(--glass);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm);
+    color:var(--txt);font-size:1.05rem;font-family:'Inter',sans-serif;
+    padding:0 20px;padding-left:48px;outline:none;transition:border-color .2s,box-shadow .2s;
+    -webkit-appearance:none;appearance:none;box-shadow:inset 0 2px 10px rgba(0,0,0,.6);
+  }
+  .field input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,215,106,.14),0 0 22px rgba(255,215,106,.16)}
+  .field input::placeholder{color:var(--txt-3);font-weight:400}
+
+  /* â”€â”€ PIN dots â”€â”€ */
+  .pin-row{display:flex;gap:16px;justify-content:center;margin-bottom:24px}
+  .pin-dot{
+    width:14px;height:14px;border-radius:50%;border:1.5px solid var(--glass-border);
+    background:var(--glass);
+    transition:border-color .2s,background .2s,box-shadow .2s;
+  }
+  .pin-dot.active{border-color:var(--gold);background:rgba(200,164,90,.04)}
+  .pin-dot.filled{border-color:var(--gold);background:linear-gradient(150deg,var(--gold-3),var(--gold));box-shadow:0 0 14px rgba(255,215,106,.85)}
+  .pin-dot.error{border-color:var(--red);animation:shake .35s ease}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+  /* â”€â”€ Keypad (solo PIN) â”€â”€ */
+  .keypad{width:100%;max-width:260px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;justify-items:center}
+  .k{
+    width:72px;height:72px;border-radius:50%;border:1.5px solid rgba(255,215,106,.3);
+    background:var(--glass);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm);
+    color:var(--txt);font-size:1.6rem;font-weight:500;font-family:'Inter',sans-serif;
+    cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+    transition:all .12s cubic-bezier(.4,0,0,1);position:relative;line-height:1;
+    box-shadow:inset 0 2px 8px rgba(0,0,0,.4);
+  }
+  .k:active{background:rgba(255,215,106,.14);transform:scale(.9);border-color:rgba(255,215,106,.6)}
+  .k-num{font-size:1.6rem;font-weight:500;line-height:1}
+  .k-sub{font-size:.5rem;font-weight:700;letter-spacing:.14em;color:var(--txt-3);line-height:1;margin-top:1px}
+  .k-del{color:var(--txt-2);font-size:.9rem;letter-spacing:0}
+  .k-del .k-num{font-size:.9rem;font-weight:500}
+  .k-del .k-sub{font-size:.38rem;letter-spacing:.1em}
+  .k-del:active{color:var(--txt);transform:scale(.92)}
+  .k-ok{
+    background:var(--grad-gold);color:#0A0A0A;
+    font-weight:700;font-size:.85rem;letter-spacing:.04em;
+    box-shadow:0 8px 28px rgba(255,190,60,.5),inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  .k-ok:active{transform:scale(.92)}
+  .k-ok:disabled{opacity:.25;cursor:not-allowed;transform:none;box-shadow:none}
+
+  /* â”€â”€ Bottom button (phone) â”€â”€ */
+  .bottom-btn{
+    position:absolute;bottom:0;left:0;right:0;
+    padding:0 28px calc(24px + env(safe-area-inset-bottom));
+  }
+  .btn-entrar{
+    width:100%;height:54px;border-radius:999px;border:none;
+    background:var(--grad-gold);color:#0A0A0A;
+    font-size:.95rem;font-weight:700;font-family:'Inter',sans-serif;letter-spacing:.04em;
+    cursor:pointer;transition:transform .15s cubic-bezier(.4,0,0,1);
+    box-shadow:0 8px 28px rgba(255,190,60,.5),inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  .btn-entrar:active{transform:scale(.97)}
+  .btn-entrar:disabled{opacity:.25;cursor:not-allowed;transform:none;box-shadow:none}
+
+  /* â”€â”€ Mensajes â”€â”€ */
+  .msg{text-align:center;font-size:.78rem;min-height:18px;margin-top:10px;transition:opacity .2s}
+  .msg.err{color:var(--red)}
+  .msg.ok{color:var(--green)}
+
+  /* â”€â”€ Crear cuenta â”€â”€ */
+  .link-row{text-align:center;margin-top:18px;font-size:.78rem;color:var(--txt-2)}
+  .link-row a{color:var(--gold);text-decoration:none;font-weight:600;cursor:pointer}
+  .reg-photo{width:76px;height:76px;border-radius:20px;margin:0 auto 16px;background:var(--glass);border:1.5px dashed var(--glass-border);display:grid;place-items:center;cursor:pointer;overflow:hidden;font-size:1.4rem;color:var(--txt-3)}
+  .reg-photo img{width:100%;height:100%;object-fit:cover}
+  .reg-photo-label{text-align:center;font-size:.68rem;color:var(--txt-3);margin:-10px 0 16px}
+  .reg-body{width:100%;max-width:320px;overflow-y:auto;max-height:100%;padding-bottom:12px}
+
+  /* â”€â”€ Footer â”€â”€ */
+  .foot{position:absolute;bottom:var(--kb,0px);left:0;right:0;text-align:center;padding-bottom:calc(12px + env(safe-area-inset-bottom));font-size:.58rem;color:#6D6D6D;letter-spacing:.12em;text-transform:uppercase;font-family:'Inter',sans-serif;font-weight:500}
+  .foot-line{display:block;width:32px;height:1px;background:linear-gradient(90deg,transparent,#C8A45A,transparent);margin:0 auto 6px}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  @media (min-width:768px){
+    .k{height:76px;width:76px;font-size:1.7rem}
+    .pin-dot{width:16px;height:16px}
+  }
+  @supports(corner-shape:squircle){*,*::before,*::after{corner-shape:squircle}.spin{corner-shape:round}
+    [style*="border-radius:50%"],[style*="border-radius: 50%"]{corner-shape:round}}
+
+  /* â”€â”€ Role chips (selector de rol en registro) â”€â”€ */
+  .role-row{display:flex;gap:8px}
+  .role-chip{
+    flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+    padding:12px 12px;border-radius:12px;cursor:pointer;
+    border:1.5px solid var(--glass-border);background:var(--glass);
+    backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm);
+    color:var(--txt-2);font-size:.8rem;font-weight:500;font-family:inherit;text-align:left;
+    transition:border-color .2s,background .2s,color .2s;position:relative;
+  }
+  .role-chip small{font-size:.62rem;color:var(--txt-3);font-weight:400;letter-spacing:0;line-height:1.25}
+  .role-chip__dot{width:7px;height:7px;border-radius:50%;background:var(--txt-3);transition:background .2s;position:absolute;top:11px;right:11px}
+  .role-chip.active{border-color:var(--gold);background:rgba(200,164,90,.06);color:var(--txt)}
+  .role-chip.active .role-chip__dot{background:var(--gold)}
+  .role-chip.active small{color:var(--txt-2)}
+  .role-chip:active{transform:scale(.98)}
+ </style>
+
+</head>
+<body>
+
+<!-- â•â•â• SCREEN 1: TelÃ©fono â•â•â• -->
+<div class="screen" id="s1">
+  <div class="logo"><img src="/icons/logo.png" alt="SP Leons Group"></div>
+  <div class="brand">LEONS GROUP</div>
+  <div class="sub">Inversiones &amp; Finca RaÃ­z</div>
+  <div class="sp-line"></div>
+
+  <div class="field">
+    <label>TelÃ©fono</label>
+    <div class="field-wrap">
+      <span class="prefix">+57</span>
+      <input type="tel" id="phone" placeholder="300 123 4567" inputmode="numeric" maxlength="12" autocomplete="tel">
+    </div>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <div class="link-row">Â¿Eres asesor nuevo? <a id="linkCrearCuenta">Crear cuenta</a></div>
+
+  <div class="bottom-btn">
+    <button class="btn-entrar" id="btnEntrar" disabled>Entrar</button>
+  </div>
+</div>
+
+<!-- â•â•â• SCREEN 3: Crear cuenta (auto-registro de asesor) â•â•â• -->
+<div class="screen hidden" id="s3">
+  <div class="reg-body">
+    <div class="logo" style="margin:0 auto 18px"><img src="/icons/logo.png" alt="SP Leons Group"></div>
+    <div class="brand" style="text-align:center">LEONS GROUP</div>
+    <div class="sub" style="text-align:center" id="regSub">Crear cuenta de asesor</div>
+    <div class="sp-line" style="margin:0 auto 24px"></div>
+
+    <div class="reg-photo" id="regPhotoBox">ðŸ“·</div>
+    <div class="reg-photo-label">Foto de perfil (opcional)</div>
+    <input type="file" id="regFotoInput" accept="image/*" style="display:none">
+
+    <div class="field">
+      <label>Nombre completo</label>
+      <div class="field-wrap"><input type="text" id="regNombre" placeholder="Tu nombre" autocomplete="name"></div>
+    </div>
+    <div class="field">
+      <label>TelÃ©fono</label>
+      <div class="field-wrap"><span class="prefix">+57</span><input type="tel" id="regPhone" placeholder="300 123 4567" inputmode="numeric" maxlength="12"></div>
+    </div>
+    <div class="field">
+      <label>PIN de 4 dÃ­gitos</label>
+      <div class="field-wrap"><input type="password" id="regPin" placeholder="â€¢â€¢â€¢â€¢" inputmode="numeric" maxlength="4"></div>
+    </div>
+
+    <!-- Selector de rol (Registro): por defecto asesor. Supervisor entra con autoregistro
+         + aprueba el admin despuÃ©s (mismo flujo pendiente que el asesor). -->
+    <div class="field">
+      <label>Quiero registrarme como</label>
+      <div class="role-row" id="roleRow">
+        <button type="button" class="role-chip active" data-role="asesor">
+          <span class="role-chip__dot"></span>Asesor
+          <small>vendo y atiendo mis leads</small>
+        </button>
+        <button type="button" class="role-chip" data-role="supervisor">
+          <span class="role-chip__dot"></span>Supervisor
+          <small>observo y reasigno el equipo</small>
+        </button>
+      </div>
+    </div>
+
+    <div class="msg" id="msgReg"></div>
+    <button class="btn-entrar" id="btnRegistrar" style="margin-top:6px">Solicitar cuenta</button>
+    <div class="link-row"><a id="linkVolverLogin">Volver al inicio de sesiÃ³n</a></div>
+  </div>
+</div>
+
+<!-- â•â•â• SCREEN 2: PIN â•â•â• -->
+<div class="screen hidden" id="s2">
+  <div class="logo"><img src="/icons/logo.png" alt="SP Leons Group"></div>
+  <div class="brand">LEONS GROUP</div>
+  <div class="sub" id="pinSub"></div>
+  <div class="sp-line"></div>
+
+  <div class="pin-row">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+
+  <div class="keypad" id="keypad"></div>
+  <div class="msg" id="msg2"></div>
+</div>
+
+<div class="foot"><span class="foot-line"></span>Desarrollado por Parra Studios</div>
+
+<script>
+(function(){
+  'use strict';
+
+   fetch('/api/me').then(r=>r.ok?r.json():null).then(u=>{
+    if(u) location.replace(destinoPorRol(u.rol));
+  });
+
+  // Tres roles â†’ tres paneles (admin: SP OS, supervisor: Supervisor Center, vendedor: mÃ³vil).
+  // Centraliza el destino aquÃ­ para no triplicar la lÃ³gica en cada rama del login.
+  function destinoPorRol(rol){
+    if(rol === 'admin') return '/os/dashboard.html';
+    if(rol === 'supervisor') return '/supervisor/';
+    return '/m/';
+  }
+
+  const $ = id => document.getElementById(id);
+  let phone = '';
+  let pin = '';
+  let attempting = false;
+
+  // â”€â”€ Phone input â”€â”€
+  const phoneEl = $('phone');
+  const btnEntrar = $('btnEntrar');
+
+  function formatPhone(raw){
+    let f = raw;
+    if(raw.length > 3) f = raw.slice(0,3) + ' ' + raw.slice(3);
+    if(raw.length > 6) f = raw.slice(0,3) + ' ' + raw.slice(3,6) + ' ' + raw.slice(6);
+    return f;
+  }
+
+  phoneEl.addEventListener('input', e=>{
+    let raw = e.target.value.replace(/\D/g,'');
+    // Si el usuario escribiÃ³ el cÃ³digo de paÃ­s, tomar solo los Ãºltimos 10 dÃ­gitos
+    if(raw.length > 10) raw = raw.slice(-10);
+    phone = raw;
+    e.target.value = formatPhone(raw);
+    btnEntrar.disabled = raw.length < 10;
+    $('msg').textContent = '';
+  });
+
+  phoneEl.addEventListener('keydown', e=>{
+    if(e.key === 'Enter' && phone.length >= 10) goToPin();
+  });
+
+  btnEntrar.addEventListener('click', goToPin);
+
+  // â”€â”€ Transitions â”€â”€
+  function goToPin(){
+    if(phone.length < 10) return;
+    $('pinSub').textContent = '+57 ' + formatPhone(phone);
+    $('s1').classList.add('hidden');
+    $('s2').classList.remove('hidden');
+    cambioPin = null;
+    pin = '';
+    updatePinDots();
+    renderKeypad();
+    $('msg2').textContent = '';
+    // Bloquear teclado nativo: focus en un input oculto readonly
+    const trap = document.createElement('input');
+    trap.setAttribute('readonly','');
+    trap.style.cssText = 'position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0';
+    $('s2').appendChild(trap);
+    trap.focus();
+  }
+
+  function goToPhone(){
+    $('s2').classList.add('hidden');
+    $('s1').classList.remove('hidden');
+    phoneEl.value = formatPhone(phone);
+    btnEntrar.disabled = phone.length < 10;
+    phoneEl.focus();
+  }
+
+  // â”€â”€ PIN dots â”€â”€
+  function updatePinDots(){
+    for(let i=0;i<4;i++){
+      const d = $('pd'+i);
+      d.className = 'pin-dot';
+      if(i < pin.length){ d.classList.add('filled'); }
+      else if(i === pin.length){ d.classList.add('active'); }
+    }
+    $('msg2').className = 'msg';
+  }
+
+  // â”€â”€ Keypad (PIN only) â”€â”€
+  function renderKeypad(){
+    const kp = $('keypad');
+    const layout = [
+      {n:'1',s:''},  {n:'2',s:'ABC'}, {n:'3',s:'DEF'},
+      {n:'4',s:'GHI'}, {n:'5',s:'JKL'}, {n:'6',s:'MNO'},
+      {n:'7',s:'PQRS'}, {n:'8',s:'TUV'}, {n:'9',s:'WXYZ'},
+    ];
+    let html = layout.map(k =>
+      `<button class="k" data-p="${k.n}"><span class="k-num">${k.n}</span>${k.s ? `<span class="k-sub">${k.s}</span>` : ''}</button>`
+    ).join('');
+    html += `
+      <button class="k k-del" id="kDel"><span class="k-num">âŒ«</span><span class="k-sub">BORRAR</span></button>
+      <button class="k" data-p="0"><span class="k-num">0</span></button>
+      <button class="k k-ok" id="kOK" disabled>OK</button>`;
+    kp.innerHTML = html;
+    kp.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{
+      if(pin.length<4 && !attempting){ pin+=b.dataset.p; updatePinDots(); if(pin.length===4) procesarPinCompleto(); }
+    });
+    $('kDel').onclick = ()=>{
+      if(!attempting){
+        if(pin.length > 0){ pin=pin.slice(0,-1); updatePinDots(); }
+        else { goToPhone(); }
+      }
+    };
+  }
+
+  // â”€â”€ Login â”€â”€
+  async function doLogin(){
+    attempting = true;
+    $('msg2').textContent = 'Verificandoâ€¦'; $('msg2').className = 'msg';
+    try {
+      const res = await fetch('/api/login', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ telefono: '+57' + phone, pin }),
+      });
+      const data = await res.json();
+      if(!res.ok){
+        if(data.error === 'credenciales_invalidas'){
+          for(let i=0;i<4;i++) $('pd'+i).classList.add('error');
+          $('msg2').textContent = 'NÃºmero o PIN incorrecto'; $('msg2').className = 'msg err';
+          setTimeout(()=>{ pin=''; updatePinDots(); attempting=false; }, 700);
+        } else if(data.error === 'cuenta_pendiente_aprobacion'){
+          $('msg2').textContent = 'Tu cuenta estÃ¡ en revisiÃ³n. El admin te avisarÃ¡ cuando estÃ© activa.'; $('msg2').className = 'msg err';
+          setTimeout(()=>{ pin=''; updatePinDots(); attempting=false; }, 900);
+        } else {
+          throw new Error(data.error || 'Error');
+        }
+        return;
+      }
+      const destino = destinoPorRol(data.usuario && data.usuario.rol);
+      if(data.must_change){
+        // PIN de fÃ¡brica: obligar a crear uno nuevo antes de entrar
+        iniciarCambioPin(destino);
+        return;
+      }
+      $('msg2').textContent = 'Bienvenido'; $('msg2').className = 'msg ok';
+      setTimeout(()=>{ location.replace(destino); }, 300);
+    } catch(err) {
+      $('msg2').textContent = 'Error de conexiÃ³n'; $('msg2').className = 'msg err';
+      setTimeout(()=>{ pin=''; updatePinDots(); attempting=false; }, 700);
+    }
+  }
+
+  // â”€â”€ Cambio de PIN obligatorio (PIN de fÃ¡brica) â”€â”€
+  let cambioPin = null; // null = login normal Â· {paso:'nuevo'|'confirmar', nuevo, destino}
+  function iniciarCambioPin(destino){
+    cambioPin = { paso:'nuevo', nuevo:'', destino };
+    pin = ''; attempting = false; updatePinDots();
+    $('pinSub').textContent = 'Crea tu PIN nuevo';
+    $('msg2').textContent = 'Tu PIN es el de fÃ¡brica. Elige uno propio.';
+    $('msg2').className = 'msg';
+  }
+  async function procesarPinCompleto(){
+    if(!cambioPin) return doLogin();
+    if(cambioPin.paso === 'nuevo'){
+      if(pin === '0000'){
+        $('msg2').textContent = 'Ese PIN no estÃ¡ permitido'; $('msg2').className = 'msg err';
+        setTimeout(()=>{ pin=''; updatePinDots(); }, 600);
+        return;
+      }
+      cambioPin.nuevo = pin; cambioPin.paso = 'confirmar';
+      pin = ''; updatePinDots();
+      $('pinSub').textContent = 'Confirma tu PIN nuevo';
+      $('msg2').textContent = '';
+      return;
+    }
+    // confirmar
+    if(pin !== cambioPin.nuevo){
+      for(let i=0;i<4;i++) $('pd'+i).classList.add('error');
+      $('msg2').textContent = 'No coincide, intenta de nuevo'; $('msg2').className = 'msg err';
+      cambioPin.paso = 'nuevo'; cambioPin.nuevo = '';
+      setTimeout(()=>{ pin=''; updatePinDots(); $('pinSub').textContent='Crea tu PIN nuevo'; }, 700);
+      return;
+    }
+    attempting = true;
+    $('msg2').textContent = 'Guardandoâ€¦'; $('msg2').className = 'msg';
+    try {
+      const res = await fetch('/api/mi-pin', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ pin }),
+      });
+      if(!res.ok) throw new Error('error');
+      $('msg2').textContent = 'PIN actualizado. Bienvenido'; $('msg2').className = 'msg ok';
+      const destino = cambioPin.destino;
+      setTimeout(()=>{ location.replace(destino); }, 400);
+    } catch(err){
+      $('msg2').textContent = 'No se pudo guardar, intenta de nuevo'; $('msg2').className = 'msg err';
+      setTimeout(()=>{ pin=''; updatePinDots(); attempting=false; }, 700);
+    }
+  }
+
+  // â”€â”€ Keyboard (desktop only) â”€â”€
+  document.addEventListener('keydown', e=>{
+    if($('s2').classList.contains('hidden')) return;
+    if(e.key >= '0' && e.key <= '9' && pin.length < 4 && !attempting){
+      pin += e.key; updatePinDots();
+      if(pin.length === 4) procesarPinCompleto();
+    } else if(e.key === 'Backspace' && !attempting){
+      pin = pin.slice(0,-1); updatePinDots();
+    } else if(e.key === 'Escape'){
+      goToPhone();
+    }
+  });
+
+  // â”€â”€ Crear cuenta (auto-registro de asesor / supervisor) â”€â”€
+  let regFotoBase64 = '';
+  let regRol = 'asesor'; // default â€” el chip de seleccionar lo cambia
+
+  // Selector de rol: actualiza la variable, el subtÃ­tulo y la UI .active
+  function setRegRol(rol){
+    regRol = rol;
+    document.querySelectorAll('.role-chip').forEach(c=>c.classList.toggle('active', c.dataset.role === rol));
+    $('regSub').textContent = rol === 'supervisor' ? 'Crear cuenta de supervisor' : 'Crear cuenta de asesor';
+  }
+  document.querySelectorAll('.role-chip').forEach(c=>{
+    c.addEventListener('click', ()=> setRegRol(c.dataset.role));
+  });
+
+  $('linkCrearCuenta').addEventListener('click', ()=>{
+    $('s1').classList.add('hidden');
+    $('s3').classList.remove('hidden');
+    setRegRol('asesor'); // resetear al valor por defecto al abrir
+    $('regNombre').focus();
+  });
+  $('linkVolverLogin').addEventListener('click', ()=>{
+    $('s3').classList.add('hidden');
+    $('s1').classList.remove('hidden');
+  });
+  $('regPhotoBox').addEventListener('click', ()=> $('regFotoInput').click());
+  $('regFotoInput').addEventListener('change', function(){
+    const file = this.files[0]; if(!file) return;
+    const r = new FileReader();
+    r.onload = e=>{
+      regFotoBase64 = e.target.result;
+      $('regPhotoBox').innerHTML = '<img src="'+regFotoBase64+'" alt="">';
+    };
+    r.readAsDataURL(file);
+  });
+  $('regPhone').addEventListener('input', e=>{
+    let raw = e.target.value.replace(/\D/g,'');
+    if(raw.length > 10) raw = raw.slice(-10);
+    e.target.value = formatPhone(raw);
+  });
+  $('regPin').addEventListener('input', e=>{
+    e.target.value = e.target.value.replace(/\D/g,'').slice(0,4);
+  });
+  let registrando = false;
+  $('btnRegistrar').addEventListener('click', async ()=>{
+    if(registrando) return;
+    const nombre = $('regNombre').value.trim();
+    const telRaw = $('regPhone').value.replace(/\D/g,'');
+    const pinReg = $('regPin').value.trim();
+    const msgEl = $('msgReg');
+    if(!nombre){ msgEl.textContent = 'Escribe tu nombre completo'; msgEl.className = 'msg err'; return; }
+    if(telRaw.length < 10){ msgEl.textContent = 'TelÃ©fono invÃ¡lido'; msgEl.className = 'msg err'; return; }
+    if(pinReg.length !== 4 || pinReg === '0000'){ msgEl.textContent = 'Elige un PIN de 4 dÃ­gitos distinto de 0000'; msgEl.className = 'msg err'; return; }
+    registrando = true;
+    $('btnRegistrar').disabled = true;
+    msgEl.textContent = 'Enviandoâ€¦'; msgEl.className = 'msg';
+    try{
+      const res = await fetch('/api/vendedores/registro', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ nombre, telefono:'+57'+telRaw, pin:pinReg, foto: regFotoBase64 || undefined, rol: regRol }),
+      });
+      const data = await res.json();
+      if(!res.ok){
+        const errores = { telefono_ya_registrado:'Ese telÃ©fono ya estÃ¡ registrado', pin_invalido:'PIN invÃ¡lido', formato_telefono_invalido_debe_ser_57:'TelÃ©fono invÃ¡lido', demasiados_intentos_intenta_mas_tarde:'Demasiados intentos, intenta mÃ¡s tarde', rol_invalido:'Rol no vÃ¡lido' };
+        msgEl.textContent = errores[data.error] || 'No se pudo registrar'; msgEl.className = 'msg err';
+        registrando = false; $('btnRegistrar').disabled = false;
+        return;
+      }
+      const rolTexto = regRol === 'supervisor' ? 'supervisor' : 'asesor';
+      msgEl.textContent = `Â¡Listo! Tu cuenta de ${rolTexto} estÃ¡ en revisiÃ³n â€” el admin te avisarÃ¡ cuando estÃ© activa.`; msgEl.className = 'msg ok';
+      setTimeout(()=>{
+        $('s3').classList.add('hidden');
+        $('s1').classList.remove('hidden');
+        registrando = false; $('btnRegistrar').disabled = false;
+      }, 2200);
+    }catch(err){
+      msgEl.textContent = 'Error de conexiÃ³n'; msgEl.className = 'msg err';
+      registrando = false; $('btnRegistrar').disabled = false;
+    }
+  });
+
+  phoneEl.focus();
+})();
+</script>
+</body>
+</html>

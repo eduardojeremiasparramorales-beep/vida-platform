@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · SP Feed · Supervisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+.s6_hero { width: 60px; height: 60px; border-radius: 50%; background: radial-gradient(circle at center, rgba(200,164,90,.18), transparent); display: grid; place-items: center; margin-bottom: var(--s1); }
+.s6_grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--s3); }
+.s6_card { overflow: hidden; display: flex; flex-direction: column; }
+.s6_media { position: relative; aspect-ratio: 16/10; background: #000; display: grid; place-items: center; overflow: hidden; }
+.s6_media img, .s6_media video { width: 100%; height: 100%; object-fit: cover; }
+.s6_media .s6_linkbg { width: 100%; height: 100%; display: grid; place-items: center; background: linear-gradient(135deg, #141414, #232323); }
+.s6_badges { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+.s6_del { position: absolute; top: 8px; right: 8px; z-index: 2; }
+.s6_type { position: absolute; bottom: 8px; right: 8px; background: rgba(10,10,10,.75); color: var(--gold); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 8px; border: 1px solid rgba(200,164,90,.4); }
+.s6_modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); z-index: 999; display: none; align-items: center; justify-content: center; padding: var(--s3); }
+.s6_modal.open { display: flex; }
+.s6_panel { width: 100%; max-width: 460px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 16px; padding: var(--s4); max-height: 90dvh; overflow-y: auto; }
+.s6_drop { border: 1.5px dashed var(--border-strong, rgba(200,164,90,.5)); border-radius: 12px; padding: var(--s4); text-align: center; cursor: pointer; font-size: 13px; color: var(--text-2); transition: border-color .2s, background .2s; }
+.s6_drop:hover, .s6_drop.dragging { border-color: var(--gold); background: rgba(200,164,90,.06); }
+.s6_drop.s6_hasfile { border-color: var(--green); background: rgba(78,123,70,.08); }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script src="/supervisor/supervisor-shell.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const { me, content, esc } = await SPS.mount({ active: 'feed', title: 'SP Feed', crumb: 'Supervisor Center · Contenido de marca del equipo' });
+  if (!content) return;
+
+  const ICONS = (window.SPOS && window.SPOS.ICONS) || {};
+  const fmt = { fecha: (s) => { const d = new Date(String(s).includes('T') ? s : s + 'T00:00:00'); return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }); } };
+
+  const CATEGORIAS = [
+    { k: 'lotes', label: 'Lotes' }, { k: 'trafficker', label: 'Trafficker' },
+    { k: 'equipo', label: 'Equipo' }, { k: 'eventos', label: 'Eventos' }, { k: 'cultura', label: 'Cultura' },
+  ];
+  const TIPOS = {
+    video: { label: 'Video', color: 'badge--gold' },
+    imagen: { label: 'Imagen', color: 'badge--green' },
+    link: { label: 'Enlace', color: 'badge--mute' },
+  };
+  const CAT_CLS = { lotes: 'badge--gold', trafficker: 'badge--blue', equipo: 'badge--green', eventos: 'badge--amber', cultura: 'badge--mute' };
+
+  let items = [];
+  let filtros = { categoria: '', tipo: '', busqueda: '' };
+
+  content.innerHTML = `
+   <div class="os-content__max" style="max-width:none">
+    <div class="u-row u-gap2" style="margin-bottom:var(--s3);flex-wrap:wrap;align-items:center;justify-content:space-between">
+      <div class="u-row u-gap3" style="align-items:center;flex-wrap:wrap">
+        <div class="s6_hero">
+          ${ICONS.spark || '<svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" width="28" height="28"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>'}
+        </div>
+        <div>
+          <div class="t-h2" style="font-size:22px;margin:0">SP Feed</div>
+          <div class="t-dim3" style="font-size:13px;margin-top:2px" id="s6Resumen">—</div>
+        </div>
+      </div>
+      <div class="u-row u-gap2" style="align-items:center">
+        <a class="chip" href="/supervisor/feed.html" style="text-decoration:none">Actividad en tiempo real</a>
+        <button class="btn btn--gold btn--sm" id="s6Publicar">+ Publicar contenido</button>
+      </div>
+    </div>
+
+    <div class="u-row u-gap2" style="margin-bottom:var(--s3);flex-wrap:wrap">
+      <input class="input" id="s6Busqueda" placeholder="Buscar en el feed…" style="flex:1;min-width:180px">
+      <select class="input" id="s6Categoria" style="width:auto">
+        <option value="">Todas las categorías</option>
+        <option value="lotes">Lotes</option>
+        <option value="trafficker">Trafficker</option>
+        <option value="equipo">Equipo</option>
+        <option value="eventos">Eventos</option>
+        <option value="cultura">Cultura</option>
+      </select>
+      <select class="input" id="s6Tipo" style="width:auto">
+        <option value="">Todos los formatos</option>
+        <option value="video">Video</option>
+        <option value="imagen">Imagen</option>
+        <option value="link">Enlace</option>
+      </select>
+    </div>
+
+    <div class="s6_grid" id="s6Grid"><div class="empty" style="grid-column:1/-1">Cargando feed…</div></div>
+   </div>
+
+   <div class="s6_modal" id="s6Modal">
+    <div class="s6_panel">
+      <div class="u-row u-gap2" style="justify-content:space-between;align-items:center;margin-bottom:var(--s3)">
+        <div class="t-h3" style="margin:0">Publicar en el SP Feed</div>
+        <button class="btn btn--quiet btn--sm" id="s6Cerrar">✕</button>
+      </div>
+      <div class="u-col u-gap2">
+        <label class="t-label">Título *</label>
+        <input class="input" id="s6Titulo" placeholder="Ej: Reel del lote La Bendición" maxlength="120">
+        <label class="t-label">Descripción</label>
+        <textarea class="input" id="s6Desc" rows="2" placeholder="Contexto breve para el equipo…" style="resize:vertical"></textarea>
+        <div class="u-row u-gap2" style="flex-wrap:wrap">
+          <div style="flex:1;min-width:140px">
+            <label class="t-label">Categoría</label>
+            <select class="input" id="s6CatSel" style="width:100%">
+              ${CATEGORIAS.map(c => `<option value="${c.k}">${c.label}</option>`).join('')}
+            </select>
+          </div>
+          <div style="flex:1;min-width:140px">
+            <label class="t-label">Formato</label>
+            <select class="input" id="s6TipoSel" style="width:100%">
+              <option value="video">Video (subir archivo)</option>
+              <option value="imagen">Imagen (subir archivo)</option>
+              <option value="link">Enlace externo (URL)</option>
+            </select>
+          </div>
+        </div>
+        <div id="s6UrlWrap">
+          <label class="t-label">URL *</label>
+          <input class="input" id="s6Url" placeholder="https://youtube.com/… , https://drive.google.com/… , https://…">
+        </div>
+        <div id="s6FileWrap" style="display:none">
+          <label class="t-label">Archivo * <span class="t-dim3" style="font-size:11px">(máx 80MB — jpeg/png/webp/gif/mp4/webm/mov)</span></label>
+          <div class="s6_drop" id="s6Drop">Arrastra el archivo aquí o haz clic para elegir<input type="file" id="s6File" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" style="display:none"></div>
+        </div>
+        <div class="u-row u-gap2" style="justify-content:flex-end;margin-top:var(--s2)">
+          <button class="btn btn--outline btn--sm" id="s6Cancelar">Cancelar</button>
+          <button class="btn btn--gold btn--sm" id="s6Guardar" disabled>Publicar</button>
+        </div>
+      </div>
+    </div>
+   </div>`;
+
+  const $ = (id) => document.getElementById(id);
+
+  // Filtros
+  const onFiltro = () => {
+    filtros.busqueda = $('s6Busqueda').value.trim().toLowerCase();
+    filtros.categoria = $('s6Categoria').value;
+    filtros.tipo = $('s6Tipo').value;
+    render();
+  };
+  $('s6Busqueda').addEventListener('input', onFiltro);
+  $('s6Categoria').addEventListener('change', onFiltro);
+  $('s6Tipo').addEventListener('change', onFiltro);
+
+  // Modal
+  const modal = $('s6Modal');
+  const abrir = () => { modal.classList.add('open'); validar(); };
+  const cerrar = () => { modal.classList.remove('open'); const fi = getFileInput(); if (fi) fi.value = ''; resetDrop(); validar(); };
+  $('s6Publicar').addEventListener('click', abrir);
+  $('s6Cerrar').addEventListener('click', cerrar);
+  $('s6Cancelar').addEventListener('click', cerrar);
+  modal.addEventListener('click', (e) => { if (e.target === modal) cerrar(); });
+
+  $('s6TipoSel').addEventListener('change', () => {
+    const t = $('s6TipoSel').value;
+    $('s6UrlWrap').style.display = t === 'link' ? '' : 'none';
+    $('s6FileWrap').style.display = t === 'link' ? 'none' : '';
+    validar();
+  });
+
+  // Drop zone
+  const drop = $('s6Drop');
+  function getFileInput() { return drop.querySelector('input[type="file"]'); }
+  drop.addEventListener('click', () => { const fi = getFileInput(); if (fi) fi.click(); });
+  drop.addEventListener('change', () => { const fi = getFileInput(); if (fi && fi.files[0]) { marcarArchivo(fi.files[0]); validar(); } });
+  ['dragover', 'dragenter'].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('dragging'); }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('dragging'); }));
+  drop.addEventListener('drop', (e) => {
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) { const fi = getFileInput(); if (fi) fi.files = e.dataTransfer.files; marcarArchivo(f); }
+    validar();
+  });
+  function marcarArchivo(f) {
+    if (f) { drop.classList.add('s6_hasfile'); drop.innerHTML = `<span style="color:var(--green);font-weight:600">${esc(f.name)}</span> <span class="t-dim3" style="font-size:11px">(${fmtBytes(f.size)})</span><input type="file" id="s6File" style="display:none">`; const fi = getFileInput(); if (fi) fi.addEventListener('change', () => { if (fi.files[0]) marcarArchivo(fi.files[0]); }); }
+    else { resetDrop(); }
+  }
+  function resetDrop() { drop.classList.remove('s6_hasfile'); drop.innerHTML = 'Arrastra el archivo aquí o haz clic para elegir<input type="file" id="s6File" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" style="display:none">'; const fi = getFileInput(); if (fi) fi.addEventListener('change', () => { if (fi.files[0]) marcarArchivo(fi.files[0]); }); }
+
+  function validar() {
+    const tipoSel = $('s6TipoSel').value;
+    const fi = getFileInput();
+    const ok = $('s6Titulo').value.trim() && (tipoSel === 'link' ? $('s6Url').value.trim() : (fi && fi.files && fi.files[0]));
+    $('s6Guardar').disabled = !ok;
+  }
+  ['s6Titulo', 's6Url'].forEach(id => $(id).addEventListener('input', validar));
+
+  $('s6Guardar').addEventListener('click', async () => {
+    const tipoSel = $('s6TipoSel').value;
+    const body = {
+      titulo: $('s6Titulo').value.trim(),
+      descripcion: $('s6Desc').value.trim(),
+      categoria: $('s6CatSel').value,
+    };
+    $('s6Guardar').disabled = true;
+    let r;
+    try {
+      if (tipoSel === 'link') {
+        body.tipo = 'link';
+        body.mediaUrl = $('s6Url').value.trim();
+        r = await SPS.api('/api/supervisor/feed', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      } else {
+        const fd = new FormData();
+        const fi = getFileInput();
+        fd.append('archivo', fi && fi.files[0]);
+        fd.append('titulo', body.titulo); fd.append('descripcion', body.descripcion); fd.append('categoria', body.categoria);
+        if (tipoSel === 'video') fd.append('tipo', 'video');
+        r = await SPS.api('/api/supervisor/feed/upload', { method: 'POST', body: fd });
+      }
+      if (r && r.ok) { await cargar(); cerrar(); }
+      else SPS.toast('No se pudo publicar.');
+    } catch (e) { SPS.toast('Error al publicar: ' + e.message); }
+    validar();
+  });
+
+  async function cargar() {
+    const qs = new URLSearchParams();
+    if (filtros.categoria) qs.set('categoria', filtros.categoria);
+    if (filtros.tipo) qs.set('tipo', filtros.tipo);
+    if (filtros.busqueda) qs.set('busqueda', filtros.busqueda);
+    const r = await SPS.api('/api/supervisor/feed' + (qs.toString() ? '?' + qs : ''));
+    items = (r && r.items) || [];
+    render();
+  }
+
+  function render() {
+    $('s6Resumen').textContent = `${items.length} contenido(s) en el feed`;
+    const grid = $('s6Grid');
+    if (!items.length) { grid.innerHTML = `<div class="empty" style="grid-column:1/-1">${ICONS.spark || ''}<div>Aún no hay contenido en el SP Feed. Publica el primer reel, foto o enlace.</div></div>`; return; }
+    grid.innerHTML = items.map(it => {
+      const tipo = TIPOS[it.tipo] || TIPOS.link;
+      const catCls = CAT_CLS[it.categoria] || 'badge--mute';
+      const media = it.tipo === 'video'
+        ? `<video src="/api/supervisor/feed/media/${it.mediaId}" controls preload="metadata"></video>`
+        : it.tipo === 'imagen'
+          ? `<img src="/api/supervisor/feed/media/${it.mediaId}" alt="${esc(it.titulo)}" loading="lazy">`
+          : `<a class="s6_linkbg" href="${esc(it.media_url)}" target="_blank" rel="noopener">
+               <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" width="34" height="34"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+               <span style="font-size:11px;color:var(--text-2)">Abrir enlace</span>
+             </a>`;
+      return `<div class="card card--float s6_card" data-id="${it.id}">
+        <div class="s6_media">
+          ${media}
+          <div class="s6_badges">
+            <span class="badge ${catCls}" style="font-size:9.5px">${esc(catLabel(it.categoria))}</span>
+            <span class="badge ${tipo.color}" style="font-size:9.5px">${tipo.label}</span>
+          </div>
+          <span class="s6_type">${it.tipo === 'video' ? '▶ Reel' : it.tipo === 'imagen' ? '● Foto' : '↗ Link'}</span>
+          <button class="btn btn--quiet btn--sm s6_del" data-del="${it.id}" title="Eliminar del feed" style="background:rgba(10,10,10,.6)">🗑</button>
+        </div>
+        <div style="padding:calc(var(--s1)+4px) var(--s2) var(--s2);display:flex;flex-direction:column;gap:4px;flex:1">
+          <div style="font-size:14px;font-weight:600;line-height:1.35">${esc(it.titulo)}</div>
+          ${it.descripcion ? `<div style="font-size:12px;color:var(--text-2);line-height:1.4">${esc(it.descripcion)}</div>` : ''}
+          <div class="t-dim3" style="font-size:11px;margin-top:auto;padding-top:6px">${esc(it.autor || '—')} · ${fmt.fecha(it.created_at)}</div>
+        </div>
+      </div>`;
+    }).join('');
+    grid.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = b.getAttribute('data-del');
+      if (!confirm('¿Eliminar este contenido del SP Feed?')) return;
+      const r = await SPS.api('/api/supervisor/feed/' + id, { method: 'DELETE' });
+      if (r && r.ok) { SPS.toast('Contenido eliminado del feed.'); await cargar(); }
+    }));
+  }
+
+  function catLabel(k) { const c = CATEGORIAS.find(c => c.k === k); return c ? c.label : k; }
+  function fmtBytes(b) { if (!b) return '0 B'; if (b > 1048576) return (b / 1048576).toFixed(1) + ' MB'; return Math.round(b / 1024) + ' KB'; }
+
+  // SSE: contenido nuevo en vivo
+  if (typeof EventSource !== 'undefined') {
+    try {
+      const sse = new EventSource('/api/stream');
+      sse.addEventListener('feed', async () => { await cargar(); SPS.toast('Nuevo contenido en el SP Feed.'); });
+      sse.onerror = () => sse.close();
+    } catch (e) {}
+  }
+  setInterval(async () => { await cargar(); }, 60000);
+
+  await cargar();
+})();
+</script>
+</body>
+</html>

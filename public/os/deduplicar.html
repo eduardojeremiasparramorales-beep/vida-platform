@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Depuración de leads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  .dedup-page { max-width: 800px; margin: 0 auto; }
+  .dedup-group { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+  .dedup-group-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--bg-3); border-bottom: 1px solid var(--border); }
+  .dedup-phone { font-family: 'Courier New', monospace; font-weight: 600; color: var(--gold); }
+  .dedup-badge { font-size: 11px; background: var(--gold); color: #000; padding: 2px 10px; border-radius: 10px; font-weight: 600; }
+  .dedup-leads { padding: 8px; }
+  .dedup-lead { padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; background: var(--bg-1); border: 1px solid var(--border-soft); }
+  .dedup-lead--primary { border-color: var(--gold); background: rgba(200,164,90,0.05); }
+  .dedup-lead-info { display: flex; align-items: center; gap: 8px; font-size: 14px; flex-wrap: wrap; }
+  .dedup-lead-meta { display: flex; gap: 16px; font-size: 11px; color: var(--text-3); margin-top: 4px; }
+  .dedup-tag { font-size: 10px; padding: 1px 8px; border-radius: 6px; font-weight: 600; text-transform: uppercase; }
+  .dedup-tag--cerrado { background: rgba(255,80,80,0.15); color: #ff5050; }
+  .dedup-tag--asignado { background: rgba(78,123,70,0.15); color: var(--green); }
+  .dedup-tag--nuevo { background: rgba(200,164,90,0.15); color: var(--gold); }
+  .dedup-tag--primary { background: var(--gold); color: #000; }
+  .dedup-empty { text-align: center; padding: 60px 20px; background: var(--bg-2); border-radius: 16px; border: 1px dashed var(--border); }
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; }
+  .alert--ok { background: rgba(78,123,70,0.15); color: var(--green); border: 1px solid rgba(78,123,70,0.3); }
+  .alert--error { background: rgba(255,80,80,0.15); color: #ff5050; border: 1px solid rgba(255,80,80,0.3); }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const { api, toast } = SPOS;
+  const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  const ctx = await SPOS.mount({ active: 'dedup', title: 'Depuración', crumb: 'Depuración de leads duplicados', padded: true, adminOnly: true });
+  if (!ctx) return;
+
+  let state = { groups: [], loading: true, merging: null, result: null, error: null };
+
+  async function loadGroups() {
+    state.loading = true;
+    state.error = null;
+    state.result = null;
+    renderView();
+    try {
+      const data = await api('/api/admin/duplicates');
+      if (!data || !data.ok) throw new Error((data && data.error) || 'Error al cargar');
+      state.groups = data.groups || [];
+    } catch (e) {
+      state.error = e.message;
+    }
+    state.loading = false;
+    renderView();
+  }
+
+  async function mergeDuplicates(keepId, removeId) {
+    state.merging = { keepId, removeId };
+    renderView();
+    try {
+      const data = await api('/api/admin/duplicates/merge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keepLeadId: keepId, removeLeadId: removeId })
+      });
+      if (!data || !data.ok) throw new Error((data && data.error) || 'Error al fusionar');
+      state.result = { type: 'success', msg: `Lead ${removeId} fusionado en ${keepId}. ${data.result.messagesMoved} mensajes movidos.` };
+      await loadGroups();
+      return;
+    } catch (e) {
+      state.result = { type: 'error', msg: e.message };
+    }
+    state.merging = null;
+    renderView();
+  }
+
+  function groupHtml(g) {
+    const primary = g.leads[0];
+    return `<div class="dedup-group">
+      <div class="dedup-group-header">
+        <span class="dedup-phone">${esc(g.phone)}</span>
+        <span class="dedup-badge">${g.leads.length} registros</span>
+      </div>
+      <div class="dedup-leads">
+        ${g.leads.map((l, i) => `
+          <div class="dedup-lead ${i === 0 ? 'dedup-lead--primary' : ''}">
+            <div class="dedup-lead-info">
+              <strong>#${l.id}</strong> ${esc(l.nombre)}
+              <span class="dedup-tag dedup-tag--${esc(l.status)}">${esc(l.status)}</span>
+              ${i === 0 ? '<span class="dedup-tag dedup-tag--primary">Primario</span>' : ''}
+            </div>
+            <div class="dedup-lead-meta">
+              ${l.vendedorId ? `<span>Asesor: <strong>${esc(l.vendedorId)}</strong></span>` : '<span style="color:var(--text-3)">Sin asesor</span>'}
+              <span>${l.mensajes} mensajes</span>
+              <span>${l.creado ? new Date(l.creado).toLocaleDateString() : ''}</span>
+            </div>
+            ${i > 0 ? `<button class="btn btn--sm btn--primary" style="margin-top:8px" data-keep="${primary.id}" data-remove="${l.id}"
+                ${state.merging && state.merging.keepId === primary.id && state.merging.removeId === l.id ? 'disabled' : ''}>
+                ${state.merging && state.merging.keepId === primary.id && state.merging.removeId === l.id ? 'Fusionando...' : `Fusionar → #${primary.id}`}
+              </button>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  }
+
+  function renderView() {
+    ctx.content.innerHTML = `<div class="dedup-page">
+      <div class="dedup-header">
+        <h2 style="margin:0;font-size:18px">${SPOS.ICONS.zap} Depuración de leads</h2>
+        <p style="margin:4px 0 0;font-size:12px;color:var(--text-3)">Busca y fusiona leads duplicados por teléfono</p>
+      </div>
+
+      ${state.error ? `<div class="alert alert--error" style="margin:16px 0">${esc(state.error)}</div>` : ''}
+      ${state.result ? `<div class="alert alert--${state.result.type === 'success' ? 'ok' : 'error'}" style="margin:16px 0">${esc(state.result.msg)}</div>` : ''}
+
+      <div style="display:flex;gap:8px;margin:16px 0">
+        <button class="btn btn--primary" id="btnScan" ${state.loading ? 'disabled' : ''}>
+          ${state.loading ? 'Escaneando...' : `${SPOS.ICONS.refresh} Escanear duplicados`}
+        </button>
+      </div>
+
+      ${state.loading ? `<div style="text-align:center;padding:40px;color:var(--text-3)">${SPOS.ICONS.refresh} Analizando base de datos...</div>` : ''}
+
+      ${!state.loading && state.groups.length === 0 ? `
+        <div class="dedup-empty">
+          <div style="font-size:48px;margin-bottom:8px;opacity:0.5">${SPOS.ICONS.zap}</div>
+          <h3 style="margin:0;color:var(--text-2)">No hay duplicados</h3>
+          <p style="color:var(--text-3);margin:4px 0 0">Todos los leads tienen un teléfono único. Base de datos limpia.</p>
+        </div>
+      ` : ''}
+
+      ${!state.loading ? state.groups.map(groupHtml).join('') : ''}
+    </div>`;
+
+    ctx.content.querySelector('#btnScan')?.addEventListener('click', loadGroups);
+    ctx.content.querySelectorAll('[data-keep]').forEach(b => b.addEventListener('click', () => mergeDuplicates(Number(b.dataset.keep), Number(b.dataset.remove))));
+  }
+
+  loadGroups();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Configuración</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  /* Layout de dos columnas: nav de secciones (sticky) + panel de contenido.
+     Primer settings de SP OS con este patrón — ver design-system.html para el
+     precedente de layout, aquí se le agrega selección por click (no scroll-anchor)
+     porque cada sección trae sus propios datos, no son solo anclas de una página larga. */
+  .cfg-layout { display: grid; grid-template-columns: 220px 1fr; gap: var(--s4); align-items: start; }
+  .cfg-nav { position: sticky; top: var(--s3); display: flex; flex-direction: column; gap: 2px;
+    background: var(--bg-1); border: 1px solid var(--border-soft); border-radius: var(--r); padding: 10px; }
+  .cfg-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+    font-size: 13.5px; font-weight: 500; color: var(--text-2); cursor: pointer;
+    transition: background .15s, color .15s; user-select: none; }
+  .cfg-nav-item:hover { background: var(--bg-2); color: var(--text); }
+  .cfg-nav-item.active { background: var(--gold-soft); color: var(--gold-ink, var(--gold)); font-weight: 600; }
+  @media (max-width: 900px) {
+    .cfg-layout { grid-template-columns: 1fr; }
+    .cfg-nav { position: static; flex-direction: row; flex-wrap: wrap; }
+  }
+
+  .cfg-sec { background: var(--bg-1); border: 1px solid var(--border-soft); border-radius: var(--r); padding: var(--s3); margin-bottom: var(--s3); }
+  .cfg-sec h3 { font-family: var(--f-title); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-ink, var(--gold)); margin-bottom: 6px; }
+  .cfg-sec p { font-size: 12.5px; color: var(--text-3); margin-bottom: var(--s2); }
+  .cfg-field { margin-bottom: 14px; }
+  .cfg-field label { display: block; font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
+  .cfg-field input, .cfg-field textarea, .cfg-field select { width: 100%; background: var(--bg-3); border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--text); padding: 10px 12px; font-family: var(--f-ui); font-size: 13.5px; outline: none; resize: vertical; }
+  .cfg-field input:focus, .cfg-field textarea:focus, .cfg-field select:focus { border-color: var(--gold-line); }
+  .cfg-save { height: 38px; padding: 0 22px; background: var(--gold); color: #000; border: none; border-radius: var(--r-sm); font-weight: 600; font-size: 13px; cursor: pointer; font-family: var(--f-ui); }
+  .cfg-save:disabled { opacity: .4; }
+  .cfg-save--ghost { background: var(--bg-3); color: var(--text); border: 1px solid var(--border); }
+  .cfg-hint { font-size: 11.5px; color: var(--text-3); margin-top: 5px; }
+
+  .cap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+  .cap-card { background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: var(--r-sm); padding: 14px; }
+  .cap-card__top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .cap-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .cap-dot--on { background: #57C168; box-shadow: 0 0 8px rgba(87,193,104,.5); }
+  .cap-dot--warn { background: var(--amber); }
+  .cap-dot--off { background: var(--text-4); }
+  .cap-card__label { font-size: 13.5px; font-weight: 600; }
+  .cap-card__detail { font-size: 11.5px; color: var(--text-3); line-height: 1.4; margin: 4px 0 8px; }
+  .cap-card__link { font-size: 11.5px; color: var(--gold-ink, var(--gold)); }
+
+  .usage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: var(--s3); }
+  .usage-stat { background: var(--bg-2); border-radius: var(--r-sm); padding: 14px; text-align: center; }
+  .usage-stat b { display: block; font-size: 24px; font-weight: 700; font-family: var(--f-num); }
+  .usage-stat span { font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; }
+
+  .row-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border-soft); }
+  .row-item:last-child { border-bottom: none; }
+  .row-item__main { font-size: 13px; font-weight: 500; }
+  .row-item__sub { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+  .btn-mini { background: var(--bg-3); border: 1px solid var(--border); border-radius: 8px; color: var(--text-2); padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .btn-mini:hover { color: var(--text); border-color: var(--gold-line); }
+  .btn-mini--danger { color: var(--red); }
+  .badge-actual { font-size: 10px; font-weight: 700; color: var(--green); background: var(--green-soft); padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const { api, toast, esc, fmt } = SPOS;
+
+  const ctx = await SPOS.mount({ active: 'settings', title: 'Configuración', crumb: 'Ajustes del sistema', padded: true, adminOnly: true });
+  if (!ctx) return;
+
+  const SECTIONS = [
+    { id: 'general', label: 'General', icon: '⚙️' },
+    { id: 'cuenta', label: 'Cuenta', icon: '👤' },
+    { id: 'privacidad', label: 'Privacidad y seguridad', icon: '🔒' },
+    { id: 'facturacion', label: 'Facturación', icon: '💳' },
+    { id: 'uso', label: 'Uso', icon: '📊' },
+    { id: 'capacidades', label: 'Capacidades', icon: '🧩' },
+    { id: 'operacion', label: 'Operación', icon: '🛠️' },
+  ];
+  let currentSection = 'general';
+
+  function fmtBytes(n) {
+    if (!n) return '0 MB';
+    const mb = n / (1024 * 1024);
+    return mb >= 1024 ? (mb / 1024).toFixed(2) + ' GB' : mb.toFixed(1) + ' MB';
+  }
+  function fmtFecha(ts) {
+    if (!ts) return '—';
+    const d = new Date(Number(ts) || ts);
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderLayout() {
+    ctx.content.innerHTML = `<div class="cfg-layout">
+      <nav class="cfg-nav">${SECTIONS.map(s => `<div class="cfg-nav-item${s.id === currentSection ? ' active' : ''}" data-sec="${s.id}"><span>${s.icon}</span> ${s.label}</div>`).join('')}</nav>
+      <div id="cfgPanel"><div class="empty"><span>Cargando…</span></div></div>
+    </div>`;
+    ctx.content.querySelectorAll('.cfg-nav-item').forEach(el => el.addEventListener('click', () => {
+      if (el.dataset.sec === currentSection) return;
+      currentSection = el.dataset.sec;
+      renderLayout();
+    }));
+    renderSection(currentSection);
+  }
+
+  async function renderSection(id) {
+    const panel = document.getElementById('cfgPanel');
+    const renderers = { general: renderGeneral, cuenta: renderCuenta, privacidad: renderPrivacidad, facturacion: renderFacturacion, uso: renderUso, capacidades: renderCapacidades, operacion: renderOperacion };
+    try { await renderers[id](panel); }
+    catch (e) { panel.innerHTML = `<div class="cfg-sec"><p style="color:var(--red)">Error cargando la sección: ${esc(e.message)}</p></div>`; }
+  }
+
+  // ═══════════════════ GENERAL ═══════════════════
+  async function renderGeneral(panel) {
+    const cfg = await api('/api/config') || {};
+    const v = k => esc(cfg[k] || '');
+    panel.innerHTML = `
+      <form class="cfg-sec" id="fGeneral">
+        <h3>General del negocio</h3>
+        <p>Datos base que alimentan las plantillas de mensajes y las cadencias programadas.</p>
+        <div class="cfg-field"><label>Nombre del negocio</label><input id="company_name" value="${v('company_name')}" placeholder="Leons Group"></div>
+        <div class="cfg-field"><label>Zona horaria</label>
+          <select id="timezone">
+            ${['America/Bogota', 'America/Mexico_City', 'America/Lima', 'America/Santiago', 'America/Buenos_Aires', 'UTC'].map(tz => `<option value="${tz}" ${(cfg.timezone || 'America/Bogota') === tz ? 'selected' : ''}>${tz}</option>`).join('')}
+          </select>
+          <div class="cfg-hint">Usada para calcular horarios de cadencias y mensajes programados.</div>
+        </div>
+        <div class="cfg-field"><label>Formato de moneda</label>
+          <select id="currency_format">
+            <option value="COP" ${(cfg.currency_format || 'COP') === 'COP' ? 'selected' : ''}>COP — Peso colombiano</option>
+            <option value="USD" ${cfg.currency_format === 'USD' ? 'selected' : ''}>USD — Dólar</option>
+          </select>
+        </div>
+        <div class="cfg-field"><label>Tema por defecto del negocio</label>
+          <select id="default_theme">
+            <option value="system" ${(cfg.default_theme || 'system') === 'system' ? 'selected' : ''}>Sistema</option>
+            <option value="light" ${cfg.default_theme === 'light' ? 'selected' : ''}>Claro</option>
+            <option value="dark" ${cfg.default_theme === 'dark' ? 'selected' : ''}>Oscuro</option>
+          </select>
+          <div class="cfg-hint">Es lo que ven los usuarios que nunca eligieron un tema en su propio dispositivo — quien ya eligió no se ve afectado.</div>
+        </div>
+        <button type="submit" class="cfg-save">Guardar</button>
+      </form>`;
+    document.getElementById('fGeneral').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const btn = ev.target.querySelector('button'); btn.disabled = true;
+      const body = {
+        company_name: document.getElementById('company_name').value.trim(),
+        timezone: document.getElementById('timezone').value,
+        currency_format: document.getElementById('currency_format').value,
+        default_theme: document.getElementById('default_theme').value,
+      };
+      const r = await api('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      btn.disabled = false;
+      toast(r ? 'Guardado' : 'Error al guardar', r ? 'ok' : 'err');
+    });
+  }
+
+  // ═══════════════════ CUENTA ═══════════════════
+  async function renderCuenta(panel) {
+    const me = await api('/api/me') || {};
+    const sesiones = await api('/api/me/sesiones') || [];
+    panel.innerHTML = `
+      <div class="cfg-sec">
+        <h3>Mi perfil</h3>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+          <div class="avatar avatar--lg" id="cuentaAvatar" style="background:${SPOS.avatarColor(me.nombre)}">${me.foto ? `<img src="${me.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : SPOS.initials(me.nombre)}</div>
+          <label class="btn-mini" style="cursor:pointer">Cambiar foto<input type="file" id="fotoInput" accept="image/*" style="display:none"></label>
+        </div>
+        <div class="cfg-field"><label>Nombre</label><input id="miNombre" value="${esc(me.nombre || '')}"></div>
+        <div class="cfg-field"><label>Teléfono</label><input value="${esc(me.telefono || '—')}" disabled style="opacity:.6"></div>
+        <button type="button" class="cfg-save" id="btnGuardarNombre">Guardar nombre</button>
+      </div>
+
+      ${me.vendedorId ? `
+      <div class="cfg-sec">
+        <h3>Cambiar PIN</h3>
+        <p>4 dígitos, no puede ser 0000.</p>
+        <div style="display:flex;gap:10px;max-width:340px">
+          <div class="cfg-field" style="flex:1"><label>PIN nuevo</label><input id="pinNuevo" type="password" inputmode="numeric" maxlength="4" placeholder="••••"></div>
+          <div class="cfg-field" style="flex:1"><label>Confirmar</label><input id="pinConfirmar" type="password" inputmode="numeric" maxlength="4" placeholder="••••"></div>
+        </div>
+        <button type="button" class="cfg-save" id="btnGuardarPin">Cambiar PIN</button>
+      </div>
+
+      <div class="cfg-sec">
+        <h3>Verificación en 2 pasos</h3>
+        <p>Pide tu PIN en cada dispositivo nuevo al iniciar sesión.</p>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:12px">
+          <input type="checkbox" id="twofaCheck" ${me.two_fa ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--gold)">
+          Activar verificación en dos pasos
+        </label>
+        <button type="button" class="cfg-save" id="btnGuardar2FA">Guardar</button>
+      </div>
+
+      <div class="cfg-sec">
+        <h3>Versión de la app</h3>
+        <p id="lblVersion" style="margin:0">…</p>
+      </div>` : ''}
+
+      <div class="cfg-sec">
+        <h3>Sesiones activas</h3>
+        <p>Dispositivos donde tu cuenta tiene sesión iniciada.</p>
+        <div id="listaSesiones">${sesiones.length ? sesiones.map(s => `
+          <div class="row-item">
+            <div><div class="row-item__main">${esc(s.dispositivo)} ${s.actual ? '<span class="badge-actual">Esta sesión</span>' : ''}</div>
+            <div class="row-item__sub">Última actividad: ${fmtFecha(s.ultima_actividad)}</div></div>
+            ${!s.actual ? `<button class="btn-mini btn-mini--danger" data-cerrar="${esc(s.token)}">Cerrar</button>` : ''}
+          </div>`).join('') : '<div class="cfg-hint">No hay otras sesiones registradas.</div>'}
+        </div>
+        ${sesiones.length > 1 ? '<button type="button" class="cfg-save cfg-save--ghost" id="btnCerrarTodas" style="margin-top:12px">Cerrar todas las demás sesiones</button>' : ''}
+      </div>`;
+
+    document.getElementById('fotoInput').addEventListener('change', async ev => {
+      const file = ev.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const r = await api('/api/me/foto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ foto: reader.result }) });
+        if (r) { toast('Foto actualizada', 'ok'); renderSection('cuenta'); } else toast('Error al subir foto', 'err');
+      };
+      reader.readAsDataURL(file);
+    });
+    document.getElementById('btnGuardarNombre').addEventListener('click', async () => {
+      const nombre = document.getElementById('miNombre').value.trim();
+      if (!nombre) return toast('El nombre no puede estar vacío', 'err');
+      const r = await api('/api/me/nombre', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre }) });
+      toast(r ? 'Nombre actualizado' : 'Error', r ? 'ok' : 'err');
+    });
+    document.getElementById('btnGuardarPin')?.addEventListener('click', async () => {
+      const p1 = document.getElementById('pinNuevo').value, p2 = document.getElementById('pinConfirmar').value;
+      if (!/^\d{4}$/.test(p1)) return toast('El PIN debe ser de 4 dígitos', 'err');
+      if (p1 !== p2) return toast('Los PIN no coinciden', 'err');
+      const r = await api('/api/mi-pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: p1 }) });
+      if (r && r.ok) { toast('PIN actualizado', 'ok'); document.getElementById('pinNuevo').value = ''; document.getElementById('pinConfirmar').value = ''; }
+      else toast((r && r.error) || 'Error al cambiar PIN', 'err');
+    });
+    document.getElementById('btnGuardar2FA')?.addEventListener('click', async () => {
+      const enable = document.getElementById('twofaCheck').checked;
+      const r = await api('/api/me/2fa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enable }) });
+      toast(r ? (enable ? 'Verificación 2FA activada' : 'Verificación 2FA desactivada') : 'Error al guardar', r ? 'ok' : 'err');
+    });
+    (async () => {
+      const v = await api('/api/app/version');
+      const lbl = document.getElementById('lblVersion');
+      if (lbl) lbl.textContent = v && v.versionName ? 'Leons Group ' + v.versionName : '—';
+    })();
+    document.querySelectorAll('[data-cerrar]').forEach(b => b.addEventListener('click', async () => {
+      await api('/api/me/sesiones/' + b.dataset.cerrar, { method: 'DELETE' });
+      toast('Sesión cerrada', 'ok'); renderSection('cuenta');
+    }));
+    document.getElementById('btnCerrarTodas')?.addEventListener('click', async () => {
+      const r = await api('/api/me/cerrar-todas', { method: 'POST' });
+      toast(r ? `${r.cerradas} sesión(es) cerrada(s)` : 'Error', r ? 'ok' : 'err');
+      renderSection('cuenta');
+    });
+  }
+
+  // ═══════════════════ PRIVACIDAD ═══════════════════
+  async function renderPrivacidad(panel) {
+    const [cfg, optouts, capacidades] = await Promise.all([
+      api('/api/config') || {}, api('/api/optouts') || [], api('/api/capacidades') || [],
+    ]);
+    const webhookCap = (capacidades || []).find(c => c.id === 'webhook_firma');
+    panel.innerHTML = `
+      <div class="cfg-sec">
+        <h3>Exportar mis datos</h3>
+        <p>Descarga un ZIP con todos los leads (CSV), notas internas y plantillas de respuesta.</p>
+        <button type="button" class="cfg-save" id="btnExportar">Exportar mis datos</button>
+      </div>
+
+      <form class="cfg-sec" id="fRetencion">
+        <h3>Retención de medios</h3>
+        <p>Borra automáticamente archivos de chat (fotos, audios, videos) más antiguos que el plazo elegido. Las fotos del catálogo público nunca se tocan. Apagado por defecto.</p>
+        <div class="cfg-field" style="display:flex;align-items:center;gap:10px">
+          <label style="margin:0;cursor:pointer;display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="retencionOn" ${cfg.media_retention_enabled === '1' ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--gold)">
+            Activar retención automática
+          </label>
+        </div>
+        <div class="cfg-field" style="max-width:260px"><label>Borrar archivos mayores a</label>
+          <select id="retencionDias">
+            <option value="90" ${cfg.media_retention_days === '90' ? 'selected' : ''}>3 meses</option>
+            <option value="180" ${(cfg.media_retention_days || '180') === '180' ? 'selected' : ''}>6 meses</option>
+            <option value="365" ${cfg.media_retention_days === '365' ? 'selected' : ''}>12 meses</option>
+          </select>
+        </div>
+        <button type="submit" class="cfg-save">Guardar</button>
+      </form>
+
+      <div class="cfg-sec">
+        <h3>Lista de exclusión (opt-out)</h3>
+        <p>Números que pidieron no recibir más mensajes promocionales — se excluyen automáticamente de todas las campañas.</p>
+        <div id="listaOptouts">${optouts.length ? optouts.map(o => `
+          <div class="row-item">
+            <div><div class="row-item__main">${esc(o.phone)}</div><div class="row-item__sub">${esc(o.canal)} · "${esc(o.motivo)}" · ${fmtFecha(o.created_at)}</div></div>
+            <button class="btn-mini" data-reactivar="${esc(o.phone)}">Reactivar</button>
+          </div>`).join('') : '<div class="cfg-hint">Nadie ha pedido baja todavía.</div>'}
+        </div>
+      </div>
+
+      <div class="cfg-sec">
+        <h3>Chat interno de equipo</h3>
+        <p>🛡️ El chat directo entre asesores es supervisado por administración — cada asesor ve un aviso al entrar a un chat 1 a 1 con un compañero. No es desactivable (transparencia por diseño).</p>
+      </div>
+
+      <div class="cfg-sec">
+        <h3>Seguridad del webhook</h3>
+        <div class="row-item" style="border:none;padding:4px 0">
+          <div class="row-item__main"><span class="cap-dot ${webhookCap && webhookCap.status === 'on' ? 'cap-dot--on' : 'cap-dot--off'}" style="display:inline-block;margin-right:8px"></span>${webhookCap ? esc(webhookCap.detail) : 'Sin datos'}</div>
+        </div>
+      </div>`;
+
+    document.getElementById('btnExportar').addEventListener('click', async () => {
+      const btn = document.getElementById('btnExportar'); btn.disabled = true; btn.textContent = 'Generando…';
+      try {
+        const res = await fetch('/api/privacidad/exportar', { method: 'POST', credentials: 'include' });
+        if (!res.ok) throw new Error('http_' + res.status);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'exportacion-datos-sp.zip';
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+        toast('Exportación descargada', 'ok');
+      } catch (e) { toast('Error al exportar', 'err'); }
+      btn.disabled = false; btn.textContent = 'Exportar mis datos';
+    });
+    document.getElementById('fRetencion').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const body = { media_retention_enabled: document.getElementById('retencionOn').checked ? '1' : '0', media_retention_days: document.getElementById('retencionDias').value };
+      const r = await api('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      toast(r ? 'Guardado' : 'Error', r ? 'ok' : 'err');
+    });
+    document.querySelectorAll('[data-reactivar]').forEach(b => b.addEventListener('click', async () => {
+      await api('/api/optouts/' + encodeURIComponent(b.dataset.reactivar), { method: 'DELETE' });
+      toast('Número reactivado', 'ok'); renderSection('privacidad');
+    }));
+  }
+
+  // ═══════════════════ FACTURACIÓN ═══════════════════
+  async function renderFacturacion(panel) {
+    const cfg = await api('/api/config') || {};
+    const v = k => esc(cfg[k] || '');
+    panel.innerHTML = `
+      <div class="cfg-sec">
+        <h3>Plan actual</h3>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+          <div style="font-family:var(--f-title);font-size:20px;color:var(--gold-ink, var(--gold))">Plan Fundador</div>
+          <span class="badge badge--green">GRATIS</span>
+        </div>
+        <p>Incluye: CRM completo, WhatsApp ilimitado, Campañas SP, IA Copiloto, catálogo público, automatizaciones. Todo activo hoy, sin costo — Vid.a no ha activado cobro aún.</p>
+      </div>
+
+      <form class="cfg-sec" id="fFacturacion">
+        <h3>Datos de facturación</h3>
+        <p>Para cuando el cobro se active, ya quedan listos.</p>
+        <div class="cfg-field"><label>Razón social</label><input id="billing_razon_social" value="${v('billing_razon_social')}"></div>
+        <div class="cfg-field"><label>NIT / CC</label><input id="billing_nit" value="${v('billing_nit')}"></div>
+        <div class="cfg-field"><label>Dirección</label><input id="billing_direccion" value="${v('billing_direccion')}"></div>
+        <div class="cfg-field"><label>Email de facturación</label><input id="billing_email" type="email" value="${v('billing_email')}"></div>
+        <button type="submit" class="cfg-save">Guardar</button>
+      </form>
+
+      <div class="cfg-sec">
+        <h3>Historial de facturas</h3>
+        <div class="empty" style="padding:32px 0"><span>Aquí aparecerán tus facturas cuando Vid.a active los planes.</span></div>
+      </div>`;
+
+    document.getElementById('fFacturacion').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const body = {};
+      ['billing_razon_social', 'billing_nit', 'billing_direccion', 'billing_email'].forEach(k => { body[k] = document.getElementById(k).value.trim(); });
+      const r = await api('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      toast(r ? 'Guardado' : 'Error', r ? 'ok' : 'err');
+    });
+  }
+
+  // ═══════════════════ USO ═══════════════════
+  async function renderUso(panel) {
+    const u = await api('/api/uso') || {};
+    const serie = u.serie_6_meses || [];
+    const maxVal = Math.max(1, ...serie.map(p => (p.mensajes_enviados || 0) + (p.mensajes_recibidos || 0)));
+    const barW = 100 / (serie.length || 1);
+    const bars = serie.map((p, i) => {
+      const total = (p.mensajes_enviados || 0) + (p.mensajes_recibidos || 0);
+      const h = Math.max(2, (total / maxVal) * 60);
+      return `<rect x="${i * barW + barW * 0.15}%" y="${64 - h}" width="${barW * 0.7}%" height="${h}" rx="2" fill="var(--gold)" opacity="${i === serie.length - 1 ? '1' : '.55'}"><title>${p.periodo}: ${total}</title></rect>
+        <text x="${i * barW + barW * 0.5}%" y="76" font-size="8" fill="var(--text-3)" text-anchor="middle">${p.periodo.slice(5)}</text>`;
+    }).join('');
+
+    panel.innerHTML = `
+      <div class="cfg-sec">
+        <h3>Este mes (${esc(u.periodo || '')})</h3>
+        <div class="usage-grid">
+          <div class="usage-stat"><b>${fmt.n(u.mensajes_enviados)}</b><span>Enviados</span></div>
+          <div class="usage-stat"><b>${fmt.n(u.mensajes_recibidos)}</b><span>Recibidos</span></div>
+          <div class="usage-stat"><b>${fmt.n(u.conversaciones_activas)}</b><span>Conversaciones activas</span></div>
+          <div class="usage-stat"><b>${fmt.n(u.generaciones_ia)}</b><span>Generaciones IA</span></div>
+          <div class="usage-stat"><b>${fmt.n(u.campanas_hoy)}/${fmt.n(u.campanas_limite_diario)}</b><span>Campañas hoy</span></div>
+          <div class="usage-stat"><b>${fmtBytes(u.almacenamiento_media_bytes)}</b><span>Medios</span></div>
+        </div>
+        ${u.whatsapp_tier ? `<div class="cfg-hint">Calidad WhatsApp: <b>${esc(u.whatsapp_tier.calidad || '—')}</b> · Nivel de mensajería: <b>${esc(u.whatsapp_tier.tier || '—')}</b></div>` : ''}
+      </div>
+
+      <div class="cfg-sec">
+        <h3>Mensajes — últimos 6 meses</h3>
+        <svg viewBox="0 0 300 84" style="width:100%;max-width:420px;height:110px">${bars}</svg>
+      </div>`;
+  }
+
+  // ═══════════════════ CAPACIDADES ═══════════════════
+  async function renderCapacidades(panel) {
+    const caps = await api('/api/capacidades') || [];
+    panel.innerHTML = `
+      <div class="cfg-sec">
+        <h3>Mapa del sistema</h3>
+        <p>Estado real de cada capacidad, detectado en vivo — no una suposición.</p>
+        <div class="cap-grid">${caps.map(c => `
+          <div class="cap-card">
+            <div class="cap-card__top"><span class="cap-dot cap-dot--${c.status}"></span><span class="cap-card__label">${esc(c.label)}</span></div>
+            <div class="cap-card__detail">${esc(c.detail)}</div>
+            ${c.link ? `<a class="cap-card__link" href="${esc(c.link)}">Configurar →</a>` : ''}
+          </div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  // ═══════════════════ OPERACIÓN (migrado tal cual de la página anterior) ═══════════════════
+  async function renderOperacion(panel) {
+    const cfg = await api('/api/config') || {};
+    const v = k => String(cfg[k] || '').replace(/"/g, '&quot;');
+    let waTemplates = []; try { waTemplates = await api('/api/wa-templates') || []; } catch (e) {}
+    let tplVarsCatalog = []; try { tplVarsCatalog = await api('/api/template-vars') || []; } catch (e) {}
+
+    panel.innerHTML = `
+      <form class="cfg-sec" id="fBienvenida">
+        <h3>Mensaje de bienvenida</h3>
+        <p>Respuesta automática que recibe cada cliente nuevo al escribir por primera vez al número oficial.</p>
+        <div class="cfg-field">
+          <textarea id="welcome" rows="4" maxlength="1000" placeholder="Hola 👋 Gracias por contactar a SP Inmobiliaria…">${String(cfg.welcome_message || '')}</textarea>
+          <div class="cfg-hint">Si se deja vacío, se usa el mensaje por defecto del sistema.</div>
+        </div>
+        <button type="submit" class="cfg-save">Guardar mensaje</button>
+      </form>
+
+      <div class="cfg-sec" id="secPlantillas">
+        <h3>Plantillas de WhatsApp (Meta)</h3>
+        <p>Sincroniza el catálogo real de plantillas aprobadas en Meta Business Suite (nunca se escriben a mano). Luego asigna qué dato del CRM llena cada variable de cada plantilla — así el asesor puede iniciar conversaciones con los datos reales del lead ya completados.</p>
+        <button type="button" class="cfg-save" id="btnSyncTpl">Sincronizar desde Meta</button>
+        <div id="tplList" style="margin-top:14px"></div>
+      </div>
+
+      <form class="cfg-sec" id="fReengagement">
+        <h3>Template de reactivación (ventana 24h)</h3>
+        <p>Cuando la ventana de 24 horas del cliente está cerrada, el sistema envía este template automáticamente antes del mensaje de texto para reabrir la conversación.</p>
+        <div class="cfg-field">
+          <label>Template de WhatsApp</label>
+          <select id="reengagement_template">
+            <option value="">Sin template (mensaje fallará si ventana cerrada)</option>
+          </select>
+          <div class="cfg-hint">Debes tener templates aprobados en Meta Business Suite. Si no aparecen, créalos en WhatsApp → Plantillas.</div>
+        </div>
+        <button type="submit" class="cfg-save">Guardar template</button>
+      </form>
+
+      <form class="cfg-sec" id="fIntegraciones">
+        <h3>Integraciones opcionales</h3>
+        <p>Credenciales para llamadas (Twilio) y alertas (Slack). Solo se usan si están completas.</p>
+        <div class="cfg-field"><label>Twilio Account SID</label><input id="twilio_account_sid" type="password" autocomplete="off" value="${v('twilio_account_sid')}"></div>
+        <div class="cfg-field"><label>Twilio Auth Token</label><input id="twilio_auth_token" type="password" autocomplete="off" value="${v('twilio_auth_token')}"></div>
+        <div class="cfg-field"><label>Twilio Número</label><input id="twilio_numero" placeholder="+57…" value="${v('twilio_numero')}"></div>
+        <div class="cfg-field"><label>Slack Webhook URL</label><input id="slack_webhook" type="password" autocomplete="off" value="${v('slack_webhook')}"></div>
+        <button type="submit" class="cfg-save">Guardar integraciones</button>
+      </form>
+
+      <form class="cfg-sec" id="fEscalation">
+        <h3>⏰ Escalado inteligente</h3>
+        <p>Tiempos para alertar y reasignar leads cuando un asesor no responde. Los leads nuevos se reasignan automáticamente; los recurrentes solo reciben alertas.</p>
+        <div class="cfg-field"><label>Alerta al asesor (minutos)</label><input id="escalation_alerta_min" value="${v('escalation_alerta_min') || '15'}" placeholder="15"></div>
+        <div class="cfg-field"><label>Reasignar lead nuevo (minutos)</label><input id="escalation_reasignar_min" value="${v('escalation_reasignar_min') || '30'}" placeholder="30"></div>
+        <div class="cfg-field"><label>Notificar admin (minutos)</label><input id="escalation_admin_min" value="${v('escalation_admin_min') || '60'}" placeholder="60"></div>
+        <div class="cfg-field"><label>Lead se considera "asentado" (horas)</label><input id="escalation_asentado_horas" value="${v('escalation_asentado_horas') || '24'}" placeholder="24">
+        <div class="cfg-hint">Después de este tiempo, el lead ya no se reasigna — solo recibe alertas el asesor actual.</div></div>
+        <button type="submit" class="cfg-save">Guardar tiempos de escalado</button>
+      </form>
+
+      <form class="cfg-sec" id="fIA">
+        <h3>🤖 IA Copiloto</h3>
+        <p>El Copiloto SP usa modelos de IA para analizar leads, sugerir respuestas y ayudarte a vender más. Agrega uno o más proveedores abajo — para empezar, elige un preset y pega tu API Key.</p>
+        <div class="cfg-field" style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <label style="margin:0;cursor:pointer">
+            <input type="checkbox" id="ai_enabled" ${cfg.ai_enabled !== 'false' ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--gold);margin-right:8px;vertical-align:middle">
+            Copiloto activado
+          </label>
+        </div>
+        <div style="margin-bottom:14px">
+          <label style="font-size:10.5px;color:var(--text-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;display:block">Agregar proveedor con un clic:</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap" id="presetBtns"></div>
+        </div>
+        <div id="providerList"></div>
+        <div id="noProviders" style="display:none;padding:14px;text-align:center;color:var(--text-3);font-size:13px;border:1px dashed var(--border);border-radius:12px">Aún no hay proveedores. Haz clic en uno de los presets de arriba para empezar.</div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button type="submit" class="cfg-save">Guardar configuración IA</button>
+          <button type="button" class="cfg-save cfg-save--ghost" id="btnTestIA">Probar conexión</button>
+        </div>
+        <div id="iaTestResult" style="margin-top:10px;font-size:12px;display:none"></div>
+      </form>
+
+      <div class="cfg-sec">
+        <h3>Canales y equipo</h3>
+        <p>La conexión de WhatsApp/Messenger/Instagram se gestiona en <a href="/os/integraciones.html" style="color:var(--gold-ink, var(--gold))">Integraciones</a>. Los asesores, PIN y plantillas en <a href="/os/equipo.html" style="color:var(--gold-ink, var(--gold))">Equipo</a>.</p>
+      </div>`;
+
+    document.getElementById('fBienvenida').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const btn = ev.target.querySelector('button'); btn.disabled = true;
+      const r = await api('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ welcome_message: document.getElementById('welcome').value.trim() }) });
+      btn.disabled = false;
+      if (r) toast('Mensaje de bienvenida guardado', 'ok'); else toast('Error al guardar', 'err');
+    });
+
+    document.getElementById('fIntegraciones').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const btn = ev.target.querySelector('button'); btn.disabled = true;
+      const body = {};
+      ['twilio_account_sid', 'twilio_auth_token', 'twilio_numero', 'slack_webhook'].forEach(k => { body[k] = document.getElementById(k).value.trim(); });
+      const r = await api('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      btn.disabled = false;
+      if (r) toast('Integraciones guardadas', 'ok'); else toast('Error al guardar', 'err');
+    });
+
+    const sel = document.getElementById('reengagement_template');
+    function poblarSelectReactivacion() {
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Sin template (mensaje fallará si ventana cerrada)</option>';
+      waTemplates.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.nombre; opt.textContent = t.nombre;
+        if (cfg.reengagement_template === t.nombre) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+    poblarSelectReactivacion();
+
+    function renderTplList() {
+      const box = document.getElementById('tplList');
+      if (!box) return;
+      if (!waTemplates.length) { box.innerHTML = '<div class="cfg-hint">Aún no hay plantillas sincronizadas. Debes tener plantillas APROBADAS en Meta Business Suite y las variables WHATSAPP_TOKEN / WHATSAPP_BUSINESS_ACCOUNT_ID configuradas.</div>'; return; }
+      box.innerHTML = waTemplates.map(t => {
+        let vars = []; try { vars = JSON.parse(t.variables || '[]'); } catch (e) {}
+        let mapping = {}; try { mapping = JSON.parse(t.var_mapping || '{}'); } catch (e) {}
+        return `<div class="pm-card" style="border:1px solid var(--border-soft);border-radius:12px;padding:14px;margin-bottom:10px;background:var(--bg-2)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <strong style="font-size:13px">${esc(t.nombre)}</strong>
+            <span class="cfg-hint" style="margin:0">${esc(t.idioma || '')} · ${esc(t.categoria || '')} · ${esc(t.estado || '')}</span>
+          </div>
+          ${vars.length ? vars.map(ph => `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <span style="font-size:12px;color:var(--text-3);min-width:90px">{{${esc(ph)}}}</span>
+              <select data-tpl="${t.id}" data-ph="${esc(ph)}" style="flex:1;background:var(--bg-0);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 9px;font-size:12.5px">
+                <option value="">Sin asignar (se pedirá a mano al enviar)</option>
+                ${tplVarsCatalog.map(vv => `<option value="${vv.key}" ${mapping[ph] === vv.key ? 'selected' : ''}>${esc(vv.label)}</option>`).join('')}
+              </select>
+            </div>`).join('') : '<div class="cfg-hint">Esta plantilla no tiene variables.</div>'}
+        </div>`;
+      }).join('');
+      box.querySelectorAll('select[data-tpl]').forEach(selEl => selEl.onchange = async () => {
+        const tplId = selEl.dataset.tpl;
+        const t = waTemplates.find(x => String(x.id) === String(tplId));
+        let mapping = {}; try { mapping = JSON.parse(t.var_mapping || '{}'); } catch (e) {}
+        mapping[selEl.dataset.ph] = selEl.value;
+        t.var_mapping = JSON.stringify(mapping);
+        const r = await api('/api/wa-templates/' + tplId + '/mapping', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mapping }) });
+        if (r) toast('Variable asignada', 'ok'); else toast('Error al guardar', 'err');
+      });
+    }
+    renderTplList();
+
+    document.getElementById('btnSyncTpl')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btnSyncTpl');
+      btn.disabled = true; btn.textContent = 'Sincronizando...';
+      const r = await api('/api/wa-templates/sync', { method: 'POST' });
+      btn.disabled = false; btn.textContent = 'Sincronizar desde Meta';
+      if (r && r.ok) {
+        toast(`${r.synced} de ${r.total} plantilla(s) aprobada(s) sincronizada(s)`, 'ok');
+        waTemplates = await api('/api/wa-templates') || [];
+        renderTplList();
+        poblarSelectReactivacion();
+      } else {
+        toast('Error al sincronizar: ' + (r && r.detalle || 'revisa WHATSAPP_TOKEN / WHATSAPP_BUSINESS_ACCOUNT_ID'), 'err');
+      }
+    });
+
+    document.getElementById('fReengagement')?.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const btn = ev.target.querySelector('button'); btn.disabled = true;
+      const r = await api('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reengagement_template: sel.value }) });
+      btn.disabled = false;
+      if (r) toast('Template de reactivación guardado', 'ok'); else toast('Error al guardar', 'err');
+    });
+
+    document.getElementById('fEscalation')?.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const btn = ev.target.querySelector('button'); btn.disabled = true;
+      const keys = ['escalation_alerta_min', 'escalation_reasignar_min', 'escalation_admin_min', 'escalation_asentado_horas'];
+      const body = {};
+      keys.forEach(k => { body[k] = document.getElementById(k).value.trim() || ''; });
+      const r = await api('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      btn.disabled = false;
+      if (r) toast('Tiempos de escalado guardados', 'ok'); else toast('Error al guardar', 'err');
+    });
+
+    const PRESETS = {
+      openrouter: { name: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', keyUrl: 'https://openrouter.ai/keys', models: ['google/gemini-2.0-flash-001', 'deepseek/deepseek-chat', 'mistralai/mistral-7b-instruct', 'meta-llama/llama-3.2-3b-instruct'] },
+      openai: { name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', keyUrl: 'https://platform.openai.com/api-keys', models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo'] },
+      deepseek: { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', keyUrl: 'https://platform.deepseek.com/api_keys', models: ['deepseek-chat', 'deepseek-reasoner'] },
+      groq: { name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', keyUrl: 'https://console.groq.com/keys', models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'] },
+    };
+    let iaProviders = [], iaDefaultId = '';
+    const $pL = document.getElementById('providerList'), $noP = document.getElementById('noProviders'), $pB = document.getElementById('presetBtns');
+
+    function renderProviderList() {
+      if (!iaProviders.length) { $pL.innerHTML = ''; $noP.style.display = 'block'; return; }
+      $noP.style.display = 'none';
+      $pL.innerHTML = iaProviders.map((p, i) =>
+        '<div class="pm-card" style="border:1px solid var(--border-soft);border-radius:12px;padding:14px;margin-bottom:10px;background:var(--bg-2)">' +
+          '<div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">' +
+            '<div style="flex:1"><label style="font-size:10.5px;color:var(--text-3);display:block;margin-bottom:3px">Nombre</label>' +
+            '<input data-idx="' + i + '" data-fld="name" value="' + esc(p.name || '') + '" style="width:100%;background:var(--bg-0);border:1px solid var(--border);border-radius:9px;color:var(--text);padding:9px 11px;font-size:12.5px;outline:none"></div>' +
+            '<button data-rm="' + i + '" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:4px 8px;align-self:flex-end">Quitar</button></div>' +
+          '<div style="display:flex;gap:10px;margin-bottom:8px">' +
+            '<div style="flex:1"><label style="font-size:10.5px;color:var(--text-3);display:block;margin-bottom:3px">Base URL</label>' +
+            '<input data-idx="' + i + '" data-fld="baseUrl" value="' + esc(p.baseUrl || '') + '" style="width:100%;background:var(--bg-0);border:1px solid var(--border);border-radius:9px;color:var(--text);padding:9px 11px;font-size:12.5px;outline:none"></div>' +
+            '<div style="flex:1"><label style="font-size:10.5px;color:var(--text-3);display:block;margin-bottom:3px">API Key</label>' +
+            '<input data-idx="' + i + '" data-fld="apiKey" type="password" autocomplete="off" value="" placeholder="' + (p.hasKey ? esc(p.keyMask) + ' (deja vacío para conservar)' : 'sk-...') + '" style="width:100%;background:var(--bg-0);border:1px solid var(--border);border-radius:9px;color:var(--text);padding:9px 11px;font-size:12.5px;outline:none"></div></div>' +
+          '<div style="display:flex;gap:10px;align-items:center;margin-bottom:4px">' +
+            '<div style="flex:1"><label style="font-size:10.5px;color:var(--text-3);display:block;margin-bottom:3px">Modelos (separados por coma)</label>' +
+            '<input data-idx="' + i + '" data-fld="models" value="' + esc((p.models || []).join(', ')) + '" placeholder="google/gemini-2.0-flash-001, deepseek/deepseek-chat" style="width:100%;background:var(--bg-0);border:1px solid var(--border);border-radius:9px;color:var(--text);padding:9px 11px;font-size:12.5px;outline:none"></div>' +
+            '<label style="font-size:11.5px;color:var(--text-2);cursor:pointer;white-space:nowrap"><input type="radio" name="defprov" data-def="' + esc(p.id) + '" ' + (p.id === iaDefaultId ? 'checked' : '') + ' style="accent-color:var(--gold);margin-right:4px">Default</label></div>' +
+        '</div>').join('');
+      $pL.querySelectorAll('input[data-fld]').forEach(inp => inp.oninput = () => {
+        const i = +inp.dataset.idx, f = inp.dataset.fld;
+        if (f === 'models') iaProviders[i][f] = inp.value.split(',').map(s => s.trim()).filter(Boolean);
+        else iaProviders[i][f] = inp.value;
+      });
+      $pL.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { iaProviders.splice(+b.dataset.rm, 1); renderProviderList(); });
+      $pL.querySelectorAll('[data-def]').forEach(rb => rb.onchange = () => { iaDefaultId = rb.dataset.def; });
+    }
+
+    async function loadIaConfig() {
+      const r = await api('/api/ai/providers');
+      if (r && r.providers) {
+        iaProviders = r.providers.map(p => ({ ...p, apiKey: '' }));
+        iaDefaultId = r.defaultId || (iaProviders[0] && iaProviders[0].id) || '';
+      }
+      renderProviderList();
+      $pB.innerHTML = Object.entries(PRESETS).map(([k, vv]) =>
+        '<button type="button" data-preset="' + k + '" style="background:var(--bg-3);border:1px solid var(--border);border-radius:9px;color:var(--text-2);padding:7px 12px;font-size:12px;cursor:pointer;white-space:nowrap">+ ' + vv.name + '</button>'
+      ).join('');
+      $pB.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
+        const k = b.dataset.preset, pr = PRESETS[k];
+        if (iaProviders.some(p => p.id === k)) { toast(pr.name + ' ya está agregado', 'err'); return; }
+        iaProviders.push({ id: k, name: pr.name, baseUrl: pr.baseUrl, apiKey: '', models: pr.models || [], keyMask: '', hasKey: false });
+        renderProviderList();
+        toast(pr.name + ' agregado. Pega tu API Key y guarda.', 'ok');
+      });
+    }
+
+    document.getElementById('fIA').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const btn = ev.target.querySelector('button[type="submit"]'); btn.disabled = true;
+      const payload = iaProviders.map(p => ({ id: p.id, name: p.name, baseUrl: p.baseUrl, apiKey: p.apiKey, models: p.models }));
+      await api('/api/ai/providers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ providers: payload, defaultId: iaDefaultId }) });
+      const enabled = document.getElementById('ai_enabled').checked;
+      await api('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ai_enabled: enabled ? 'true' : 'false' }) });
+      btn.disabled = false;
+      toast('Configuración de IA guardada', 'ok');
+      await loadIaConfig();
+    });
+
+    document.getElementById('btnTestIA').addEventListener('click', async () => {
+      const btn = document.getElementById('btnTestIA');
+      const res = document.getElementById('iaTestResult');
+      const def = iaProviders.find(p => p.id === iaDefaultId) || iaProviders[0];
+      res.style.display = 'block';
+      res.innerHTML = 'Probando conexión con ' + (def ? def.name : 'proveedor por defecto') + '...';
+      res.style.color = 'var(--text-3)';
+      btn.disabled = true;
+      try {
+        const r = await api('/api/nlp/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto: 'Hola, me interesan los lotes en Tocaima. ¿Cuánto cuestan?' }) });
+        if (r && r.ok) {
+          res.innerHTML = '✅ Conexión exitosa! Modelo: <strong>' + esc(r.model || '?') + '</strong> · ' + esc((r.sentiment && r.sentiment.label) || '?') + ' · ' + esc((r.intent && r.intent.intent) || '?');
+          res.style.color = '#4E7B46';
+        } else {
+          res.innerHTML = '❌ ' + esc((r && r.error) || 'Respuesta inválida. ¿API Key correcta?');
+          res.style.color = '#e74c3c';
+        }
+      } catch (e) {
+        res.innerHTML = '❌ Error de conexión: ' + esc(e.message);
+        res.style.color = '#e74c3c';
+      }
+      btn.disabled = false;
+    });
+
+    await loadIaConfig();
+  }
+
+  renderLayout();
+})();
+</script>
+</body>
+</html>

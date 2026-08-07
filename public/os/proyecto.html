@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Centro de Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+:root{ --c-disponible:#4E7B46; --c-separado:#D4AF37; --c-vendido:#E5484D; --c-reservado:#5B8DEF; --c-bloqueado:#4a4a4a; --c-negociacion:#9B6BD8; }
+html,body{ height:100%; margin:0; overflow:hidden; background:#0A0A0A; }
+.cc{ position:fixed; inset:0; display:flex; flex-direction:column; }
+
+/* ── Top bar ── */
+.cc-top{ display:flex; align-items:center; gap:14px; padding:10px 16px; z-index:40;
+  background:linear-gradient(180deg, rgba(12,12,12,.96), rgba(12,12,12,.86)); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  border-bottom:1px solid var(--border-soft); }
+.cc-back{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:10px;
+  background:var(--bg-3); border:1px solid var(--border); color:var(--text-2); cursor:pointer; text-decoration:none; transition:.2s; }
+.cc-back:hover{ color:var(--gold); border-color:var(--gold-line); }
+.cc-title{ font-family:var(--f-title); font-size:18px; letter-spacing:.03em; color:#fff; line-height:1; }
+.cc-title small{ display:block; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:13px; color:var(--text-3); margin-top:3px; letter-spacing:0; }
+.cc-spacer{ flex:1; }
+.cc-search{ position:relative; }
+.cc-search input{ width:230px; background:var(--bg-4); border:1px solid var(--border); border-radius:10px; color:var(--text);
+  padding:9px 12px 9px 34px; font-family:var(--f-ui); font-size:13px; outline:none; transition:.2s; }
+.cc-search input:focus{ border-color:var(--gold-line); width:270px; }
+.cc-search svg{ position:absolute; left:11px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--text-3); }
+.seg{ display:flex; background:var(--bg-4); border:1px solid var(--border); border-radius:10px; padding:3px; gap:2px; }
+.seg button{ border:none; background:transparent; color:var(--text-3); font-family:var(--f-ui); font-size:12px; font-weight:500;
+  padding:7px 14px; border-radius:8px; cursor:pointer; transition:.2s; }
+.seg button.on{ background:var(--gold); color:#000; font-weight:600; }
+.tbtn{ display:inline-flex; align-items:center; gap:7px; background:var(--bg-3); border:1px solid var(--border); color:var(--text-2);
+  font-family:var(--f-ui); font-size:12.5px; padding:9px 13px; border-radius:10px; cursor:pointer; transition:.2s; }
+.tbtn:hover{ border-color:var(--gold-line); color:var(--text); }
+.tbtn.on{ background:var(--gold-soft); border-color:var(--gold-line); color:var(--gold); }
+.tbtn svg{ width:15px; height:15px; }
+
+/* ── Dashboard strip ── */
+.cc-dash{ display:flex; align-items:stretch; gap:10px; padding:12px 16px; overflow-x:auto; z-index:30;
+  background:linear-gradient(180deg, rgba(14,14,14,.9), rgba(12,12,12,.55)); border-bottom:1px solid var(--border-soft); }
+.cc-dash::-webkit-scrollbar{ height:0; }
+.tile{ flex:0 0 auto; min-width:118px; padding:11px 14px; border-radius:13px; background:var(--bg-2); border:1px solid var(--border-soft); }
+.tile__l{ font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-3); display:flex; align-items:center; gap:5px; }
+.tile__n{ font-size:21px; font-weight:700; margin-top:6px; line-height:1; font-family:var(--f-ui); transition:color .3s; }
+.tile__s{ font-size:10.5px; color:var(--text-3); margin-top:3px; }
+.tile.big{ min-width:150px; }
+.dot{ width:7px; height:7px; border-radius:50%; }
+.n-green{ color:#7bbf70;} .n-gold{ color:var(--gold);} .n-red{ color:#ef6a6e;} .n-blue{ color:#7aa5f2;} .n-purple{color:#b78ee6;} .n-white{color:#fff;}
+.donut{ flex:0 0 auto; display:flex; align-items:center; gap:12px; padding:8px 16px 8px 12px; border-radius:13px; background:var(--bg-2); border:1px solid var(--border-soft); }
+.donut svg{ width:58px; height:58px; transform:rotate(-90deg); }
+.donut .dt{ font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-3);}
+.donut .dv{ font-family:var(--f-title); font-size:22px; color:var(--gold); }
+
+/* ── Stage ── */
+.cc-stage{ position:relative; flex:1; overflow:hidden; }
+#map{ position:absolute; inset:0; background:#0d0f0c; }
+.leaflet-container{ background:#0d0f0c; outline:none; }
+.leaflet-tooltip.lote-tip{ background:rgba(12,12,12,.92); border:1px solid var(--gold-line); color:var(--text); border-radius:10px;
+  padding:8px 11px; box-shadow:0 10px 30px -12px #000; font-family:var(--f-ui); backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm);
+  animation:tipIn .18s ease; }
+.leaflet-tooltip.lote-tip::before{ display:none; }
+@keyframes tipIn{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:none;} }
+.lote-tip b{ font-family:var(--f-title); font-size:13px; color:#fff; }
+.lote-tip .tr{ display:flex; justify-content:space-between; gap:16px; font-size:11.5px; margin-top:4px; color:var(--text-2);}
+.lote-tip .tr span:last-child{ color:#fff; font-weight:600; }
+.lote-tip .tst{ display:inline-block; margin-top:6px; font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; padding:2px 8px; border-radius:999px; }
+
+/* Iso view */
+#iso{ position:absolute; inset:0; display:none; background:radial-gradient(120% 90% at 50% 0%, #14160f, #0b0b09 70%); cursor:grab; }
+#iso.on{ display:block; }
+#iso.grab{ cursor:grabbing; }
+#iso svg{ width:100%; height:100%; display:block; }
+.iso-face{ transition:fill .3s; }
+
+/* Floating controls */
+.cc-fc{ position:absolute; z-index:20; display:flex; flex-direction:column; gap:8px; }
+.cc-fc.tl{ top:14px; left:14px; }
+.cc-fc.bl{ bottom:16px; left:14px; }
+.chip-legend{ background:var(--glass-2); backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm); border:1px solid var(--glass-border); border-radius:12px; padding:11px 13px; }
+.chip-legend .lg{ display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--text-2); padding:3px 0; cursor:pointer; transition:.2s; user-select:none; }
+.chip-legend .lg:hover{ color:#fff; }
+.chip-legend .lg.off{ opacity:.32; }
+.chip-legend .lg .sw{ width:11px; height:11px; border-radius:3px; }
+.chip-legend .lg .cnt{ margin-left:auto; font-size:10.5px; color:var(--text-3); font-variant-numeric:tabular-nums; }
+.plano-ctl{ background:var(--glass-2); backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm); border:1px solid var(--glass-border); border-radius:12px; padding:10px 13px; }
+.plano-ctl label{ font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-3); display:block; margin-bottom:6px; }
+.plano-ctl input[type=range]{ width:130px; accent-color:var(--gold); }
+.zc{ display:flex; flex-direction:column; background:var(--glass-2); backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm); border:1px solid var(--glass-border); border-radius:12px; overflow:hidden; }
+.zc button{ width:38px; height:38px; border:none; background:transparent; color:var(--text-2); font-size:18px; cursor:pointer; transition:.15s; }
+.zc button:hover{ background:var(--bg-3); color:var(--gold); }
+.zc button+button{ border-top:1px solid var(--border-soft); }
+
+/* Draw hint */
+.draw-hint{ position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:25; display:none;
+  background:rgba(200,164,90,.14); border:1px solid var(--gold-line); color:var(--gold); font-size:12px; padding:8px 16px; border-radius:999px; backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm); }
+.draw-hint.on{ display:block; }
+
+/* ── Side panel ── */
+.cc-panel{ position:absolute; top:0; right:0; bottom:0; width:380px; max-width:88vw; z-index:50;
+  background:linear-gradient(180deg, rgba(16,16,16,.98), rgba(12,12,12,.98)); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  border-left:1px solid var(--border); transform:translateX(105%); transition:transform .42s cubic-bezier(.16,1,.3,1);
+  display:flex; flex-direction:column; box-shadow:-20px 0 60px -30px #000; }
+.cc-panel.open{ transform:none; }
+.cp-head{ position:relative; padding:20px 20px 16px; border-bottom:1px solid var(--border-soft); }
+.cp-close{ position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:8px; background:var(--bg-3); border:1px solid var(--border); color:var(--text-2); cursor:pointer; }
+.cp-num{ font-family:var(--f-title); font-size:26px; color:#fff; letter-spacing:.02em; }
+.cp-mz{ font-size:12px; color:var(--text-3); margin-top:2px; }
+.cp-st{ display:inline-flex; align-items:center; gap:7px; margin-top:12px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; padding:6px 13px; border-radius:999px; }
+.cp-body{ flex:1; overflow-y:auto; padding:18px 20px 24px; }
+.cp-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
+.cp-f{ background:var(--bg-2); border:1px solid var(--border-soft); border-radius:12px; padding:11px 13px; }
+.cp-f__l{ font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-3); }
+.cp-f__v{ font-size:15px; color:var(--text); margin-top:4px; font-weight:600; }
+.cp-f.wide{ grid-column:1/-1; }
+.cp-f.price .cp-f__v{ color:var(--gold); font-size:18px; }
+.cp-sec{ font-family:var(--f-title); font-size:12px; letter-spacing:.06em; color:var(--text-2); text-transform:uppercase; margin:20px 0 10px; }
+.cp-actions{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.cp-a{ display:flex; align-items:center; justify-content:center; gap:7px; padding:11px; border-radius:11px; border:1px solid var(--border);
+  background:var(--bg-3); color:var(--text-2); font-family:var(--f-ui); font-size:12.5px; font-weight:500; cursor:pointer; transition:.2s; }
+.cp-a:hover{ border-color:var(--gold-line); color:#fff; transform:translateY(-1px); }
+.cp-a svg{ width:15px; height:15px; }
+.cp-a.sep{ color:var(--c-separado);} .cp-a.ven{ color:#ef6a6e;} .cp-a.res{ color:#7aa5f2;}
+.cp-a.wa{ color:#25D366; }
+.cp-a.wide{ grid-column:1/-1; }
+.cp-hist{ position:relative; padding-left:16px; }
+.cp-hist::before{ content:''; position:absolute; left:4px; top:4px; bottom:4px; width:1px; background:var(--border); }
+.cp-h{ position:relative; padding:0 0 14px; }
+.cp-h::before{ content:''; position:absolute; left:-15px; top:4px; width:8px; height:8px; border-radius:50%; background:var(--gold); box-shadow:0 0 0 3px var(--bg-1); }
+.cp-h__e{ font-size:12.5px; color:var(--text); }
+.cp-h__d{ font-size:11px; color:var(--text-3); margin-top:2px; }
+.cp-empty-media{ font-size:12px; color:var(--text-3); font-style:italic; }
+.thumbs{ display:flex; flex-wrap:wrap; gap:8px; }
+.thumbs img{ width:64px; height:64px; border-radius:9px; object-fit:cover; border:1px solid var(--border); }
+
+.cc-stage-empty{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:5; pointer-events:none; }
+.cc-stage-empty div{ text-align:center; color:var(--text-3); background:rgba(12,12,12,.7); border:1px dashed var(--border); border-radius:16px; padding:30px 34px; pointer-events:auto; }
+.cc-stage-empty h3{ font-family:var(--f-title); color:var(--text-2); font-size:16px; margin-bottom:8px; }
+
+/* modal simple */
+.mm-ov{ position:fixed; inset:0; background:rgba(0,0,0,.42); backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px; }
+.mm{ background:var(--bg-1); border:1px solid var(--border); border-radius:18px; width:100%; max-width:440px; padding:24px; box-shadow:var(--sh-pop); }
+.mm h3{ font-family:var(--f-title); font-size:16px; margin-bottom:16px; }
+.mm .pm-row{ margin-bottom:13px; }
+.mm label{ display:block; font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--text-3); margin-bottom:5px; }
+.mm input,.mm select,.mm textarea{ width:100%; background:var(--bg-4); border:1px solid var(--border); border-radius:9px; color:var(--text); padding:10px 12px; font-family:var(--f-ui); font-size:13px; outline:none; }
+.mm-act{ display:flex; gap:9px; justify-content:flex-end; margin-top:8px; }
+.mm-btn{ border:none; border-radius:10px; padding:10px 18px; font-size:13px; cursor:pointer; font-weight:500; }
+.mm-btn.save{ background:var(--gold); color:#000; font-weight:600; } .mm-btn.ghost{ background:var(--bg-3); color:var(--text-2); border:1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="cc" id="app" style="display:none">
+  <div class="cc-top">
+    <a class="cc-back" href="/os/proyectos.html" title="Volver a proyectos">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg></a>
+    <div class="cc-title" id="pjName">Proyecto<small id="pjLoc">—</small></div>
+    <div class="cc-spacer"></div>
+    <div class="cc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+      <input id="q" placeholder="Buscar lote, cliente, asesor…"></div>
+    <div class="seg"><button id="v2d" class="on">2D</button><button id="viso">Isométrica</button></div>
+    <button class="tbtn" id="btnPlano"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-5.5 1.5L5 3l6 1.5L18 3l3 18-6-1.5-6 1.5zM9 4.5v16M15 3v16"/></svg>Subir plano</button>
+    <button class="tbtn" id="btnFoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M3 17l5-4 4 3 3-2 6 5"/></svg>Foto catálogo</button>
+    <button class="tbtn" id="btnDraw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3zM18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>Dibujar lote</button>
+  </div>
+
+  <div class="cc-dash" id="dash"></div>
+
+  <div class="cc-stage">
+    <div id="map"></div>
+    <div id="iso"></div>
+    <div class="draw-hint" id="drawHint">Clic para agregar vértices · doble clic para cerrar el lote · Esc para cancelar</div>
+
+    <div class="cc-fc tl">
+      <div class="chip-legend" id="legend"></div>
+    </div>
+    <div class="cc-fc bl">
+      <div class="plano-ctl" id="planoCtl" style="display:none">
+        <label>Plano de referencia</label>
+        <input type="range" id="planoOp" min="0" max="100" value="55">
+      </div>
+      <div class="zc"><button id="zin">+</button><button id="zout">−</button></div>
+    </div>
+
+    <div class="cc-stage-empty" id="stageEmpty" style="display:none">
+      <div><h3>✦ Plano por digitalizar</h3>
+        <p style="font-size:13px;max-width:340px;line-height:1.6">Este proyecto aún no tiene lotes. Usa <b style="color:var(--gold)">Dibujar lote</b> para trazar el plano sobre el mapa, o carga el plano de referencia en la configuración del proyecto.</p></div>
+    </div>
+  </div>
+
+  <!-- Panel lateral -->
+  <aside class="cc-panel" id="panel"></aside>
+</div>
+
+<script src="/vendor/leaflet/leaflet.js"></script>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function(){
+  const { api, toast, esc } = SPOS;
+  const me = await api('/api/me');
+  if(!me){ location.replace('/login.html'); return; }
+  const isAdmin = me.rol === 'admin';
+  const pid = new URLSearchParams(location.search).get('id');
+  if(!pid){ location.replace('/os/proyectos.html'); return; }
+
+  const proyecto = await api('/api/proyectos/'+pid);
+  if(!proyecto || proyecto.error){ toast('Proyecto no encontrado','err'); location.replace('/os/proyectos.html'); return; }
+  document.getElementById('app').style.display='flex';
+  document.getElementById('pjName').firstChild.textContent = proyecto.nombre;
+  document.getElementById('pjLoc').textContent = [proyecto.ciudad, proyecto.departamento].filter(Boolean).join(', ') || 'Colombia';
+
+  const COLORS = { disponible:'#4E7B46', separado:'#D4AF37', vendido:'#E5484D', reservado:'#5B8DEF', bloqueado:'#4a4a4a', negociacion:'#9B6BD8' };
+  const EST = ['disponible','separado','vendido','reservado','negociacion','bloqueado'];
+  const EST_LABEL = { disponible:'Disponible', separado:'Separado', vendido:'Vendido', reservado:'Reservado', bloqueado:'Bloqueado', negociacion:'En negociación' };
+  const money = v => v ? '$'+Number(v).toLocaleString('es-CO') : '—';
+  const lighten = (hex)=> hex; // stroke igual al fill por ahora
+
+  let lotes = [];
+  let layers = new Map();   // loteId -> L.polygon
+  let selected = null;
+  const hidden = new Set(); // estados ocultos por leyenda
+  let query = '';
+
+  // ── Mapa Leaflet (CRS.Simple) ──
+  const map = L.map('map', { crs:L.CRS.Simple, minZoom:-4, maxZoom:6, zoomControl:false, attributionControl:false, preferCanvas:true, zoomSnap:.25 });
+  map.setView([500,500], 0);
+  const canvasRenderer = L.canvas({ padding:.5 });
+
+  // Overlay del plano de referencia (calco). Se dibuja debajo de los lotes.
+  let planoLayer = null;
+  const planoOpEl = document.getElementById('planoOp');
+  function setPlano(url, bounds, fit){
+    if(!url) return;
+    if(planoLayer) map.removeLayer(planoLayer);
+    const op = (planoOpEl.value||55)/100;
+    planoLayer = L.imageOverlay(url, bounds, { opacity:op, interactive:false }).addTo(map);
+    planoLayer.bringToBack();
+    document.getElementById('planoCtl').style.display='block';
+    document.getElementById('stageEmpty').style.display='none';
+    if(fit){ try{ map.fitBounds(bounds); }catch(e){} }
+  }
+  planoOpEl.oninput = e => { if(planoLayer) planoLayer.setOpacity(e.target.value/100); };
+  if(proyecto.plano_url){
+    let bounds = [[0,0],[1000,1000]];
+    try{ if(proyecto.plano_bounds) bounds = JSON.parse(proyecto.plano_bounds); }catch(e){}
+    setPlano(proyecto.plano_url, bounds, false);
+  }
+
+  // Subir plano: la imagen se guarda como fondo del proyecto y sirve de calco para trazar lotes.
+  document.getElementById('btnPlano').onclick = ()=>{
+    if(!isAdmin){ toast('Solo el admin puede cargar el plano','err'); return; }
+    const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*';
+    inp.onchange = ()=>{
+      const f = inp.files[0]; if(!f) return;
+      toast('Cargando plano…','ok');
+      const rd = new FileReader();
+      rd.onload = ()=>{
+        const img = new Image();
+        img.onload = async ()=>{
+          // bounds en unidades del plano (px), escaladas para un lienzo cómodo
+          const maxDim = 1600, sc = Math.min(1, maxDim/Math.max(img.width, img.height));
+          const w = Math.round(img.width*sc), h = Math.round(img.height*sc);
+          const bounds = [[0,0],[h,w]];
+          const r = await api('/api/proyectos/'+pid, { method:'PUT', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ plano_url: rd.result, plano_bounds: JSON.stringify(bounds) }) });
+          if(r && r.ok){ proyecto.plano_url = rd.result; proyecto.plano_bounds = JSON.stringify(bounds);
+            setPlano(rd.result, bounds, true); toast('Plano cargado. Ya puedes trazar los lotes encima.','ok'); }
+          else toast('No se pudo guardar el plano','err');
+        };
+        img.src = rd.result;
+      };
+      rd.readAsDataURL(f);
+    };
+    inp.click();
+  };
+
+  // Foto principal del catálogo público: redimensiona (máx 1600px, JPEG) y sube same-origin.
+  document.getElementById('btnFoto').onclick = ()=>{
+    if(!isAdmin){ toast('Solo el admin puede cambiar la foto','err'); return; }
+    const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*';
+    inp.onchange = ()=>{
+      const f = inp.files[0]; if(!f) return;
+      toast('Subiendo foto…','ok');
+      const rd = new FileReader();
+      rd.onload = ()=>{
+        const img = new Image();
+        img.onload = async ()=>{
+          const maxDim = 1600, sc = Math.min(1, maxDim/Math.max(img.width, img.height));
+          const w = Math.round(img.width*sc), h = Math.round(img.height*sc);
+          const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          const dataUrl = cv.toDataURL('image/jpeg', .85);
+          const dataBase64 = dataUrl.split(',')[1];
+          const r = await api('/api/proyectos/'+pid+'/foto', { method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ dataBase64, mime:'image/jpeg' }) });
+          if(r && r.ok){ proyecto.imagen_url = r.imagen_url; toast('Foto del catálogo actualizada','ok'); }
+          else toast('No se pudo subir la foto','err');
+        };
+        img.src = rd.result;
+      };
+      rd.readAsDataURL(f);
+    };
+    inp.click();
+  };
+
+  function toLatLngs(poly){ return (poly||[]).map(p => [p[1], p[0]]); } // [x,y] -> [lat=y, lng=x]
+
+  function styleFor(l){
+    const c = COLORS[l.estado] || '#666';
+    const dim = (query && !matchLote(l)) || hidden.has(l.estado);
+    return { renderer:canvasRenderer, color:lighten(c), weight: selected===l.id?2.5:1, opacity: dim?.15:.9,
+      fillColor:c, fillOpacity: dim?.06 : (selected===l.id?.78:.5) };
+  }
+
+  function tipHTML(l){
+    const c = COLORS[l.estado]||'#666';
+    return `<b>Lote ${esc(l.numero||l.id)}</b>${l.manzana?` · Mz ${esc(l.manzana)}`:''}
+      <div class="tr"><span>Área</span><span>${l.area?l.area+' m²':'—'}</span></div>
+      <div class="tr"><span>Precio</span><span>${money(l.precio)}</span></div>
+      <span class="tst" style="background:${c}22;color:${c}">${EST_LABEL[l.estado]||l.estado}</span>`;
+  }
+
+  function drawLote(l){
+    if(!l.poligono) return;
+    let poly; try{ poly = typeof l.poligono==='string'?JSON.parse(l.poligono):l.poligono; }catch(e){ return; }
+    if(!Array.isArray(poly) || poly.length<3) return;
+    const pg = L.polygon(toLatLngs(poly), styleFor(l)).addTo(map);
+    pg.bindTooltip(tipHTML(l), { className:'lote-tip', sticky:true, direction:'top', opacity:1 });
+    pg.on('click', ()=> selectLote(l.id));
+    pg.on('mouseover', ()=>{ if(selected!==l.id) pg.setStyle({ weight:2, fillOpacity:.68 }); });
+    pg.on('mouseout', ()=>{ pg.setStyle(styleFor(l)); });
+    layers.set(l.id, pg);
+  }
+
+  function refreshStyles(){ lotes.forEach(l=>{ const pg=layers.get(l.id); if(pg) pg.setStyle(styleFor(l)); }); }
+
+  function fitAll(){
+    const grp = [];
+    layers.forEach(pg=> grp.push(pg));
+    if(grp.length){ try{ map.fitBounds(L.featureGroup(grp).getBounds().pad(.15)); }catch(e){} }
+    else if(planoLayer){ map.fitBounds(planoLayer.getBounds()); }
+  }
+
+  function matchLote(l){
+    if(!query) return true;
+    const q = query.toLowerCase();
+    return String(l.numero||'').toLowerCase().includes(q)
+      || String(l.manzana||'').toLowerCase().includes(q)
+      || String(l.cliente_nombre||'').toLowerCase().includes(q)
+      || String(l.asesor_nombre||'').toLowerCase().includes(q)
+      || String(l.estado||'').includes(q)
+      || String(l.precio||'').includes(q)
+      || String(l.area||'').includes(q);
+  }
+
+  async function loadLotes(){
+    lotes = await api('/api/proyectos/'+pid+'/lotes') || [];
+    layers.forEach(pg=> map.removeLayer(pg)); layers.clear();
+    lotes.forEach(drawLote);
+    document.getElementById('stageEmpty').style.display = lotes.length? 'none':'flex';
+    fitAll();
+    renderLegend();
+    if(isoOn) renderIso();
+  }
+
+  // ── Selección + panel ──
+  async function selectLote(id){
+    selected = id; refreshStyles();
+    const data = await api('/api/lotes/'+id);
+    if(!data || data.error) return;
+    renderPanel(data.lote, data.historial||[]);
+  }
+
+  function actionBtn(cls,label,svg,handler){
+    return `<button class="cp-a ${cls}">${svg}${label}</button>`;
+  }
+
+  function renderPanel(l, hist){
+    const c = COLORS[l.estado]||'#666';
+    const docs = safeArr(l.documentos), fotos = safeArr(l.fotografias);
+    const p = document.getElementById('panel');
+    p.innerHTML = `
+      <div class="cp-head">
+        <button class="cp-close" id="cpClose">✕</button>
+        <div class="cp-num">Lote ${esc(l.numero||l.id)}</div>
+        <div class="cp-mz">${l.manzana?'Manzana '+esc(l.manzana)+' · ':''}ID #${l.id}</div>
+        <span class="cp-st" style="background:${c}22;color:${c}"><span class="dot" style="background:${c}"></span>${EST_LABEL[l.estado]||l.estado}</span>
+      </div>
+      <div class="cp-body">
+        <div class="cp-grid">
+          <div class="cp-f price wide"><div class="cp-f__l">Precio</div><div class="cp-f__v">${money(l.precio)}</div></div>
+          <div class="cp-f"><div class="cp-f__l">Área</div><div class="cp-f__v">${l.area? l.area+' m²':'—'}</div></div>
+          <div class="cp-f"><div class="cp-f__l">Dimensiones</div><div class="cp-f__v">${esc(l.dimensiones||'—')}</div></div>
+          <div class="cp-f"><div class="cp-f__l">Cliente</div><div class="cp-f__v" style="font-size:13px">${esc(l.cliente_nombre||'—')}</div></div>
+          <div class="cp-f"><div class="cp-f__l">Asesor</div><div class="cp-f__v" style="font-size:13px">${esc(l.asesor_nombre||'—')}</div></div>
+          <div class="cp-f"><div class="cp-f__l">Separación</div><div class="cp-f__v" style="font-size:12.5px">${fdate(l.fecha_separacion)}</div></div>
+          <div class="cp-f"><div class="cp-f__l">Venta</div><div class="cp-f__v" style="font-size:12.5px">${fdate(l.fecha_venta)}</div></div>
+        </div>
+
+        ${isAdmin? `<div class="cp-sec">Acciones rápidas</div>
+        <div class="cp-actions">
+          ${actionBtn('sep','Separar','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>')}
+          ${actionBtn('ven','Vender','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>')}
+          ${actionBtn('res','Reservar','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>')}
+          ${actionBtn('','Disponible','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z"/></svg>')}
+          ${actionBtn('','Cambiar precio','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>')}
+          ${actionBtn('','Observación','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>')}
+          ${actionBtn('wa wide','Compartir por WhatsApp','<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.5-.1-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-1.6-.8-2.7-1.4-3.7-3.2-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.3 5.2 4.6 1.9.8 2.7.9 3.6.8.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2z"/></svg>')}
+        </div>
+
+        <div class="cp-sec">Documentos y fotos</div>
+        <div class="cp-actions">
+          ${actionBtn('','Subir documento','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>')}
+          ${actionBtn('','Subir foto','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>')}
+        </div>` : ''}
+
+        ${fotos.length? `<div class="cp-sec">Fotografías</div><div class="thumbs">${fotos.map(f=>`<img src="${esc(f)}" alt="">`).join('')}</div>`:''}
+        ${docs.length? `<div class="cp-sec">Documentos (${docs.length})</div>${docs.map((d,i)=>`<a href="${esc(d)}" target="_blank" class="cp-a wide" style="text-decoration:none;margin-bottom:6px">Documento ${i+1}</a>`).join('')}`:''}
+
+        ${l.observaciones? `<div class="cp-sec">Observaciones</div><div style="font-size:13px;color:var(--text-2);line-height:1.6">${esc(l.observaciones)}</div>`:''}
+
+        <div class="cp-sec">Historial</div>
+        ${hist.length? `<div class="cp-hist">${hist.map(h=>`<div class="cp-h"><div class="cp-h__e">${esc(h.detalle||h.evento)}</div><div class="cp-h__d">${esc(h.autor||'sistema')} · ${fdate(h.created_at)}</div></div>`).join('')}</div>` : '<div class="cp-empty-media">Sin movimientos aún.</div>'}
+      </div>`;
+    p.classList.add('open');
+    document.getElementById('cpClose').onclick = closePanel;
+
+    // Bind acciones
+    const btns = p.querySelectorAll('.cp-a');
+    if(isAdmin){
+      let idx=0;
+      const bind = (i,fn)=>{ if(btns[i]) btns[i].onclick=fn; };
+      bind(0, ()=> cambiarEstado(l.id,'separado'));
+      bind(1, ()=> cambiarEstado(l.id,'vendido'));
+      bind(2, ()=> cambiarEstado(l.id,'reservado'));
+      bind(3, ()=> cambiarEstado(l.id,'disponible'));
+      bind(4, ()=> cambiarPrecio(l));
+      bind(5, ()=> agregarObs(l));
+      bind(6, ()=> compartirWhatsApp(l));
+      bind(7, ()=> subirMedia(l.id,'documentos'));
+      bind(8, ()=> subirMedia(l.id,'fotografias'));
+    } else {
+      // vendedor: solo WhatsApp
+      p.querySelectorAll('.cp-a.wa').forEach(b=> b.onclick=()=>compartirWhatsApp(l));
+    }
+  }
+  function closePanel(){ selected=null; document.getElementById('panel').classList.remove('open'); refreshStyles(); }
+
+  // ── Acciones ──
+  async function cambiarEstado(id, estado){
+    const r = await api('/api/lotes/'+id+'/estado', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ estado }) });
+    if(r&&r.ok){ applyLocal(r.lote); toast('Lote '+(r.lote.numero||id)+' → '+EST_LABEL[estado],'ok'); }
+    else toast('No se pudo actualizar','err');
+  }
+  async function cambiarPrecio(l){
+    modalInput('Cambiar precio', 'Precio ($)', l.precio||'', async (val)=>{
+      const r = await api('/api/lotes/'+l.id+'/precio', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ precio:Number(val)||0 }) });
+      if(r&&r.ok){ applyLocal(r.lote); toast('Precio actualizado','ok'); }
+    }, 'number');
+  }
+  async function agregarObs(l){
+    modalInput('Agregar observación','Observación', l.observaciones||'', async (val)=>{
+      const r = await api('/api/lotes/'+l.id+'/observacion', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ texto:val }) });
+      if(r&&r.ok){ applyLocal(r.lote); toast('Observación guardada','ok'); }
+    }, 'textarea');
+  }
+  function subirMedia(id, campo){
+    const inp = document.createElement('input'); inp.type='file';
+    inp.accept = campo==='fotografias'? 'image/*' : '*/*';
+    inp.onchange = () => {
+      const f = inp.files[0]; if(!f) return;
+      const rd = new FileReader();
+      rd.onload = async () => {
+        const ep = campo==='fotografias'?'fotos':'documentos';
+        const r = await api('/api/lotes/'+id+'/'+ep, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ item: rd.result }) });
+        if(r&&r.ok){ applyLocal(r.lote); selectLote(id); toast('Archivo subido','ok'); }
+        else toast('Error al subir','err');
+      };
+      rd.readAsDataURL(f);
+    };
+    inp.click();
+  }
+  function compartirWhatsApp(l){
+    const txt = `*Lote ${l.numero||l.id}* — ${proyecto.nombre}%0A${EST_LABEL[l.estado]}%0AÁrea: ${l.area||'—'} m²%0APrecio: ${money(l.precio)}`;
+    window.open('https://wa.me/?text='+txt, '_blank');
+  }
+
+  function applyLocal(nl){
+    const i = lotes.findIndex(x=>x.id===nl.id);
+    if(i>=0){ lotes[i] = { ...lotes[i], ...nl }; }
+    const pg = layers.get(nl.id);
+    if(pg){ pg.setTooltipContent(tipHTML(lotes[i])); pg.setStyle(styleFor(lotes[i])); }
+    if(isoOn) renderIso();
+    loadStats();
+  }
+
+  // ── Dashboard ──
+  async function loadStats(){
+    const s = await api('/api/proyectos/'+pid+'/stats'); if(!s) return;
+    const pct = s.pct_vendido||0;
+    const circ = 2*Math.PI*24; const off = circ*(1-pct/100);
+    const tile = (l,n,cls,sub,dotColor)=> `<div class="tile"><div class="tile__l">${dotColor?`<span class="dot" style="background:${dotColor}"></span>`:''}${l}</div><div class="tile__n ${cls}">${n}</div>${sub?`<div class="tile__s">${sub}</div>`:''}</div>`;
+    document.getElementById('dash').innerHTML =
+      `<div class="donut"><svg viewBox="0 0 58 58"><circle cx="29" cy="29" r="24" fill="none" stroke="#232323" stroke-width="6"/><circle cx="29" cy="29" r="24" fill="none" stroke="#D4AF37" stroke-width="6" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${off}" style="transition:stroke-dashoffset 1s cubic-bezier(.16,1,.3,1)"/></svg><div><div class="dt">Progreso</div><div class="dv">${pct}%</div></div></div>`
+      + tile('Total lotes', (s.total||0), 'n-white')
+      + tile('Disponibles', (s.disponibles||0), 'n-green','',COLORS.disponible)
+      + tile('Separados', (s.separados||0), 'n-gold','',COLORS.separado)
+      + tile('Vendidos', (s.vendidos||0), 'n-red','',COLORS.vendido)
+      + tile('Reservados', (s.reservados||0), 'n-blue','',COLORS.reservado)
+      + tile('En negociación', (s.negociacion||0), 'n-purple','',COLORS.negociacion)
+      + `<div class="tile big"><div class="tile__l">Ingresos</div><div class="tile__n n-gold" style="font-size:17px">${money(s.ingresos)}</div></div>`
+      + tile('Ventas hoy', (s.ventas_hoy||0), 'n-white')
+      + tile('Ventas mes', (s.ventas_mes||0), 'n-white')
+      + tile('Separac. mes', (s.separaciones_mes||0), 'n-white')
+      + tile('Asesores', (s.asesores||0), 'n-white')
+      + tile('Clientes', (s.clientes||0), 'n-white')
+      + tile('T. prom. venta', (s.tiempo_promedio_dias||0)+'d', 'n-white');
+  }
+
+  // ── Leyenda / filtros por estado ──
+  function renderLegend(){
+    const counts = {}; EST.forEach(e=> counts[e]=0);
+    lotes.forEach(l=> counts[l.estado]=(counts[l.estado]||0)+1);
+    document.getElementById('legend').innerHTML = EST.map(e=>
+      `<div class="lg ${hidden.has(e)?'off':''}" data-est="${e}"><span class="sw" style="background:${COLORS[e]}"></span>${EST_LABEL[e]}<span class="cnt">${counts[e]||0}</span></div>`
+    ).join('');
+    document.querySelectorAll('#legend .lg').forEach(el=> el.onclick=()=>{
+      const e = el.dataset.est; if(hidden.has(e)) hidden.delete(e); else hidden.add(e);
+      renderLegend(); refreshStyles(); if(isoOn) renderIso();
+    });
+  }
+
+  // ── Búsqueda ──
+  document.getElementById('q').addEventListener('input', (e)=>{ query=e.target.value.trim(); refreshStyles(); if(isoOn) renderIso(); });
+
+  // ── Zoom ──
+  document.getElementById('zin').onclick = ()=> map.zoomIn();
+  document.getElementById('zout').onclick = ()=> map.zoomOut();
+
+  // ── Dibujar lote (trazado) ──
+  let drawing=false, drawPts=[], drawLayer=null, drawMarkers=[];
+  document.getElementById('btnDraw').onclick = ()=>{ isAdmin? toggleDraw() : toast('Solo el admin puede dibujar','err'); };
+  function toggleDraw(){
+    drawing=!drawing;
+    document.getElementById('btnDraw').classList.toggle('on',drawing);
+    document.getElementById('drawHint').classList.toggle('on',drawing);
+    map.getContainer().style.cursor = drawing?'crosshair':'';
+    if(!drawing) clearDraw();
+  }
+  function clearDraw(){ drawPts=[]; if(drawLayer){ map.removeLayer(drawLayer); drawLayer=null; } drawMarkers.forEach(m=>map.removeLayer(m)); drawMarkers=[]; }
+  map.on('click', (e)=>{
+    if(!drawing) return;
+    drawPts.push([e.latlng.lng, e.latlng.lat]); // guardar como [x,y]
+    const mk = L.circleMarker(e.latlng,{ radius:4, color:'#C8A45A', fillColor:'#C8A45A', fillOpacity:1, renderer:canvasRenderer }).addTo(map);
+    drawMarkers.push(mk);
+    if(drawLayer) map.removeLayer(drawLayer);
+    if(drawPts.length>=2){ drawLayer = L.polyline(drawPts.map(p=>[p[1],p[0]]),{ color:'#C8A45A', dashArray:'4', renderer:canvasRenderer }).addTo(map); }
+  });
+  map.on('dblclick', (e)=>{ if(drawing && drawPts.length>=3){ L.DomEvent.stop(e); finishDraw(); } });
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ if(drawing){ clearDraw(); toggleDraw(); } else closePanel(); } });
+  async function finishDraw(){
+    const poly = drawPts.slice();
+    clearDraw();
+    modalNuevoLote(poly);
+  }
+  function modalNuevoLote(poly){
+    const ov = document.createElement('div'); ov.className='mm-ov';
+    ov.innerHTML = `<div class="mm"><h3>Nuevo lote</h3>
+      <div style="display:flex;gap:10px"><div class="pm-row" style="flex:1"><label>Número</label><input id="lNum" placeholder="215"></div>
+        <div class="pm-row" style="flex:1"><label>Manzana</label><input id="lMz" placeholder="A"></div></div>
+      <div style="display:flex;gap:10px"><div class="pm-row" style="flex:1"><label>Área (m²)</label><input id="lArea" type="number" placeholder="98"></div>
+        <div class="pm-row" style="flex:1"><label>Dimensiones</label><input id="lDim" placeholder="7 x 14"></div></div>
+      <div style="display:flex;gap:10px"><div class="pm-row" style="flex:1"><label>Precio ($)</label><input id="lPrecio" type="number" placeholder="12000000"></div>
+        <div class="pm-row" style="flex:1"><label>Estado</label><select id="lEst">${EST.map(e=>`<option value="${e}">${EST_LABEL[e]}</option>`).join('')}</select></div></div>
+      <div class="mm-act"><button class="mm-btn ghost" id="lCancel">Cancelar</button><button class="mm-btn save" id="lSave">Crear lote</button></div></div>`;
+    document.body.appendChild(ov);
+    ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+    document.getElementById('lCancel').onclick=()=>{ ov.remove(); if(drawing) toggleDraw(); };
+    document.getElementById('lSave').onclick=async ()=>{
+      const body = { numero:val('lNum'), manzana:val('lMz'), area:Number(val('lArea'))||0, dimensiones:val('lDim'),
+        precio:Number(val('lPrecio'))||0, estado:document.getElementById('lEst').value, poligono:poly };
+      const r = await api('/api/proyectos/'+pid+'/lotes', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      if(r&&r.ok){ toast('Lote creado','ok'); ov.remove(); await loadLotes(); loadStats(); if(drawing) toggleDraw(); }
+      else toast('Error al crear','err');
+    };
+    function val(id){ return document.getElementById(id).value.trim(); }
+  }
+
+  // ── Vista isométrica (SVG) ──
+  let isoOn=false, isoState={ scale:1, ox:0, oy:0 };
+  document.getElementById('v2d').onclick = ()=> setView('2d');
+  document.getElementById('viso').onclick = ()=> setView('iso');
+  function setView(v){
+    isoOn = v==='iso';
+    document.getElementById('v2d').classList.toggle('on',!isoOn);
+    document.getElementById('viso').classList.toggle('on',isoOn);
+    document.getElementById('iso').classList.toggle('on',isoOn);
+    document.getElementById('map').style.opacity = isoOn?0:1;
+    if(isoOn) renderIso(); else setTimeout(()=>map.invalidateSize(),50);
+  }
+  function isoProject(x,y){ return [ (x-y), (x+y)/2 ]; } // 2:1 isométrico
+  function renderIso(){
+    const host = document.getElementById('iso');
+    const W = host.clientWidth, H = host.clientHeight;
+    // bounds de todos los puntos
+    let pts=[]; lotes.forEach(l=>{ let p; try{p=typeof l.poligono==='string'?JSON.parse(l.poligono):l.poligono;}catch(e){p=[];} (p||[]).forEach(q=>pts.push(isoProject(q[0],q[1]))); });
+    if(!pts.length){ host.innerHTML = `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px">La vista isométrica cobra vida cuando el proyecto tiene lotes trazados.</div>`; return; }
+    const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]);
+    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+    const pad=60; const sc=Math.min((W-pad*2)/((maxX-minX)||1),(H-pad*2)/((maxY-minY)||1))*.9;
+    const offX = W/2 - ((minX+maxX)/2)*sc, offY = H/2 - ((minY+maxY)/2)*sc;
+    const HGT = 14; // altura de extrusión en px
+    const proj = (x,y)=>{ const [ix,iy]=isoProject(x,y); return [ix*sc+offX, iy*sc+offY]; };
+
+    // ordenar lotes de atrás hacia adelante (por suma de coords centro)
+    const items = lotes.map(l=>{ let p; try{p=typeof l.poligono==='string'?JSON.parse(l.poligono):l.poligono;}catch(e){p=[];} return {l,p}; })
+      .filter(it=> Array.isArray(it.p)&&it.p.length>=3)
+      .sort((a,b)=>{ const ca=cen(a.p),cb=cen(b.p); return (ca[0]+ca[1])-(cb[0]+cb[1]); });
+    function cen(p){ let x=0,y=0; p.forEach(q=>{x+=q[0];y+=q[1];}); return [x/p.length,y/p.length]; }
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}"><g transform="translate(${isoState.ox},${isoState.oy}) scale(${isoState.scale})">`;
+    items.forEach(({l,p})=>{
+      const dim = (query && !matchLote(l)) || hidden.has(l.estado);
+      const c = COLORS[l.estado]||'#666';
+      const top = p.map(q=> proj(q[0],q[1]));
+      const side = shade(c,-38), sideOp = dim?.12:1, topOp=dim?.14:.92;
+      // caras laterales (extrusión hacia abajo)
+      let walls='';
+      for(let i=0;i<top.length;i++){
+        const a=top[i], b=top[(i+1)%top.length];
+        walls += `<polygon class="iso-face" points="${a[0]},${a[1]} ${b[0]},${b[1]} ${b[0]},${b[1]+HGT} ${a[0]},${a[1]+HGT}" fill="${side}" fill-opacity="${sideOp}" stroke="${shade(c,-55)}" stroke-width=".4"/>`;
+      }
+      const topPts = top.map(q=>`${q[0]},${q[1]}`).join(' ');
+      const stroke = selected===l.id?'#fff':shade(c,25);
+      svg += `<g data-id="${l.id}" style="cursor:pointer">${walls}<polygon class="iso-face" points="${topPts}" fill="${c}" fill-opacity="${topOp}" stroke="${stroke}" stroke-width="${selected===l.id?1.6:.7}"/></g>`;
+    });
+    svg += `</g></svg>`;
+    host.innerHTML = svg;
+    host.querySelectorAll('g[data-id]').forEach(g=> g.onclick=()=> selectLote(Number(g.dataset.id)) );
+  }
+  function shade(hex,pct){ const n=parseInt(hex.slice(1),16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+    r=Math.max(0,Math.min(255,r+pct)); g=Math.max(0,Math.min(255,g+pct)); b=Math.max(0,Math.min(255,b+pct));
+    return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1); }
+  // pan/zoom iso
+  (function(){ const host=document.getElementById('iso'); let dragging=false,sx,sy;
+    host.addEventListener('wheel',e=>{ e.preventDefault(); const f=e.deltaY<0?1.12:.89; isoState.scale=Math.max(.3,Math.min(6,isoState.scale*f)); renderIso(); },{passive:false});
+    host.addEventListener('mousedown',e=>{ dragging=true; host.classList.add('grab'); sx=e.clientX-isoState.ox; sy=e.clientY-isoState.oy; });
+    window.addEventListener('mousemove',e=>{ if(!dragging) return; isoState.ox=e.clientX-sx; isoState.oy=e.clientY-sy; renderIso(); });
+    window.addEventListener('mouseup',()=>{ dragging=false; host.classList.remove('grab'); });
+  })();
+  window.addEventListener('resize',()=>{ if(isoOn) renderIso(); });
+
+  // helpers
+  function safeArr(v){ try{ const a=typeof v==='string'?JSON.parse(v):v; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+  function fdate(s){ if(!s) return '—'; const d=new Date(s.replace(' ','T')); return isNaN(d)? esc(s) : d.toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'}); }
+  function modalInput(title,label,value,onSave,type){
+    const ov=document.createElement('div'); ov.className='mm-ov';
+    const field = type==='textarea'? `<textarea id="miV" rows="3">${esc(String(value||''))}</textarea>` : `<input id="miV" type="${type||'text'}" value="${esc(String(value||''))}">`;
+    ov.innerHTML=`<div class="mm"><h3>${title}</h3><div class="pm-row"><label>${label}</label>${field}</div><div class="mm-act"><button class="mm-btn ghost" id="miC">Cancelar</button><button class="mm-btn save" id="miS">Guardar</button></div></div>`;
+    document.body.appendChild(ov); ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+    document.getElementById('miC').onclick=()=>ov.remove();
+    document.getElementById('miS').onclick=()=>{ onSave(document.getElementById('miV').value); ov.remove(); };
+    setTimeout(()=>document.getElementById('miV').focus(),40);
+  }
+
+  // ── SSE tiempo real ──
+  try{
+    const es = new EventSource('/api/stream');
+    es.addEventListener('lote_actualizado', (ev)=>{ try{ const d=JSON.parse(ev.data); if(Number(d.proyectoId)===Number(pid)){ loadLotes(); loadStats(); } }catch(e){} });
+  }catch(e){}
+
+  // init
+  await loadLotes();
+  await loadStats();
+})();
+</script>
+</body>
+</html>

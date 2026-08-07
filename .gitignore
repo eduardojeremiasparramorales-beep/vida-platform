@@ -1,0 +1,70 @@
+node_modules/
+.env
+.env.local
+
+# OS / Editor
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Datos — nunca en git
+*.db*
+data/
+data-backup*/
+media/
+logs/
+
+# Logs / Scripts / Binarios
+*.log
+*.bat
+*.sh
+*.exe
+coverage/
+.nyc_output/
+
+# APKs y AABs genéricos
+*.apk
+*.aab
+
+# Imágenes genéricas
+*.jpg
+*.jpeg
+*.png
+*.ico
+*.gif
+*.webp
+*.svg
+*.avif
+
+# Los scripts de deploy SÍ viajan en git
+!deploy/deploy.sh
+!deploy/setup-server.sh
+
+# Pero los assets de la app SÍ viajan en git
+!public/icons/*.png
+!public/icons/*.ico
+!public/descargas/leons-group.apk
+!public/descargas/leons-group-v2.0.0.apk
+!public/descargas/leons-group-v2.1.0.apk
+!public/descargas/leons-group-hibrido.apk
+!public/descargas/leons-group-hibrido-v3.apk
+!public/descargas/leons-group.aab
+!public/descargas/version.json
+
+# Campañas SP — todo viaja en git
+!CAMPAÑAS_SP/
+!CAMPAÑAS_SP/**/*
+CAMPAÑAS_SP/__pycache__/
+CAMPAÑAS_SP/**/__pycache__/
+CAMPAÑAS_SP/test_output/
+CAMPAÑAS_SP/output/
+CAMPAÑAS_SP/projects/
+
+# Build de Capacitor/Android
+mobile-app/**/build/
+mobile-app/android/.gradle/
+mobile-app/node_modules/
+mobile-app/android/app/build/
+mobile-app/android/.idea/

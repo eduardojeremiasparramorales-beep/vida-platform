@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Supervisor Center">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>Leons Group · Supervisor Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script src="/supervisor/supervisor-shell.js"></script>
+<script>
+(async function () {
+  const { me, content, esc } = await SPS.mount({ active: 'inicio', title: 'Inicio', crumb: 'Supervisor Center' });
+  if (!content) return;
+
+  // Pedimos capacidades del backend — el router /api/supervisor/me las lista
+  // (las activas = sprints implementados; las 501 = pendientes).
+  const caps = await SPS.api('/api/supervisor/me');
+  if (!caps) return;
+  const ICONS = (window.SPOS && window.SPOS.ICONS) || {};
+  const fmt = (window.SPOS && window.SPOS.fmt) || {};
+
+  const cards = (caps.capacidades || []).map(c => {
+    const ic = ICONS.dashboard || ICONS.spark || '';
+    const badge = c.activo
+      ? `<span class="badge badge--green" style="font-size:10px">Activo</span>`
+      : `<span class="badge badge--mute" style="font-size:10px">Sprint ${c.sprint}</span>`;
+    return `<div class="card card--pad card--float" style="display:flex;flex-direction:column;gap:10px;opacity:${c.activo?1:0.55};cursor:${c.activo?'pointer':'default'}" ${c.activo?`data-go="${c.id}"`:''}>
+      <div class="u-between">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(200,164,90,.08);display:grid;place-items:center;color:var(--gold)">${ic.replace('<svg ','<svg style="width:18px;height:18px" ') || ''}</div>
+        ${badge}
+      </div>
+      <div style="font-weight:600;font-size:14px">${esc(tituloSeccion(c.id))}</div>
+      <div class="t-dim3" style="font-size:12px;line-height:1.4">${esc(descripcionSeccion(c.id))}</div>
+    </div>`;
+  }).join('');
+
+  content.innerHTML = `
+    <div class="os-content__max">
+      <!-- Bienvenida -->
+      <div class="card rise rise-1" style="margin-bottom:var(--s3)">
+        <div class="card--pad">
+          <div class="u-row u-gap2" style="align-items:center">
+            <div class="avatar avatar--md" style="background:${(window.SPS.avatarColor)(me.nombre)};overflow:hidden">${me.foto?`<img src="${esc(me.foto)}" style="width:100%;height:100%;object-fit:cover">`:(window.SPS.initials)(me.nombre)}</div>
+            <div>
+              <div style="font-size:18px;font-weight:600;letter-spacing:-0.01em">${esc(me.nombre)}</div>
+              <div class="t-dim3" style="font-size:12px;margin-top:2px">Supervisor · Leons Group · ${esc(me.telefono || '')}</div>
+            </div>
+          </div>
+          <div class="t-dim" style="margin-top:14px;font-size:13px;line-height:1.5;max-width:560px">
+            Bienvenido al <strong>Supervisor Center</strong>. Aquí supervisas al equipo comercial: conversaciones en vivo,
+            métricas por asesor, alertas de leads sin responder y reasignaciones. Las secciones se van habilitando a medida
+            que se completan los sprints del roadmap — empiezan grises y se "encienden" cuando quedan listas.
+          </div>
+        </div>
+      </div>
+
+      <!-- Secciones del roadmap (Sprints 1-8) -->
+      <div class="t-h3" style="margin-bottom:var(--s2)">Secciones</div>
+      <div class="grid grid--3">
+        ${cards || `<div class="empty">Sin secciones</div>`}
+      </div>
+    </div>
+  `;
+
+  // Secciones activas navegan a su página; /me no tiene página propia → vuelve al inicio.
+  document.querySelectorAll('[data-go]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.getAttribute('data-go');
+      location.href = id === 'me' ? '/supervisor/index.html' : `/supervisor/${id}.html`;
+    });
+  });
+
+  function tituloSeccion(id){
+    return ({
+      dashboard: 'Dashboard del equipo',
+      equipo: 'Equipo · Asesores',
+      conversaciones: 'Conversaciones en vivo',
+      alertas: 'Alertas de seguimiento',
+      feed: 'SP Feed · Reels',
+      ia: 'IA Copiloto',
+      analitica: 'Analítica avanzada',
+      me: 'Mi perfil'
+    })[id] || id;
+  }
+  function descripcionSeccion(id){
+    return ({
+      dashboard: 'Visión global del día: leads activos, sin responder, conversión y rendimiento por asesor.',
+      equipo: 'Métricas individuales de cada asesor, ranking del mes y opción de reasignar leads entre ellos.',
+      conversaciones: 'Inbox del equipo: filtra por asesor, observa el timeline completo de cualquier conversación.',
+      alertas: 'Leads que llevan 30 o 60 minutos sin respuesta, con reasignación urgente en tiempo real.',
+      feed: 'SP Feed: reels, fotos y enlaces de marca publicados por admin y supervisor. (Sprint 6)',
+      ia: 'Copiloto IA contextualizado al supervisor, no al asesor: análisis de equipo, no de un lead concreto.',
+      analitica: 'Embudo de conversión, series temporales, ranking histórico y export CSV.',
+      me: 'Tu sesión y tus dispositivos activos.'
+    })[id] || '';
+  }
+})();
+</script>
+</body>
+</html>

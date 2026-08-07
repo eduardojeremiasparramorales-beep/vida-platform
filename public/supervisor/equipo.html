@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Equipo · Supervisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script src="/supervisor/supervisor-shell.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const { me, content, esc } = await SPS.mount({ active: 'equipo', title: 'Equipo', crumb: 'Supervisor Center · Asesores del negocio' });
+  if (!content) return;
+
+  const ICONS = (window.SPOS && window.SPOS.ICONS) || {};
+  const fmt = (window.SPOS && window.SPOS.fmt) || {
+    n: (v) => (v == null ? '—' : Number(v).toLocaleString('es-CO')),
+    pct: (v) => (v == null ? '—' : v + '%'),
+  };
+  const avatarColor = (window.SPS && SPS.avatarColor) || (() => '#D4AF37');
+  const initials = (window.SPS && SPS.initials) || ((n) => String(n || '?').slice(0, 2).toUpperCase());
+
+  const ETIQUETAS = {
+    sin_clasificar: { label: 'Nuevo', cls: 'mute' },
+    interesado:    { label: 'Interesado', cls: 'blue' },
+    negociacion:   { label: 'Negociación', cls: 'gold' },
+    cita:          { label: 'Cita', cls: 'amber' },
+    vendido:       { label: 'Vendido', cls: 'green' },
+    no_interesado: { label: 'No interesado', cls: 'mute' },
+  };
+  const ESTADOS = { activo: 'green', ocupado: 'amber', vacaciones: 'blue', inactivo: 'mute', suspendido: 'red' };
+
+  let asesores = [];
+  let seleccionado = null;
+
+  /* --- Carga inicial: equipo completo --- */
+  const d = await SPS.api('/api/supervisor/equipo');
+  if (!d) { content.innerHTML = `<div class="empty">${ICONS.team || ''}<div>No se pudo cargar el equipo.</div></div>`; return; }
+  asesores = d.asesores || [];
+
+  const activos = asesores.filter(a => a.estado === 'activo').length;
+
+  content.innerHTML = `
+   <div class="os-content__max">
+    <div class="u-between rise rise-1" style="margin-bottom:var(--s3);flex-wrap:wrap;gap:var(--s2)">
+      <div>
+        <div class="t-h3">Asesores del negocio</div>
+        <div class="t-dim3" style="font-size:12px;margin-top:2px">${fmt.n(asesores.length)} asesores · ${fmt.n(activos)} activos — ordenados por cierres del mes</div>
+      </div>
+      <div class="u-row u-gap2" style="font-size:12px" id="estadoFiltro">
+        <span class="chip active" data-estado="todos">Todos</span>
+        <span class="chip" data-estado="activo">Activos</span>
+        <span class="chip" data-estado="ocupado">Ocupados</span>
+        <span class="chip" data-estado="vacaciones">Vacaciones</span>
+        <span class="chip" data-estado="inactivo">Inactivos</span>
+      </div>
+    </div>
+
+    <div id="cards" class="grid grid--3" style="margin-bottom:var(--s4)"></div>
+
+    <!-- Detalle del asesor seleccionado: sus leads + reasignación -->
+    <div id="detalle"></div>
+   </div>`;
+
+  const cardsEl = document.getElementById('cards');
+  const detalleEl = document.getElementById('detalle');
+
+  /* --- Render de las tarjetas de asesor (filtro por estado) --- */
+  function renderCards(estadoFiltro) {
+    const lista = asesores.filter(a => !estadoFiltro || a.estado === estadoFiltro);
+    if (!lista.length) {
+      cardsEl.innerHTML = `<div class="empty" style="grid-column:1/-1">${ICONS.team || ''}<div>No hay asesores en este estado.</div></div>`;
+      return;
+    }
+    cardsEl.innerHTML = lista.map(a => {
+      const dot = ESTADOS[a.estado] || 'mute';
+      const sel = seleccionado && seleccionado.id === a.id;
+      const bar = Math.min(100, a.tasaRespuesta);
+      return `<div class="card card--float rise rise-1" data-asesor="${a.id}" style="cursor:pointer;border-color:${sel ? 'var(--gold-line)' : 'transparent'};background:${sel ? 'linear-gradient(160deg,var(--bg-2),rgba(200,164,90,.05))' : 'var(--bg-1)'}">
+        <div class="card--pad">
+          <div class="u-row u-gap2 u-align-center" style="margin-bottom:var(--s2)">
+            <div class="avatar avatar--md" style="background:${avatarColor(a.nombre)};overflow:hidden">${a.foto ? `<img src="${esc(a.foto)}" style="width:100%;height:100%;object-fit:cover">` : initials(a.nombre)}</div>
+            <div class="u-grow">
+              <div style="font-weight:600;font-size:14px">${esc(a.nombre)}</div>
+              <div class="u-row u-gap1" style="font-size:11.5px;margin-top:3px">
+                <span class="dot dot--${dot}"></span><span class="t-dim3">${esc(a.estado)} · ${esc(a.telefono || '')}</span>
+              </div>
+            </div>
+            <span class="badge badge--${a.vendidosMes > 0 ? 'gold' : 'mute'}" style="font-size:11px">${fmt.n(a.vendidosMes)} mes</span>
+          </div>
+          <div class="grid grid--2" style="gap:8px">
+            ${miniStat(ICONS.leads, fmt.n(a.activos), 'activos')}
+            ${miniStat(ICONS.clock, fmt.n(a.pendientes), 'pendientes')}
+            ${miniStat(ICONS.target, fmt.pct(a.conversion), 'conversión')}
+            ${miniStat(ICONS.money, fmt.n(a.vendidos), 'cierres')}
+          </div>
+          <div style="margin-top:var(--s2)">
+            <div class="u-between" style="font-size:11px;margin-bottom:5px"><span class="t-dim3">Tasa de respuesta</span><span class="t-num">${fmt.pct(a.tasaRespuesta)}</span></div>
+            <div style="height:6px;background:var(--bg-4);border-radius:999px;overflow:hidden"><div style="height:100%;width:${bar}%;background:var(--grad-gold);border-radius:999px"></div></div>
+          </div>
+          <div class="u-between" style="margin-top:var(--s2)">
+            <span class="t-dim3" style="font-size:11px">Última actividad: ${a.ultimaActividad ? esc(String(a.ultimaActividad).slice(0, 16)) : 'sin actividad'}</span>
+            <span class="btn btn--gold btn--sm" data-ver="${a.id}">Ver leads</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    cardsEl.querySelectorAll('[data-ver]').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); cargarDetalle(Number(btn.getAttribute('data-ver'))); });
+    });
+    cardsEl.querySelectorAll('[data-asesor]').forEach(card => {
+      card.addEventListener('click', () => cargarDetalle(Number(card.getAttribute('data-asesor'))));
+    });
+  }
+
+  function miniStat(ic, val, label) {
+    return `<div style="background:var(--bg-2);border:1px solid var(--border-soft);border-radius:10px;padding:9px 10px">
+      <div class="u-row u-gap1 u-align-center" style="margin-bottom:2px">${ic ? ic.replace('<svg ', '<svg style="width:13px;height:13px" ') : ''}<span class="t-num" style="font-size:13.5px;font-weight:600">${val}</span></div>
+      <div class="t-dim3" style="font-size:10.5px">${label}</div>
+    </div>`;
+  }
+
+  /* --- Detalle: leads del asesor + reasignar --- */
+  async function cargarDetalle(asesorId) {
+    seleccionado = asesores.find(a => a.id === asesorId) || null;
+    renderCards(document.querySelector('[data-estado].active') && document.querySelector('[data-estado].active').getAttribute('data-estado') || null);
+
+    if (!seleccionado) return;
+    const r = await SPS.api(`/api/supervisor/equipo/leads?asesorId=${asesorId}`);
+    if (!r) return;
+    const leads = r.leads || [];
+    const otros = asesores.filter(a => a.id !== asesorId);
+
+    detalleEl.innerHTML = `
+      <div class="card rise rise-2">
+        <div class="u-between card--pad" style="padding-bottom:var(--s2);flex-wrap:wrap;gap:var(--s2)">
+          <div class="u-row u-gap2 u-align-center">
+            <div class="avatar avatar--sm" style="background:${avatarColor(seleccionado.nombre)}">${initials(seleccionado.nombre)}</div>
+            <div>
+              <div style="font-weight:600">${esc(seleccionado.nombre)} — ${fmt.n(leads.length)} leads activos</div>
+              <div class="t-dim3" style="font-size:12px">Selecciona un lead y elige el asesor que lo asumirá</div>
+            </div>
+          </div>
+          <span class="t-dim3" style="font-size:12px">${fmt.n(seleccionado.activos)} activos · ${fmt.n(seleccionado.pendientes)} sin responder · ${fmt.n(seleccionado.vendidosMes)} cierres del mes</span>
+        </div>
+        ${leads.length ? `
+        <div style="max-height:420px;overflow:auto">
+        <table class="table">
+          <thead><tr><th>Cliente</th><th>Etapa</th><th>Última actividad</th><th>Reasignar a</th></tr></thead>
+          <tbody>
+            ${leads.map(l => `
+              <tr>
+                <td>
+                  <div style="font-weight:500">${esc(l.nombre)}</div>
+                  <div class="t-dim3" style="font-size:11.5px">${esc(l.telefono)}${l.temperatura ? ` · <span style="color:${l.temperatura==='caliente'?'var(--green)':l.temperatura==='tibio'?'var(--amber)':'var(--text-3)'}">${esc(l.temperatura)}</span>` : ''}</div>
+                </td>
+                <td><span class="badge badge--${(ETIQUETAS[l.etiqueta] || ETIQUETAS.sin_clasificar).cls}">${(ETIQUETAS[l.etiqueta] || ETIQUETAS.sin_clasificar).label}</span></td>
+                <td class="t-dim" style="font-size:12px">${l.actualizado ? esc(String(l.actualizado).slice(0, 16)) : '—'}</td>
+                <td>
+                  <div class="u-row u-gap1" style="flex-wrap:nowrap">
+                    <select class="input" data-target="${l.id}" style="padding:8px 30px 8px 10px;font-size:12.5px;min-width:0">
+                      <option value="">Seleccionar asesor…</option>
+                      ${otros.map(o => `<option value="${o.id}" ${o.estado !== 'activo' ? 'disabled' : ''}>${esc(o.nombre)}${o.estado !== 'activo' ? ` (${esc(o.estado)})` : ''}</option>`).join('')}
+                    </select>
+                    <button class="btn btn--gold btn--sm" data-reasignar="${l.id}" disabled style="white-space:nowrap">Mover</button>
+                  </div>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        </div>` : `<div class="empty" style="padding:var(--s5)">${ICONS.leads || ''}<div>Este asesor no tiene leads activos.</div></div>`}
+      </div>`;
+
+    detalleEl.querySelectorAll('select[data-target]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const btn = detalleEl.querySelector(`[data-reasignar="${sel.getAttribute('data-target')}"]`);
+        if (btn) btn.disabled = !sel.value;
+      });
+    });
+    detalleEl.querySelectorAll('[data-reasignar]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const leadId = btn.getAttribute('data-reasignar');
+        const sel = detalleEl.querySelector(`[data-target="${leadId}"]`);
+        const vendedorId = sel.value;
+        if (!vendedorId) return;
+        btn.disabled = true; btn.textContent = '…';
+        const res = await SPS.api(`/api/supervisor/reasignar/${leadId}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vendedorId: Number(vendedorId) }),
+        });
+        if (res && res.ok) {
+          SPS.toast(`Lead reasignado a ${res.vendedor.nombre}`, 'ok');
+          cargarDetalle(asesorId);          // recargar leads (ya no están aquí)
+          const eq = await SPS.api('/api/supervisor/equipo');  // refrescar métricas
+          if (eq) asesores = eq.asesores || [];
+          renderCards(document.querySelector('[data-estado].active') ? document.querySelector('[data-estado].active').getAttribute('data-estado') : null);
+        } else {
+          btn.disabled = false; btn.textContent = 'Mover';
+          SPS.toast((res && res.error ? res.error : 'No se pudo reasignar'), 'err');
+        }
+      });
+    });
+  }
+
+  /* --- Filtro por estado --- */
+  content.querySelectorAll('#estadoFiltro .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      content.querySelectorAll('#estadoFiltro .chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderCards(chip.getAttribute('data-estado') === 'todos' ? null : chip.getAttribute('data-estado'));
+    });
+  });
+
+  renderCards(null);
+})();
+</script>
+</body>
+</html>

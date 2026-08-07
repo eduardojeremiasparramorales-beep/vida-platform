@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Galería de Marca</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  .gal-toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+  .gal-toolbar .btn { white-space:nowrap; }
+  .gal-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; }
+  .gal-card { background:var(--bg-2); border:1px solid var(--border-soft); border-radius:14px; overflow:hidden; position:relative; transition:border-color .2s; }
+  .gal-card:hover { border-color:var(--gold-line); }
+  .gal-card.inactive { opacity:.45; }
+  .gal-card__thumb { width:100%; aspect-ratio:9/16; overflow:hidden; position:relative; background:rgba(0,0,0,.25); }
+  .gal-card__thumb.landscape { aspect-ratio:16/9; }
+  .gal-card__thumb img { width:100%; height:100%; object-fit:cover; }
+  .gal-card__tag { position:absolute; top:8px; right:8px; padding:2px 8px; border-radius:6px; font-size:.58rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; background:rgba(10,10,10,.8); color:var(--gold); border:1px solid rgba(200,164,90,.25); backdrop-filter:blur(8px); }
+  .gal-card__body { padding:10px 12px 12px; }
+  .gal-card__name { font-size:.78rem; font-weight:600; color:var(--text); margin-bottom:3px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .gal-card__meta { font-size:.65rem; color:var(--text-3); margin-bottom:10px; }
+  .gal-card__actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .gal-empty { grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--text-3); background:var(--bg-2); border-radius:16px; border:1px dashed var(--border); }
+  .gal-empty h3 { font-family:var(--f-title); font-size:15px; color:var(--text-2); margin-bottom:6px; }
+
+  /* Modal */
+  .pm-ov { position:fixed; inset:0; background:rgba(0,0,0,.48); backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+  .pm-ov.show { display:flex; }
+  .pm { background:var(--bg-1); border:1px solid var(--border); border-radius:18px; width:100%; max-width:500px; max-height:92vh; overflow-y:auto; padding:24px; }
+  .pm h3 { font-family:var(--f-title); font-size:15px; color:var(--gold); margin-bottom:16px; }
+  .pm-row { margin-bottom:14px; }
+  .pm-row label { display:block; font-size:10.5px; color:var(--text-3); text-transform:uppercase; letter-spacing:.1em; margin-bottom:5px; }
+  .pm-row input, .pm-row select, .pm-row textarea { width:100%; background:var(--bg-3); border:1px solid var(--border); border-radius:9px; color:var(--text); padding:10px 12px; font-family:var(--f-ui); font-size:13.5px; outline:none; }
+  .pm-row input:focus, .pm-row select:focus, .pm-row textarea:focus { border-color:var(--gold-line); }
+  .pm-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+  .pm-btn { border:none; border-radius:10px; padding:10px 18px; font-size:13px; cursor:pointer; font-family:var(--f-ui); }
+  .pm-btn.save { background:var(--gold); color:#000; font-weight:600; }
+  .pm-btn.ghost { background:var(--bg-3); color:var(--text-2); border:1px solid var(--border); }
+  .pm-btn.del { background:rgba(255,80,80,.15); color:#ff5050; }
+
+  /* Drop zone */
+  .drop-zone { border:2px dashed var(--border); border-radius:14px; padding:36px 20px; text-align:center; cursor:pointer; transition:border-color .2s, background .2s; }
+  .drop-zone.dragover { border-color:var(--gold); background:rgba(200,164,76,.06); }
+  .drop-zone__icon { font-size:32px; color:var(--text-3); margin-bottom:6px; }
+  .drop-zone__text { font-size:12px; color:var(--text-3); }
+  .drop-zone__text strong { color:var(--gold); }
+  .drop-zone.has-file { border-color:var(--green-soft); background:rgba(78,123,70,.06); }
+  .drop-zone__preview { max-width:100%; max-height:180px; border-radius:10px; margin-top:10px; display:none; }
+  .drop-zone__name { font-size:11px; color:var(--text-2); margin-top:6px; word-break:break-all; }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { api, toast, esc, ICONS } = SPOS;
+  const ctx = await SPOS.mount({ active: 'galeria', title: 'Galería de Marca', crumb: 'Logos, banners y fondos oficiales', padded: true, adminOnly: true });
+  if (!ctx) return;
+
+  let items = [];
+
+  async function cargar() {
+    const r = await api('/api/galeria/admin');
+    items = Array.isArray(r) ? r : [];
+    render();
+  }
+
+  function catLabel(cat) {
+    return cat === 'logos' ? 'Logos' : cat === 'banners' ? 'Banners' : 'Fondos';
+  }
+
+  function render() {
+    const h = document.querySelector('.os-topbar');
+    if (h) { const existing = h.querySelector('.gal-toolbar'); if (existing) existing.remove(); }
+    if (h) {
+      const tb = document.createElement('div');
+      tb.className = 'gal-toolbar';
+      tb.innerHTML = '<button id="btnAdd" class="btn btn--gold btn--sm">' + ICONS.plus + 'Agregar asset</button>'
+        + '<a href="/galeria/" target="_blank" class="btn btn--ghost btn--sm" style="text-decoration:none">' + ICONS.spark + 'Ver galería</a>';
+      h.appendChild(tb);
+    }
+    document.getElementById('btnAdd')?.addEventListener('click', () => abrirModal(null));
+
+    if (!items.length) {
+      ctx.content.innerHTML = '<div class="gal-empty"><h3>✦ Galería de activos de marca</h3><p>Aún no hay assets. Agrega el primero para que aparezca en <a href="/galeria/" style="color:var(--gold)">/galeria/</a>.</p></div>';
+    } else {
+      ctx.content.innerHTML = '<div class="gal-grid">' + items.map(i => {
+        const isBanner = i.categoria === 'banners';
+        return `<div class="gal-card${i.activa ? '' : ' inactive'}">
+          <div class="gal-card__thumb${isBanner ? ' landscape' : ''}">
+            <img src="/galeria/assets/${esc(i.filename)}" alt="${esc(i.nombre)}" loading="lazy">
+            <span class="gal-card__tag">${ catLabel(i.categoria) }</span>
+          </div>
+          <div class="gal-card__body">
+            <div class="gal-card__name">${esc(i.nombre)}</div>
+            <div class="gal-card__meta">${i.activa ? 'Activo' : '<span style="color:#ff5050">Oculto</span>'} · ${esc(i.filename)}</div>
+            <div class="gal-card__actions">
+              <button class="btn btn--ghost btn--sm" data-edit="${i.id}">Editar</button>
+              <button class="btn btn--ghost btn--sm" data-toggle="${i.id}">${i.activa ? 'Ocultar' : 'Mostrar'}</button>
+              <button class="btn btn--ghost btn--sm" data-del="${i.id}" style="color:#ff5050">Eliminar</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('') + '</div>';
+    }
+
+    ctx.content.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => {
+      const id = +b.dataset.edit;
+      abrirModal(items.find(i => i.id === id));
+    }));
+    ctx.content.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', async () => {
+      const id = +b.dataset.toggle;
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+      await api('/api/galeria/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ activa: !item.activa }) });
+      toast(item.activa ? 'Oculto' : 'Visible');
+      cargar();
+    }));
+    ctx.content.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
+      const id = parseInt(b.dataset.del);
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+      if (!confirm('Eliminar "' + item.nombre + '" definitivamente?')) return;
+      await api('/api/galeria/' + id, { method: 'DELETE' });
+      toast('Eliminado');
+      cargar();
+    }));
+  }
+
+  let uploadedFilename = null;
+
+  function abrirModal(item) {
+    const existente = document.querySelector('.pm-ov');
+    if (existente) existente.remove();
+    const ov = document.createElement('div'); ov.className = 'pm-ov show';
+    ov.innerHTML = `<div class="pm">
+      <h3>${item ? 'Editar asset' : 'Nuevo asset'}</h3>
+      <div class="pm-row">
+        <label>Nombre</label>
+        <input id="pmNombre" value="${esc(item ? item.nombre : '')}" placeholder="Logo SP Leons">
+      </div>
+      <div class="pm-row">
+        <label>Categoría</label>
+        <select id="pmCat">
+          <option value="logos" ${item && item.categoria === 'logos' ? 'selected' : ''}>Logos</option>
+          <option value="banners" ${item && item.categoria === 'banners' ? 'selected' : ''}>Banners</option>
+          <option value="fondos" ${item && item.categoria === 'fondos' ? 'selected' : ''}>Fondos</option>
+        </select>
+      </div>
+      <div class="pm-row">
+        <label>${item ? 'Cambiar archivo (opcional)' : 'Archivo'}</label>
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-zone__icon">${item ? '&#128444;' : '&#8681;'}</div>
+          <div class="drop-zone__text">${item ? 'Suelta imagen aquí o <strong>haz clic para cambiar</strong>' : 'Suelta imagen aquí o <strong>haz clic para subir</strong>'}</div>
+          <img class="drop-zone__preview" id="dropPreview" ${item ? `src="/galeria/assets/${esc(item.filename)}"` : ''}>
+          <div class="drop-zone__name" id="dropName"></div>
+        </div>
+        <input type="file" id="pmFile" accept="image/*" style="display:none">
+      </div>
+      <div class="pm-actions">
+        ${item ? '<button class="pm-btn del" id="pmDel">Eliminar</button>' : ''}
+        <button class="pm-btn ghost" id="pmCancel">Cancelar</button>
+        <button class="pm-btn save" id="pmSave">${item ? 'Guardar' : 'Crear'}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+
+    if (item) uploadedFilename = item.filename;
+    else uploadedFilename = null;
+
+    const dz = document.getElementById('dropZone');
+    const fileInp = document.getElementById('pmFile');
+    const preview = document.getElementById('dropPreview');
+    const dropName = document.getElementById('dropName');
+
+    dz.addEventListener('click', () => fileInp.click());
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault();
+      dz.classList.remove('dragover');
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInp.addEventListener('change', () => {
+      if (fileInp.files.length) handleFile(fileInp.files[0]);
+    });
+
+    async function handleFile(file) {
+      dropName.textContent = file.name;
+      dz.classList.add('has-file');
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = ev => { preview.src = ev.target.result; preview.style.display = 'block'; };
+        reader.readAsDataURL(file);
+      }
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch('/api/galeria/upload', { method: 'POST', body: fd, credentials: 'include' });
+      const j = await r.json();
+      if (j && j.ok) {
+        uploadedFilename = j.filename;
+        dropName.textContent = j.filename;
+        preview.src = '/galeria/assets/' + j.filename;
+        preview.style.display = 'block';
+      } else {
+        alert('Error al subir: ' + ((j && j.error) || 'desconocido'));
+      }
+    }
+
+    document.getElementById('pmCancel')?.addEventListener('click', () => ov.remove());
+    document.getElementById('pmDel')?.addEventListener('click', async () => {
+      ov.remove();
+      await api('/api/galeria/' + item.id, { method: 'DELETE' });
+      toast('Eliminado');
+      cargar();
+    });
+    document.getElementById('pmSave')?.addEventListener('click', async () => {
+      const nombre = document.getElementById('pmNombre').value.trim();
+      const categoria = document.getElementById('pmCat').value;
+      if (!nombre) return alert('Nombre es requerido');
+
+      if (item) {
+        const body = { nombre, categoria };
+        if (uploadedFilename) body.filename = uploadedFilename;
+        await api('/api/galeria/' + item.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        toast('Guardado');
+      } else {
+        if (!uploadedFilename) return alert('Debes subir un archivo');
+        await api('/api/galeria', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, categoria, filename: uploadedFilename }) });
+        toast('Creado');
+      }
+      ov.remove();
+      cargar();
+    });
+
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+  }
+
+  cargar();
+})();
+</script>
+</body>
+</html>

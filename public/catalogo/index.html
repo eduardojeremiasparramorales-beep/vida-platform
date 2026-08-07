@@ -1,0 +1,274 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Leons Group â€” CatÃ¡logo de Lotes</title>
+<meta name="description" content="Lotes disponibles en proyectos de Leons Group. InversiÃ³n en tierra a nivel nacional.">
+<meta name="theme-color" content="#0A0A0A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<script src="/js/pixel.js"></script>
+<style>
+  :root{
+    --negro:#0A0A0A; --oro:#C8A45A; --oro-2:#e4c584; --verde:#4E7B46;
+    --marfil:#F5F2EB; --gris:#6D6D6D;
+    --bg:#0A0A0A; --bg-2:#141414; --bg-3:#1c1c1c; --txt:#F5F2EB; --txt-2:#b8b3a8; --txt-3:#7a756b;
+    --border:rgba(255,215,106,.16);
+    --glow:rgba(255,215,106,.10);
+  }
+  :root[data-theme="light"]{
+    --negro:#221C10; --oro:#A8822F; --oro-2:#A07F2C; --verde:#3F6538;
+    --marfil:#221C10; --gris:#8A7F6A;
+    --bg:#F4EFE3; --bg-2:#FFFCF4; --bg-3:#F3EDDC; --txt:#221C10; --txt-2:#6B6150; --txt-3:#9A8F78;
+    --border:rgba(168,138,78,.22);
+    --glow:rgba(255,215,106,.16);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth;overflow-x:hidden}
+  body{
+    font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--txt);
+    min-height:100vh;line-height:1.5;
+    background-image:radial-gradient(1200px 600px at 50% -10%, var(--glow), transparent 60%);
+  }
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+  /* Header */
+  header{padding:28px 0 18px;text-align:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20;
+    background:rgba(10,10,10,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  :root[data-theme="light"] header{background:rgba(255,251,241,.62)}
+  .brand{font-family:'Cinzel',serif;font-weight:600;letter-spacing:.22em;font-size:1.15rem;color:var(--marfil)}
+  .brand b{color:var(--oro);font-weight:600}
+  .tagline{font-family:'Cormorant Garamond',serif;font-size:.95rem;color:var(--txt-2);letter-spacing:.12em;margin-top:2px;font-style:italic}
+
+  /* Hero */
+  .hero{text-align:center;padding:44px 0 30px}
+  .hero h1{font-family:'Cinzel',serif;font-weight:600;font-size:clamp(1.6rem,4.5vw,2.6rem);letter-spacing:.04em;line-height:1.2;
+    background:linear-gradient(180deg,var(--marfil),var(--oro-2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p{font-family:'Cormorant Garamond',serif;font-size:clamp(1.05rem,2.4vw,1.35rem);color:var(--txt-2);margin-top:10px;max-width:640px;margin-inline:auto}
+  .rule{width:52px;height:2px;background:linear-gradient(90deg,transparent,var(--oro),transparent);margin:22px auto 0}
+
+  /* Grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;padding:20px 0 60px}
+  .card{background:linear-gradient(180deg,var(--bg-2),var(--bg-3));border:1px solid var(--border);border-radius:18px;overflow:hidden;
+    cursor:pointer;transition:transform .25s ease,box-shadow .25s ease,border-color .25s;display:flex;flex-direction:column}
+  .card:hover{transform:translateY(-4px);box-shadow:0 18px 40px -18px rgba(0,0,0,.7);border-color:rgba(255,215,106,.4)}
+  :root[data-theme="light"] .card:hover{box-shadow:0 18px 40px -18px rgba(120,98,58,.35)}
+  .card .ph{aspect-ratio:16/10;background:var(--bg-3);position:relative;overflow:hidden}
+  .card .ph img{width:100%;height:100%;object-fit:cover}
+  .card .ph.empty{display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(400px 200px at 50% 20%, rgba(255,215,106,.14), transparent),var(--bg-3)}
+  .card .ph.empty span{font-family:'Cinzel',serif;font-size:2.4rem;color:rgba(255,215,106,.35)}
+  .badge{position:absolute;top:12px;left:12px;background:rgba(78,123,70,.92);color:#fff;font-size:.7rem;font-weight:600;
+    padding:5px 10px;border-radius:999px;letter-spacing:.03em;backdrop-filter:blur(4px)}
+  .card .body{padding:16px 18px 18px;flex:1;display:flex;flex-direction:column;gap:6px}
+  .card h3{font-family:'Cinzel',serif;font-weight:600;font-size:1.05rem;letter-spacing:.02em}
+  .card .loc{font-size:.82rem;color:var(--txt-3);display:flex;align-items:center;gap:5px}
+  .card .price{margin-top:auto;padding-top:10px;font-size:.78rem;color:var(--txt-2)}
+  .card .price b{display:block;font-size:1.15rem;color:var(--oro-2);font-weight:600;font-family:'Inter'}
+
+  /* Detail */
+  .detail{display:none;padding:14px 0 80px;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .back{display:inline-flex;align-items:center;gap:8px;color:var(--txt-2);font-size:.9rem;padding:10px 0;cursor:pointer}
+  .back:hover{color:var(--oro)}
+  .dhead{margin:8px 0 18px}
+  .dhead h2{font-family:'Cinzel',serif;font-weight:600;font-size:clamp(1.5rem,4vw,2.1rem);letter-spacing:.03em}
+  .dhead .loc{color:var(--txt-3);margin-top:6px;font-size:.95rem}
+  .dcover{width:100%;aspect-ratio:16/8;object-fit:cover;border-radius:18px;border:1px solid var(--border);margin-bottom:22px}
+  .dcover.empty{display:flex;align-items:center;justify-content:center;background:radial-gradient(600px 240px at 50% 20%, rgba(255,215,106,.14), transparent),var(--bg-3)}
+  .dcover.empty span{font-family:'Cinzel',serif;font-size:3.4rem;color:rgba(255,215,106,.3)}
+  .ddesc{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--txt-2);line-height:1.6;margin-bottom:26px;max-width:760px}
+  .sec-t{font-family:'Cinzel',serif;font-size:1rem;letter-spacing:.08em;color:var(--oro);margin:0 0 14px;text-transform:uppercase}
+  .lotes{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:30px}
+  .lote{background:var(--bg-2);border:1px solid var(--border);border-radius:14px;padding:15px 16px;transition:border-color .2s}
+  .lote:hover{border-color:rgba(255,215,106,.4)}
+  .lote .n{font-family:'Cinzel',serif;font-size:.95rem;color:var(--marfil);margin-bottom:8px}
+  .lote .row{display:flex;justify-content:space-between;font-size:.82rem;color:var(--txt-3);margin-top:3px}
+  .lote .row b{color:var(--txt-2);font-weight:500}
+  .lote .lp{margin-top:10px;font-size:1.05rem;font-weight:600;color:var(--oro-2)}
+  .empty-lotes{color:var(--txt-3);font-size:.9rem;padding:8px 0 24px}
+
+  /* CTA */
+  .cta-bar{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:14px 20px calc(14px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,transparent,rgba(10,10,10,.9) 28%);display:flex;justify-content:center}
+  :root[data-theme="light"] .cta-bar{background:linear-gradient(180deg,transparent,rgba(244,239,227,.94) 28%)}
+  .cta{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--oro),var(--oro-2));color:#1a1400;
+    font-weight:700;font-size:1rem;padding:15px 30px;border-radius:999px;border:none;cursor:pointer;letter-spacing:.02em;
+    box-shadow:0 12px 30px -8px rgba(255,215,106,.5);transition:transform .15s;max-width:560px;width:100%;justify-content:center}
+  .cta:active{transform:scale(.97)}
+  .cta svg{width:20px;height:20px}
+
+  footer{text-align:center;padding:30px 20px 40px;color:var(--txt-3);font-size:.78rem;border-top:1px solid var(--border)}
+  footer .fb{font-family:'Cinzel',serif;letter-spacing:.18em;color:var(--txt-2);margin-bottom:6px}
+  .loading,.errbox{text-align:center;padding:70px 20px;color:var(--txt-3)}
+  .spin{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--oro);border-radius:50%;margin:0 auto 16px;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  @media (max-width:520px){
+    .grid{grid-template-columns:1fr;gap:16px}
+    .hero{padding:32px 0 20px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">LEONS <b>GROUP</b></div>
+    <div class="tagline">Inteligencia en bienes raÃ­ces Â· Lotes a nivel nacional</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- Listado -->
+  <section id="listView">
+    <div class="hero">
+      <h1>Invierte en tierra que perdura</h1>
+      <p>Lotes seleccionados en nuestros proyectos activos. Explora, elige y asegura el tuyo.</p>
+      <div class="rule"></div>
+    </div>
+    <div id="grid" class="grid"></div>
+    <div id="listLoading" class="loading"><div class="spin"></div>Cargando catÃ¡logoâ€¦</div>
+  </section>
+
+  <!-- Detalle -->
+  <section id="detailView" class="detail">
+    <div class="back" id="backBtn">â† Volver al catÃ¡logo</div>
+    <div id="detailBody"></div>
+  </section>
+</main>
+
+<div id="ctaBar" class="cta-bar" style="display:none">
+  <button class="cta" id="ctaBtn">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm5.9 14.1c-.2.7-1.4 1.3-2 1.4-.5.1-1.2.1-1.9-.1-.4-.1-1-.3-1.7-.6-3-1.3-4.9-4.3-5.1-4.5-.1-.2-1.2-1.5-1.2-2.9 0-1.4.7-2 1-2.3.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.1.3.6 1 1.3 1.6.9.8 1.6 1 1.9 1.2.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.6-.1l1.8.9c.3.1.4.2.5.3.1.2.1.8-.1 1.4z"/></svg>
+    <span>Me interesa â€” Hablar por WhatsApp</span>
+  </button>
+</div>
+
+<footer>
+  <div class="fb">LEONS GROUP</div>
+  Bienes raÃ­ces Â· Colombia Â· Los valores mostrados son de referencia y estÃ¡n sujetos a disponibilidad.
+</footer>
+
+<script>
+const $ = s => document.querySelector(s);
+let CFG = { whatsapp:'573214625618', empresa:'Leons Group' };
+let CURRENT = null; // proyecto abierto en detalle
+
+const fmtCOP = n => {
+  if(!n || n<=0) return null;
+  return '$' + Number(n).toLocaleString('es-CO', { maximumFractionDigits:0 });
+};
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function api(path){
+  try{ const r = await fetch(path); if(!r.ok) return null; return await r.json(); }
+  catch(e){ return null; }
+}
+
+function precioDesde(p){
+  const v = fmtCOP(p.precio_min);
+  return v ? `<span class="price">Desde<b>${v}</b></span>` : `<span class="price" style="color:var(--txt-3)">Consultar precio</span>`;
+}
+
+function cardHTML(p){
+  const img = p.imagen_url
+    ? `<div class="ph"><img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy" onerror="this.parentElement.classList.add('empty');this.parentElement.innerHTML='<span>LG</span>'"></div>`
+    : `<div class="ph empty"><span>LG</span></div>`;
+  const disp = p.disponibles>0 ? `<div class="badge">${p.disponibles} lote${p.disponibles>1?'s':''} disponible${p.disponibles>1?'s':''}</div>` : '';
+  const loc = [p.ciudad,p.departamento].filter(Boolean).join(', ');
+  return `<div class="card" data-id="${p.id}">
+    <div style="position:relative">${img}${disp}</div>
+    <div class="body">
+      <h3>${esc(p.nombre)}</h3>
+      ${loc?`<div class="loc">ðŸ“ ${esc(loc)}</div>`:''}
+      ${precioDesde(p)}
+    </div>
+  </div>`;
+}
+
+async function cargarLista(){
+  const proyectos = await api('/api/publico/proyectos');
+  $('#listLoading').style.display = 'none';
+  if(!proyectos || !proyectos.length){
+    $('#grid').innerHTML = `<div class="errbox" style="grid-column:1/-1">Muy pronto publicaremos nuestros proyectos disponibles. EscrÃ­benos por WhatsApp para conocer las oportunidades activas.</div>`;
+    return;
+  }
+  $('#grid').innerHTML = proyectos.map(cardHTML).join('');
+  $('#grid').querySelectorAll('.card').forEach(c =>
+    c.onclick = () => abrirProyecto(c.dataset.id));
+}
+
+function loteHTML(l){
+  const medidas = [l.area? `${l.area} mÂ²`:'', l.dimensiones].filter(Boolean).join(' Â· ');
+  const precio = fmtCOP(l.precio);
+  return `<div class="lote">
+    <div class="n">Lote ${esc(l.numero||'â€”')}${l.manzana?` Â· Mz ${esc(l.manzana)}`:''}</div>
+    ${medidas?`<div class="row"><span>Medidas</span><b>${esc(medidas)}</b></div>`:''}
+    <div class="row"><span>Estado</span><b style="color:var(--verde)">Disponible</b></div>
+    ${precio?`<div class="lp">${precio}</div>`:'<div class="row" style="margin-top:8px"><span>Precio</span><b>Consultar</b></div>'}
+  </div>`;
+}
+
+async function abrirProyecto(id){
+  window.scrollTo(0,0);
+  $('#listView').style.display = 'none';
+  $('#detailView').style.display = 'block';
+  $('#detailBody').innerHTML = `<div class="loading"><div class="spin"></div>Cargando proyectoâ€¦</div>`;
+  $('#ctaBar').style.display = 'none';
+  const p = await api('/api/publico/proyecto/'+id);
+  if(!p){ $('#detailBody').innerHTML = `<div class="errbox">No encontramos este proyecto. Vuelve al catÃ¡logo.</div>`; return; }
+  CURRENT = p;
+  history.replaceState(null,'', '?p='+id);
+  const loc = [p.ciudad,p.departamento].filter(Boolean).join(', ');
+  const cover = p.imagen_url
+    ? `<img class="dcover" src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" onerror="this.classList.add('empty');this.outerHTML='<div class=&quot;dcover empty&quot;><span>LG</span></div>'">`
+    : `<div class="dcover empty"><span>LG</span></div>`;
+  const lotes = (p.lotes && p.lotes.length)
+    ? `<div class="lotes">${p.lotes.map(loteHTML).join('')}</div>`
+    : `<div class="empty-lotes">Los lotes de este proyecto se asignan personalmente. EscrÃ­benos y te mostramos la disponibilidad al dÃ­a.</div>`;
+  $('#detailBody').innerHTML = `
+    ${cover}
+    <div class="dhead">
+      <h2>${esc(p.nombre)}</h2>
+      ${loc?`<div class="loc">ðŸ“ ${esc(loc)}</div>`:''}
+    </div>
+    ${p.descripcion?`<div class="ddesc">${esc(p.descripcion)}</div>`:''}
+    <div class="sec-t">Lotes disponibles${p.lotes&&p.lotes.length?` Â· ${p.lotes.length}`:''}</div>
+    ${lotes}
+  `;
+  $('#ctaBar').style.display = 'flex';
+}
+
+function volver(){
+  CURRENT = null;
+  history.replaceState(null,'', location.pathname);
+  $('#detailView').style.display = 'none';
+  $('#listView').style.display = 'block';
+  $('#ctaBar').style.display = 'none';
+}
+
+$('#backBtn').onclick = volver;
+$('#ctaBtn').onclick = () => {
+  const nombre = CURRENT ? CURRENT.nombre : 'sus proyectos';
+  const msg = CURRENT
+    ? `Hola Leons Group, vi el proyecto "${CURRENT.nombre}" en el catÃ¡logo y quiero mÃ¡s informaciÃ³n sobre los lotes disponibles.`
+    : `Hola Leons Group, quiero informaciÃ³n sobre sus lotes disponibles.`;
+  window.open(`https://wa.me/${CFG.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+(async function init(){
+  const cfg = await api('/api/publico/config');
+  if(cfg && cfg.whatsapp) CFG = cfg;
+  await cargarLista();
+  // Deep-link: /catalogo/p/ID (con OG tags) o ?p=ID abre directamente un proyecto
+  const pid = (typeof window.__CATALOG_PID!=='undefined' && window.__CATALOG_PID) || new URLSearchParams(location.search).get('p');
+  if(pid) abrirProyecto(pid);
+})();
+</script>
+</body>
+</html>

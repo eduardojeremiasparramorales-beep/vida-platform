@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Centro Documental</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+.doc-card { display: flex; flex-direction: column; gap: 8px; }
+.doc-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
+.doc-icon.escritura { background: var(--gold-soft); }
+.doc-icon.contrato { background: var(--blue-soft); }
+.doc-icon.render { background: var(--green-soft); }
+.doc-icon.plano { background: rgba(139,92,246,.14); }
+.doc-icon.foto { background: rgba(236,72,153,.14); }
+.doc-icon.video { background: rgba(239,68,68,.14); }
+.doc-icon.pdf { background: rgba(239,68,68,.14); }
+.doc-icon.link { background: var(--bg-4); }
+.doc-icon.otro { background: var(--bg-4); }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS, api } = SPOS;
+  const ctx = await SPOS.mount({ active: 'documentos', title: 'Centro Documental', crumb: 'Documentos organizados por proyecto y lead', padded: true });
+
+  const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const fmt = (b) => b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB';
+
+  const TIPOS_ICON = { escritura: '📜', contrato: '📋', render: '🖼', plano: '📐', licencia: '📄', foto: '📷', video: '🎬', pdf: '📕', link: '🔗', otro: '📎' };
+  const CAT_COLORS = { general: 'badge--mute', legal: 'badge--blue', ventas: 'badge--green', marketing: 'badge--gold', financiero: 'badge--amber', proyecto: 'badge--mute', lead: 'badge--blue' };
+
+  let documentos = [];
+  let filtro = { tipo: '', categoria: '', busqueda: '' };
+
+  ctx.content.innerHTML = `
+   <div class="os-content__max">
+    <div class="u-between" style="margin-bottom:var(--s3)">
+      <div>
+        <div class="t-h2">Centro Documental</div>
+        <div class="t-dim3" style="font-size:13px;margin-top:4px" id="docResumen">—</div>
+      </div>
+      <button class="btn btn--gold btn--sm" id="btnNew">+ Subir documento</button>
+    </div>
+    <div class="u-row u-gap2" style="margin-bottom:var(--s3);flex-wrap:wrap">
+      <input class="input" id="fBusqueda" placeholder="Buscar documentos…" style="flex:1;min-width:200px">
+      <select class="input" id="fTipo" style="width:auto">
+        <option value="">Todos los tipos</option>
+        <option value="escritura">Escritura</option><option value="contrato">Contrato</option>
+        <option value="render">Render</option><option value="plano">Plano</option>
+        <option value="licencia">Licencia</option><option value="foto">Foto</option>
+        <option value="video">Video</option><option value="pdf">PDF</option>
+        <option value="link">Enlace</option><option value="otro">Otro</option>
+      </select>
+      <select class="input" id="fCat" style="width:auto">
+        <option value="">Todas las categorías</option>
+        <option value="general">General</option><option value="legal">Legal</option>
+        <option value="ventas">Ventas</option><option value="marketing">Marketing</option>
+        <option value="financiero">Financiero</option><option value="proyecto">Proyecto</option>
+        <option value="lead">Lead</option>
+      </select>
+    </div>
+    <div class="grid grid--4" id="docGrid" style="gap:var(--s2)"></div>
+   </div>`;
+
+  let _t;
+  document.getElementById('fBusqueda').addEventListener('input', e => { clearTimeout(_t); _t = setTimeout(() => { filtro.busqueda = e.target.value; cargar(); }, 300); });
+  document.getElementById('fTipo').addEventListener('change', e => { filtro.tipo = e.target.value; cargar(); });
+  document.getElementById('fCat').addEventListener('change', e => { filtro.categoria = e.target.value; cargar(); });
+
+  async function cargar() {
+    const qs = new URLSearchParams();
+    if (filtro.tipo) qs.set('tipo', filtro.tipo);
+    if (filtro.categoria) qs.set('categoria', filtro.categoria);
+    if (filtro.busqueda) qs.set('busqueda', filtro.busqueda);
+    documentos = await api('/api/documentos' + (qs.toString() ? '?' + qs : '')) || [];
+    render();
+  }
+
+  function render() {
+    document.getElementById('docResumen').textContent = `${documentos.length} documento(s)`;
+    const grid = document.getElementById('docGrid');
+    if (!documentos.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1">No hay documentos. Sube el primero.</div>'; return; }
+    grid.innerHTML = documentos.map(d => `
+      <div class="card card--float doc-card" style="padding:var(--s2)">
+        <div class="u-row u-gap2" style="align-items:flex-start">
+          <div class="doc-icon ${d.tipo}">${TIPOS_ICON[d.tipo] || '📎'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.titulo)}</div>
+            <div class="t-dim3" style="font-size:11px">${esc(d.tipo)} · ${esc(d.categoria)}</div>
+          </div>
+        </div>
+        ${d.descripcion ? `<div style="font-size:12px;color:var(--text-2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(d.descripcion)}</div>` : ''}
+        <div class="u-row u-gap1" style="flex-wrap:wrap">
+          <span class="badge ${CAT_COLORS[d.categoria] || 'badge--mute'}" style="font-size:9.5px">${d.categoria}</span>
+          ${d.archivo_size ? `<span class="t-dim3" style="font-size:10px">${fmt(d.archivo_size)}</span>` : ''}
+          ${d.vendedor_nombre ? `<span class="t-dim3" style="font-size:10px">· ${esc(d.vendedor_nombre)}</span>` : ''}
+        </div>
+        <div class="t-dim3" style="font-size:10px;margin-top:auto">${d.created_at ? new Date(d.created_at).toLocaleDateString('es-CO') : ''}</div>
+      </div>
+    `).join('');
+  }
+
+  await cargar();
+})();
+</script>
+</body>
+</html>

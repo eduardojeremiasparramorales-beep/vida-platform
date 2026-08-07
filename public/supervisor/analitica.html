@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Analítica · Supervisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script src="/supervisor/supervisor-shell.js"></script>
+<script>
+(async function () {
+  const { me, content, esc } = await SPS.mount({ active: 'analitica', title: 'Analítica', crumb: 'Supervisor Center · Embudo, tendencia y ranking del equipo' });
+  if (!content) return;
+
+  const ICONS = (window.SPOS && window.SPOS.ICONS) || {};
+  const fmt = (window.SPOS && window.SPOS.fmt) || {
+    n: (v) => (v == null ? '—' : Number(v).toLocaleString('es-CO')),
+    pct: (v) => (v == null ? '—' : v + '%'),
+  };
+  const PERIODOS = [7, 30, 90];
+  let periodo = 30;
+
+  content.innerHTML = `
+   <div class="os-content__max">
+    <div class="u-between" style="margin-bottom:var(--s3);flex-wrap:wrap;gap:var(--s2)">
+      <div class="u-row u-gap2 u-align-center">
+        <div class="t-h3" style="margin:0">Tendencia del negocio</div>
+        <span class="badge badge--mute" id="periodoLabel">últimos 30 días</span>
+      </div>
+      <div class="u-row u-gap1" id="periodoBtns">
+        ${PERIODOS.map(p => `<button class="btn btn--sm ${p === periodo ? 'btn--gold' : 'btn--quiet'}" data-p="${p}">${p} días</button>`).join('')}
+        <button class="btn btn--sm btn--quiet" id="btnCsv" title="Descargar leads del período en CSV">${(ICONS.download || '').replace('<svg ', '<svg style="width:14px;height:14px" ')} CSV</button>
+      </div>
+    </div>
+    <div id="osAnalitica" style="display:flex;flex-direction:column;gap:var(--s3)"><div class="empty">Cargando analítica…</div></div>
+   </div>`;
+
+  const host = document.getElementById('osAnalitica');
+
+  async function cargar() {
+    host.innerHTML = `<div class="empty">${ICONS.spark || ''}<div>Cargando analítica…</div></div>`;
+    const d = await SPS.api('/api/supervisor/analitica?periodo=' + periodo);
+    if (!d) { host.innerHTML = `<div class="empty">${ICONS.activity || ''}<div>No se pudo cargar la analítica.</div></div>`; return; }
+    render(d);
+  }
+
+  function render(d) {
+    const r = d.resumen, serie = d.serie || [], ranking = d.ranking || [], canales = d.canales || [], embudo = d.embudo || [];
+    document.getElementById('periodoLabel').textContent = 'últimos ' + d.periodo + ' días';
+
+    const metric = (icon, label, value, hint) => `
+      <div class="metric card--float">
+        <div class="metric__top"><div class="metric__icon">${ICONS[icon] || ''}</div></div>
+        <div><div class="metric__value t-num">${value}</div><div class="metric__label">${label}</div></div>
+      </div>`;
+
+    // Gráfico de barras del período (SVG inline, sin librerías)
+    const W = 720, H = 190, PAD = 28;
+    const max = Math.max(1, ...serie.map(s => s.entrantes));
+    const step = serie.length > 1 ? (W - PAD * 2) / (serie.length - 1) : W;
+    const y = (v) => H - PAD - ((v / max) * (H - PAD * 2));
+    const dots = serie.map((s, i) => {
+      const x = PAD + i * step;
+      return `<circle cx="${x}" cy="${y(s.entrantes)}" r="3.5" fill="var(--gold,#D4AF37)"><title>${s.dia}: ${s.entrantes} leads</title></circle>`;
+    }).join('');
+    const line = serie.map((s, i) => (i ? 'L' : 'M') + (PAD + i * step) + ' ' + y(s.entrantes)).join(' ');
+    const gridLines = [0, 0.5, 1].map(f => {
+      const gy = y(max * f);
+      return `<line x1="${PAD}" x2="${W - PAD}" y1="${gy}" y2="${gy}" stroke="var(--border)" stroke-dasharray="3 4" opacity=".5"/><text x="${PAD - 6}" y="${gy + 4}" text-anchor="end" style="font-size:9px;fill:var(--text-3)">${Math.round(max * f)}</text>`;
+    }).join('');
+    const labels = serie.filter((_, i) => i % Math.max(1, Math.ceil(serie.length / 8)) === 0)
+      .map(s => `<text x="${PAD + serie.indexOf(s) * step}" y="${H - 10}" text-anchor="middle" style="font-size:9px;fill:var(--text-3)">${String(s.dia).slice(5)}</text>`).join('');
+
+    const embudoMax = Math.max(1, ...embudo.map(e => e.n));
+    const canalMax = Math.max(1, ...canales.map(c => c.n));
+
+    host.innerHTML = `
+      <div class="grid grid--4 rise rise-1">
+        ${metric('leads', 'Leads en el período', fmt.n(r.leadsEnPeriodo), null)}
+        ${metric('target', 'Cierres en el período', fmt.n(r.vendidosEnPeriodo), null)}
+        ${metric('money', 'Cierres totales', fmt.n(r.vendidos), null)}
+        ${metric('activity', 'Conversión global', fmt.pct(r.conversionGlobal), null)}
+      </div>
+
+      <div class="card card--pad rise rise-2">
+        <div class="t-h3" style="margin-bottom:var(--s2)">Leads entrantes por día</div>
+        ${serie.length ? `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+          ${gridLines}<path d="${line}" fill="none" stroke="var(--gold,#D4AF37)" stroke-width="2" stroke-linecap="round"/>${dots}${labels}
+        </svg>` : `<div class="t-dim3" style="font-size:13px;padding:var(--s3) 0">Sin leads en el período seleccionado.</div>`}
+      </div>
+
+      <div class="grid grid--main">
+        <div class="u-col u-gap3">
+          <div class="card card--pad rise rise-2">
+            <div class="t-h3" style="margin-bottom:var(--s2)">Embudo comercial</div>
+            ${embudo.length ? embudo.map(e => {
+              const w = Math.round((e.n / embudoMax) * 100);
+              return `<div style="margin-bottom:10px">
+                <div class="u-between" style="margin-bottom:6px">
+                  <span style="font-size:13px;font-weight:500">${esc(e.etiqueta)}</span>
+                  <span class="t-num t-dim" style="font-size:13px">${fmt.n(e.n)}</span>
+                </div>
+                <div style="height:10px;background:var(--bg-4);border-radius:999px;overflow:hidden">
+                  <div style="height:100%;width:${w}%;background:var(--grad-gold,linear-gradient(90deg,#D4AF37,#a8852e));border-radius:999px"></div>
+                </div>
+              </div>`;
+            }).join('') : `<div class="t-dim3" style="font-size:13px">Sin datos.</div>`}
+          </div>
+
+          <div class="card card--pad rise rise-3">
+            <div class="t-h3" style="margin-bottom:var(--s2)">Canales de entrada</div>
+            ${canales.length ? canales.map(c => {
+              const w = Math.round((c.n / canalMax) * 100);
+              return `<div style="margin-bottom:10px">
+                <div class="u-between" style="margin-bottom:6px">
+                  <span style="font-size:13px;font-weight:500">${esc(c.canal)}</span>
+                  <span class="t-num t-dim" style="font-size:13px">${fmt.n(c.n)}</span>
+                </div>
+                <div style="height:10px;background:var(--bg-4);border-radius:999px;overflow:hidden">
+                  <div style="height:100%;width:${w}%;background:var(--blue,#5B8DEF);border-radius:999px"></div>
+                </div>
+              </div>`;
+            }).join('') : `<div class="t-dim3" style="font-size:13px">Sin conversaciones registradas.</div>`}
+          </div>
+        </div>
+
+        <div class="card rise rise-1" style="align-self:start">
+          <div class="t-h3 card--pad" style="padding-bottom:var(--s2)">Ranking del período</div>
+          <table class="table">
+            <thead><tr><th>Asesor</th><th>Leads</th><th>Cierres</th><th>Conv.</th></tr></thead>
+            <tbody>
+              ${ranking.slice(0, 10).map((a, i) => `
+                <tr>
+                  <td><div class="u-row u-gap2">
+                    <span style="width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:10px;font-weight:700;color:${i===0?'#0A0A0A':'var(--gold,#D4AF37)'};background:${i===0?'var(--grad-gold,linear-gradient(90deg,#D4AF37,#a8852e))':'rgba(212,175,55,.1)'}">${i+1}</span>
+                    <div style="font-weight:500">${esc(a.nombre)}</div>
+                  </div></td>
+                  <td class="t-num t-dim">${fmt.n(a.total)}</td>
+                  <td class="t-num">${fmt.n(a.vendidos)}</td>
+                  <td><span class="badge badge--${a.conversion>=15?'green':a.conversion>=8?'gold':'mute'}">${a.conversion}%</span></td>
+                </tr>`).join('') || `<tr><td colspan="4" class="t-dim3" style="text-align:center;padding:var(--s4)">Sin asesores con datos</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('periodoBtns').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-p]');
+    if (!b) return;
+    periodo = parseInt(b.getAttribute('data-p'), 10);
+    document.querySelectorAll('#periodoBtns [data-p]').forEach(x => x.classList.toggle('btn--gold', x === b));
+    cargar();
+  });
+  document.getElementById('btnCsv').addEventListener('click', () => {
+    const url = '/api/supervisor/analitica/export?periodo=' + periodo;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'analitica-leads-' + periodo + 'd.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+
+  cargar();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Leons Group · Meta Ads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  .ma-page { max-width: 1040px; margin: 0 auto; }
+
+  /* KPI strip */
+  .ma-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .ma-kpi { background: var(--bg-1); border: 1px solid var(--border-soft); border-radius: 12px; padding: 16px; text-align: center; }
+  .ma-kpi__val { font-size: 22px; font-weight: 700; color: var(--gold); font-family: var(--f-title); }
+  .ma-kpi__label { font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; }
+
+  /* Sections */
+  .ma-sec { background: var(--bg-1); border: 1px solid var(--border-soft); border-radius: var(--r); padding: var(--s3); margin-bottom: var(--s3); }
+  .ma-sec h3 { font-family: var(--f-title); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .ma-sec p { font-size: 12.5px; color: var(--text-3); margin-bottom: var(--s2); }
+
+  /* Campaign cards */
+  .ma-camp { border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; background: var(--bg-2); transition: border-color .15s; }
+  .ma-camp:hover { border-color: var(--gold); }
+  .ma-camp__top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .ma-camp__name { font-size: 14px; font-weight: 600; }
+  .ma-camp__meta { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+  .ma-camp__metrics { display: flex; gap: 14px; flex-wrap: wrap; margin: 8px 0; }
+  .ma-camp__metric { text-align: center; min-width: 60px; }
+  .ma-camp__metric-val { font-size: 15px; font-weight: 600; color: var(--text); }
+  .ma-camp__metric-lbl { font-size: 9.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; }
+  .ma-camp__actions { display: flex; gap: 6px; margin-top: 10px; }
+
+  /* Buttons */
+  .ma-btn { height: 34px; padding: 0 16px; background: var(--bg-3); color: var(--text); border: 1px solid var(--border); border-radius: var(--r-sm); font-weight: 600; font-size: 12px; cursor: pointer; font-family: var(--f-ui); transition: all .15s; }
+  .ma-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .ma-btn--gold { background: var(--gold); color: #000; border-color: var(--gold); }
+  .ma-btn--gold:hover { background: #d4af5a; }
+  .ma-btn--danger { background: rgba(192,57,43,.15); color: #e74c3c; border-color: rgba(192,57,43,.3); }
+  .ma-btn--danger:hover { background: rgba(192,57,43,.25); }
+  .ma-btn--green { background: rgba(78,123,70,.15); color: var(--green); border-color: rgba(78,123,70,.3); }
+  .ma-btn--green:hover { background: rgba(78,123,70,.25); }
+  .ma-btn:disabled { opacity: .4; cursor: default; pointer-events: none; }
+
+  /* Badge */
+  .ma-badge { font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .ma-badge--active { background: rgba(78,123,70,.18); color: var(--green); }
+  .ma-badge--paused { background: rgba(200,164,90,.18); color: var(--gold); }
+  .ma-badge--error { background: rgba(255,80,80,.15); color: #ff5050; }
+  .ma-badge--archived { background: rgba(150,150,150,.15); color: var(--text-3); }
+
+  /* Not configured banner */
+  .ma-banner { background: linear-gradient(135deg, rgba(200,164,90,.08), rgba(200,164,90,.02)); border: 1px solid rgba(200,164,90,.2); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 20px; }
+  .ma-banner h4 { font-family: var(--f-title); color: var(--gold); font-size: 14px; margin-bottom: 8px; }
+  .ma-banner p { font-size: 12.5px; color: var(--text-3); max-width: 500px; margin: 0 auto 14px; }
+  .ma-banner code { display: block; background: var(--bg-3); border-radius: 6px; padding: 10px; font-size: 11px; color: var(--text-2); text-align: left; margin-top: 10px; overflow-x: auto; white-space: pre; }
+
+  /* Chart area */
+  .ma-chart { position: relative; height: 180px; background: var(--bg-2); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; margin: 12px 0; }
+  .ma-chart canvas { width: 100% !important; height: 100% !important; }
+
+  /* Audiences list */
+  .ma-aud { border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; background: var(--bg-2); display: flex; justify-content: space-between; align-items: center; }
+  .ma-aud__info { flex: 1; }
+  .ma-aud__name { font-size: 13px; font-weight: 600; }
+  .ma-aud__meta { font-size: 11px; color: var(--text-3); }
+  .ma-aud__actions { display: flex; gap: 6px; }
+
+  /* Empty state */
+  .ma-empty { text-align: center; padding: 30px; color: var(--text-3); font-size: 13px; }
+
+  /* Tabs */
+  .ma-tabs { display: flex; gap: 4px; margin-bottom: 18px; }
+  .ma-tab { padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; background: var(--bg-3); color: var(--text-3); border: none; font-family: var(--f-ui); transition: all .15s; }
+  .ma-tab.active { background: rgba(200,164,90,.15); color: var(--gold); }
+  .ma-tab:hover:not(.active) { color: var(--text); }
+  .ma-tab-pane { display: none; }
+  .ma-tab-pane.active { display: block; }
+
+  /* Loading */
+  .ma-loading { display: flex; align-items: center; justify-content: center; padding: 30px; color: var(--text-3); font-size: 12px; gap: 8px; }
+  .ma-spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: ma-spin .6s linear infinite; }
+  @keyframes ma-spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const { api, toast } = SPOS;
+  const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const fmt = n => n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : String(n);
+  const fmtMoney = n => '$' + n.toLocaleString('es-CO', { maximumFractionDigits: 0 });
+
+  const ctx = await SPOS.mount({
+    active: 'meta-ads', title: 'Meta Ads', crumb: 'Marketing · Publicidad', padded: true, adminOnly: true,
+  });
+  if (!ctx) return;
+
+  // ─── State ──────────────────────────────
+  let currentTab = 'campaigns';
+  let status = null;
+  let campaigns = [];
+  let audiences = [];
+  let insights = [];
+  let loading = false;
+
+  // ─── Render ─────────────────────────────
+  function render() {
+    const configured = status && status.configured;
+    ctx.content.innerHTML = `
+      <div class="ma-page">
+        ${!configured ? renderNotConfigured() : `
+          ${renderKPIs()}
+          <div class="ma-tabs">
+            <button class="ma-tab ${currentTab === 'campaigns' ? 'active' : ''}" data-tab="campaigns">Campañas</button>
+            <button class="ma-tab ${currentTab === 'audiences' ? 'active' : ''}" data-tab="audiences">Audiencias</button>
+            <button class="ma-tab ${currentTab === 'insights' ? 'active' : ''}" data-tab="insights">Insights</button>
+          </div>
+          <div class="ma-tab-pane ${currentTab === 'campaigns' ? 'active' : ''}" data-pane="campaigns">
+            ${loading ? '<div class="ma-loading"><div class="ma-spinner"></div> Cargando campañas...</div>' : renderCampaigns()}
+          </div>
+          <div class="ma-tab-pane ${currentTab === 'audiences' ? 'active' : ''}" data-pane="audiences">
+            ${renderAudiences()}
+          </div>
+          <div class="ma-tab-pane ${currentTab === 'insights' ? 'active' : ''}" data-pane="insights">
+            ${renderInsights()}
+          </div>
+        `}
+      </div>
+    `;
+    bindEvents();
+    if (currentTab === 'insights' && insights.length > 0) drawChart();
+  }
+
+  function renderNotConfigured() {
+    const d = window.__metaDebug || {};
+    return `
+      <div class="ma-banner">
+        <h4>Meta Ads no está configurado</h4>
+        <p>${d.tokenSet === false ? '❌ Falta META_MARKETING_API_TOKEN' : (d.tokenSet ? '✅ Token detectado (' + d.tokenLength + ' chars)' : '')}${d.accountIdSet === false ? ' · ❌ Falta META_AD_ACCOUNT_ID' : (d.accountIdSet ? ' · ✅ Cuenta: ' + d.accountId : '')}${d.pixelIdSet === false ? ' · ❌ Falta META_PIXEL_ID' : (d.pixelIdSet ? ' · ✅ Pixel: ' + d.pixelId : '')}</p>
+        <p style="font-size:11.5px; color:var(--text-3); margin-bottom:6px;">Agrega estas variables en tu archivo <code>.env</code>:</p>
+        <code>META_MARKETING_API_TOKEN=tu_token_permanente
+META_AD_ACCOUNT_ID=act_XXXXXXXXX
+META_PIXEL_ID=tu_pixel_id (opcional)</code>
+      </div>
+      <div class="ma-sec">
+        <h3>Pasos para configurar</h3>
+        <div style="font-size:12.5px; color:var(--text-2); line-height:1.8;">
+          <strong>1.</strong> Ir a <a href="https://developers.facebook.com" target="_blank" style="color:var(--gold)">developers.facebook.com</a><br>
+          <strong>2.</strong> Crear app → Tipo "Business" → Agregar producto "Marketing API"<br>
+          <strong>3.</strong> Solicitar permisos: <code>ads_management</code>, <code>ads_read</code>, <code>business_management</code><br>
+          <strong>4.</strong> Crear System User con token permanente<br>
+          <strong>5.</strong> Copiar Ad Account ID desde Business Suite → Configuración → Cuentas de anuncios<br>
+          <strong>6.</strong> Agregar las 3 variables al <code>.env</code> y reiniciar el servidor
+        </div>
+      </div>
+    `;
+  }
+
+  function renderKPIs() {
+    const s = status || {};
+    return `
+      <div class="ma-kpis">
+        <div class="ma-kpi">
+          <div class="ma-kpi__val">${s.activeCampaigns || 0}</div>
+          <div class="ma-kpi__label">Activas</div>
+        </div>
+        <div class="ma-kpi">
+          <div class="ma-kpi__val">${s.campaigns || 0}</div>
+          <div class="ma-kpi__label">Total campañas</div>
+        </div>
+        <div class="ma-kpi">
+          <div class="ma-kpi__val">${fmtMoney(s.totalSpend || 0)}</div>
+          <div class="ma-kpi__label">Gasto (30d)</div>
+        </div>
+        <div class="ma-kpi">
+          <div class="ma-kpi__val">${fmt(s.totalLeads || 0)}</div>
+          <div class="ma-kpi__label">Leads (30d)</div>
+        </div>
+        <div class="ma-kpi">
+          <div class="ma-kpi__val">${s.totalLeads > 0 ? fmtMoney(Math.round(s.totalSpend / s.totalLeads)) : '—'}</div>
+          <div class="ma-kpi__label">CPL promedio</div>
+        </div>
+        <div class="ma-kpi">
+          <div class="ma-kpi__val" style="color:${s.pixelInstalled ? 'var(--green)' : '#ff5050'}">${s.pixelInstalled ? 'SÍ' : 'NO'}</div>
+          <div class="ma-kpi__label">Pixel</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCampaigns() {
+    if (campaigns.length === 0) return '<div class="ma-empty">No hay campañas encontradas en tu cuenta de anuncios.</div>';
+    return campaigns.map(c => {
+      const m = c.metrics || {};
+      const statusClass = c.status === 'ACTIVE' ? 'active' : c.status === 'PAUSED' ? 'paused' : c.status === 'ARCHIVED' ? 'archived' : 'error';
+      const statusLabel = c.status === 'ACTIVE' ? 'Activa' : c.status === 'PAUSED' ? 'Pausada' : c.status === 'ARCHIVED' ? 'Archivada' : c.status;
+      return `
+        <div class="ma-camp" data-id="${c.id}">
+          <div class="ma-camp__top">
+            <div>
+              <div class="ma-camp__name">${esc(c.name)}</div>
+              <div class="ma-camp__meta">${esc(c.objective || '')} · ${c.daily_budget ? fmtMoney(c.daily_budget) + '/día' : (c.lifetime_budget ? fmtMoney(c.lifetime_budget) + ' total' : '')}</div>
+            </div>
+            <span class="ma-badge ma-badge--${statusClass}">${statusLabel}</span>
+          </div>
+          ${m.impressions !== undefined ? `
+          <div class="ma-camp__metrics">
+            <div class="ma-camp__metric">
+              <div class="ma-camp__metric-val">${fmt(m.impressions)}</div>
+              <div class="ma-camp__metric-lbl">Impresiones</div>
+            </div>
+            <div class="ma-camp__metric">
+              <div class="ma-camp__metric-val">${m.ctr ? m.ctr.toFixed(2) + '%' : '—'}</div>
+              <div class="ma-camp__metric-lbl">CTR</div>
+            </div>
+            <div class="ma-camp__metric">
+              <div class="ma-camp__metric-val">${fmtMoney(m.spend)}</div>
+              <div class="ma-camp__metric-lbl">Gasto</div>
+            </div>
+            <div class="ma-camp__metric">
+              <div class="ma-camp__metric-val">${fmt(m.leads)}</div>
+              <div class="ma-camp__metric-lbl">Leads</div>
+            </div>
+            <div class="ma-camp__metric">
+              <div class="ma-camp__metric-val">${m.cpl ? fmtMoney(Math.round(m.cpl)) : '—'}</div>
+              <div class="ma-camp__metric-lbl">CPL</div>
+            </div>
+            <div class="ma-camp__metric">
+              <div class="ma-camp__metric-val">${m.cpm ? fmtMoney(Math.round(m.cpm)) : '—'}</div>
+              <div class="ma-camp__metric-lbl">CPM</div>
+            </div>
+          </div>
+          ` : '<div style="font-size:11.5px;color:var(--text-3);margin:6px 0">Sin métricas disponibles</div>'}
+          <div class="ma-camp__actions">
+            ${c.status === 'ACTIVE'
+              ? `<button class="ma-btn ma-btn--danger" data-pause="${c.id}">Pausar</button>`
+              : `<button class="ma-btn ma-btn--green" data-resume="${c.id}">Reanudar</button>`}
+            <button class="ma-btn" data-insights="${c.id}">Ver insights</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderAudiences() {
+    return `
+      <div class="ma-sec">
+        <h3>Audiencias personalizadas</h3>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="ma-btn ma-btn--gold" id="maSyncLeads">Sincronizar leads del CRM</button>
+          <button class="ma-btn" id="maCreateAudience">Crear audiencia manual</button>
+        </div>
+        ${audiences.length === 0
+          ? '<div class="ma-empty">No hay audiencias creadas aún.</div>'
+          : audiences.map(a => `
+            <div class="ma-aud">
+              <div class="ma-aud__info">
+                <div class="ma-aud__name">${esc(a.name)}</div>
+                <div class="ma-aud__meta">${fmt(a.approximate_count || 0)} personas · ${a.status || 'UNKNOWN'}</div>
+              </div>
+              <div class="ma-aud__actions">
+                <button class="ma-btn" data-sync-aud="${a.id}">Actualizar</button>
+                <button class="ma-btn" data-lookalike="${a.id}">Crear Lookalike</button>
+              </div>
+            </div>
+          `).join('')}
+      </div>
+    `;
+  }
+
+  function renderInsights() {
+    if (insights.length === 0) {
+      return `
+        <div class="ma-sec">
+          <h3>Insights diarios</h3>
+          <p>Selecciona una campaña y haz clic en "Ver insights" para ver el desglose diario.</p>
+          <div class="ma-empty">No hay datos de insights cargados.</div>
+        </div>
+      `;
+    }
+    const total = insights.reduce((acc, d) => ({
+      spend: acc.spend + d.spend,
+      leads: acc.leads + d.leads,
+      impressions: acc.impressions + d.impressions,
+    }), { spend: 0, leads: 0, impressions: 0 });
+
+    return `
+      <div class="ma-sec">
+        <h3>Insights diarios — Últimos ${insights.length} días</h3>
+        <div class="ma-kpis" style="margin-bottom:14px">
+          <div class="ma-kpi">
+            <div class="ma-kpi__val">${fmtMoney(total.spend)}</div>
+            <div class="ma-kpi__label">Gasto total</div>
+          </div>
+          <div class="ma-kpi">
+            <div class="ma-kpi__val">${fmt(total.leads)}</div>
+            <div class="ma-kpi__label">Leads</div>
+          </div>
+          <div class="ma-kpi">
+            <div class="ma-kpi__val">${total.leads > 0 ? fmtMoney(Math.round(total.spend / total.leads)) : '—'}</div>
+            <div class="ma-kpi__label">CPL promedio</div>
+          </div>
+        </div>
+        <div class="ma-chart"><canvas id="maChart"></canvas></div>
+        <div style="max-height:200px;overflow-y:auto;margin-top:10px">
+          <table style="width:100%;font-size:11.5px;border-collapse:collapse">
+            <thead><tr style="color:var(--text-3);text-transform:uppercase;font-size:9.5px;letter-spacing:.05em">
+              <th style="text-align:left;padding:4px 8px">Fecha</th>
+              <th style="text-align:right;padding:4px 8px">Impresiones</th>
+              <th style="text-align:right;padding:4px 8px">CTR</th>
+              <th style="text-align:right;padding:4px 8px">Gasto</th>
+              <th style="text-align:right;padding:4px 8px">Leads</th>
+              <th style="text-align:right;padding:4px 8px">CPL</th>
+            </tr></thead>
+            <tbody>
+              ${insights.map(d => `
+                <tr style="border-top:1px solid var(--border)">
+                  <td style="padding:4px 8px">${d.date}</td>
+                  <td style="text-align:right;padding:4px 8px">${fmt(d.impressions)}</td>
+                  <td style="text-align:right;padding:4px 8px">${d.ctr ? d.ctr.toFixed(2)+'%' : '—'}</td>
+                  <td style="text-align:right;padding:4px 8px">${fmtMoney(d.spend)}</td>
+                  <td style="text-align:right;padding:4px 8px">${d.leads}</td>
+                  <td style="text-align:right;padding:4px 8px">${d.cpl ? fmtMoney(Math.round(d.cpl)) : '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  // ─── Chart (sin dependencias externas) ──
+  function drawChart() {
+    const canvas = document.getElementById('maChart');
+    if (!canvas || insights.length === 0) return;
+    const ctx2 = canvas.getContext('2d');
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width * 2;
+    canvas.height = rect.height * 2;
+    ctx2.scale(2, 2);
+    const W = rect.width, H = rect.height;
+    const pad = { t: 20, r: 50, b: 24, l: 50 };
+    const cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
+
+    const maxSpend = Math.max(...insights.map(d => d.spend), 1);
+    const maxLeads = Math.max(...insights.map(d => d.leads), 1);
+
+    // Grid
+    ctx2.strokeStyle = 'rgba(255,255,255,.06)';
+    ctx2.lineWidth = 0.5;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (cH / 4) * i;
+      ctx2.beginPath(); ctx2.moveTo(pad.l, y); ctx2.lineTo(pad.l + cW, y); ctx2.stroke();
+    }
+
+    // Spend line (gold)
+    ctx2.strokeStyle = '#C8A45A';
+    ctx2.lineWidth = 2;
+    ctx2.beginPath();
+    insights.forEach((d, i) => {
+      const x = pad.l + (cW / (insights.length - 1 || 1)) * i;
+      const y = pad.t + cH - (d.spend / maxSpend) * cH;
+      i === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
+    });
+    ctx2.stroke();
+
+    // Leads line (green)
+    ctx2.strokeStyle = '#4E7B46';
+    ctx2.lineWidth = 2;
+    ctx2.beginPath();
+    insights.forEach((d, i) => {
+      const x = pad.l + (cW / (insights.length - 1 || 1)) * i;
+      const y = pad.t + cH - (d.leads / maxLeads) * cH;
+      i === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
+    });
+    ctx2.stroke();
+
+    // Legend
+    ctx2.font = '10px Inter, sans-serif';
+    ctx2.fillStyle = '#C8A45A';
+    ctx2.fillRect(pad.l, 4, 12, 3);
+    ctx2.fillText('Gasto', pad.l + 16, 9);
+    ctx2.fillStyle = '#4E7B46';
+    ctx2.fillRect(pad.l + 60, 4, 12, 3);
+    ctx2.fillText('Leads', pad.l + 76, 9);
+
+    // Y-axis labels (spend)
+    ctx2.fillStyle = 'rgba(255,255,255,.4)';
+    ctx2.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (cH / 4) * i;
+      const val = maxSpend - (maxSpend / 4) * i;
+      ctx2.fillText(fmtMoney(Math.round(val)), pad.l - 4, y + 3);
+    }
+  }
+
+  // ─── Events ─────────────────────────────
+  function bindEvents() {
+    // Tabs
+    document.querySelectorAll('.ma-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentTab = btn.dataset.tab;
+        render();
+      });
+    });
+
+    // Pause
+    document.querySelectorAll('[data-pause]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('¿Pausar esta campaña?')) return;
+        btn.disabled = true;
+        const r = await api(`/api/meta-ads/campaigns/${btn.dataset.pause}/pause`, { method: 'PUT' });
+        if (r && r.ok) { toast('Campaña pausada', 'success'); await loadAll(); }
+        else toast('Error: ' + (r?.error || 'desconocido'), 'error');
+      });
+    });
+
+    // Resume
+    document.querySelectorAll('[data-resume]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const r = await api(`/api/meta-ads/campaigns/${btn.dataset.resume}/resume`, { method: 'PUT' });
+        if (r && r.ok) { toast('Campaña reanudada', 'success'); await loadAll(); }
+        else toast('Error: ' + (r?.error || 'desconocido'), 'error');
+      });
+    });
+
+    // Insights
+    document.querySelectorAll('[data-insights]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true; btn.textContent = 'Cargando...';
+        const data = await api(`/api/meta-ads/campaigns/${btn.dataset.insights}/insights?days=30`);
+        if (data && !data.error) { insights = data; currentTab = 'insights'; render(); }
+        else toast('Error cargando insights', 'error');
+      });
+    });
+
+    // Sync leads
+    const syncBtn = document.getElementById('maSyncLeads');
+    if (syncBtn) syncBtn.addEventListener('click', async () => {
+      if (!confirm('¿Sincronizar todos los leads activos del CRM como audiencia en Meta?')) return;
+      syncBtn.disabled = true; syncBtn.textContent = 'Sincronizando...';
+      // Primero crear audiencia si no hay ninguna seleccionada
+      const name = 'SP CRM — Leads ' + new Date().toLocaleDateString('es-CO');
+      const r = await api('/api/meta-ads/audiences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, leads: [] }),
+      });
+      if (r && r.id) {
+        const sync = await api(`/api/meta-ads/audiences/${r.id}/sync-leads`, { method: 'POST' });
+        if (sync && !sync.error) {
+          toast(`${sync.synced} leads sincronizados`, 'success');
+          await loadAudiences();
+        } else toast('Error sincronizando leads', 'error');
+      } else toast('Error creando audiencia', 'error');
+    });
+
+    // Sync audience
+    document.querySelectorAll('[data-sync-aud]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const r = await api(`/api/meta-ads/audiences/${btn.dataset.syncAud}/sync-leads`, { method: 'POST' });
+        if (r && !r.error) { toast(`${r.synced} leads actualizados`, 'success'); }
+        else toast('Error actualizando audiencia', 'error');
+        btn.disabled = false;
+      });
+    });
+
+    // Lookalike
+    document.querySelectorAll('[data-lookalike]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('¿Crear audiencia Lookalike al 1% basada en esta audiencia?')) return;
+        btn.disabled = true;
+        const r = await api(`/api/meta-ads/audiences/${btn.dataset.lookalike}/lookalike`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ country: 'CO', ratio: 0.01 }),
+        });
+        if (r && r.id) { toast('Lookalike creada', 'success'); await loadAudiences(); }
+        else toast('Error creando Lookalike', 'error');
+        btn.disabled = false;
+      });
+    });
+
+    // Create audience (manual)
+    const createAudBtn = document.getElementById('maCreateAudience');
+    if (createAudBtn) createAudBtn.addEventListener('click', async () => {
+      const name = prompt('Nombre de la audiencia:');
+      if (!name) return;
+      const r = await api('/api/meta-ads/audiences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, leads: [] }),
+      });
+      if (r && r.id) { toast('Audiencia creada', 'success'); await loadAudiences(); }
+      else toast('Error creando audiencia', 'error');
+    });
+  }
+
+  // ─── Data loading ───────────────────────
+  async function loadAll() {
+    loading = true; render();
+    try {
+      const dbg = await fetch('/api/meta-ads-debug').then(r => r.json());
+      window.__metaDebug = dbg;
+    } catch (e) {}
+    status = await api('/api/meta-ads/status');
+    console.log('[META-ADS] status response:', JSON.stringify(status));
+    if (status && status.configured) {
+      campaigns = await api('/api/meta-ads/campaigns') || [];
+      await loadAudiences();
+    }
+    loading = false; render();
+  }
+
+  async function loadAudiences() {
+    audiences = await api('/api/meta-ads/audiences') || [];
+  }
+
+  // ─── Boot ───────────────────────────────
+  await loadAll();
+})();
+</script>
+</body>
+</html>

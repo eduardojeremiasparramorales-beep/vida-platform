@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  .ds-sec { margin-bottom: var(--s5); scroll-margin-top: 20px; }
+  .ds-sec__h { display: flex; align-items: baseline; gap: 12px; margin-bottom: var(--s3); padding-bottom: 12px; border-bottom: 1px solid var(--border-soft); }
+  .ds-sec__n { font-family: var(--f-num); font-size: 12px; color: var(--gold); }
+  .ds-demo { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; padding: var(--s3); background: var(--bg-1); border: 1px solid var(--border-soft); border-radius: var(--r); }
+  .ds-swatch { border-radius: 12px; overflow: hidden; border: 1px solid var(--border-soft); }
+  .ds-swatch__c { height: 68px; }
+  .ds-swatch__m { padding: 9px 11px; font-size: 11px; }
+  .ds-swatch__m b { display: block; font-weight: 600; font-size: 12px; }
+  .ds-toc { position: sticky; top: 0; align-self: start; display: flex; flex-direction: column; gap: 2px; }
+  .ds-toc a { padding: 6px 12px; border-radius: 8px; font-size: 13px; color: var(--text-2); }
+  .ds-toc a:hover { background: var(--bg-2); color: var(--text); }
+  .ds-grid2 { display: grid; grid-template-columns: 220px 1fr; gap: var(--s4); align-items: start; }
+  @media(max-width:900px){ .ds-grid2{ grid-template-columns:1fr } .ds-toc{ position:static; flex-direction:row; flex-wrap:wrap } }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS } = SPOS;
+  const ctx = await SPOS.mount({ active: '', title: 'Design System', crumb: 'Biblioteca de componentes · v1', padded: true });
+
+  const swatches = [
+    ['--bg-0','Primary Black','#0A0A0A'],['--bg-1','Secondary','#121212'],['--bg-2','Card','#171717'],
+    ['--border','Border','#252525'],['--gold','Luxury Gold','#D4AF37'],['--green','Accent Green','#4E7B46'],
+    ['--blue','Info','#5B8DEF'],['--red','Danger','#E5484D'],['--amber','Warning','#E0A44A'],['--text','White','#F8F8F8'],
+  ];
+
+  const SECS = [
+    ['tokens','Fundamentos'],['type','Tipografía'],['gradsq','Gradientes & Squircle'],
+    ['buttons','Botones'],['badges','Badges & Chips'],
+    ['inputs','Inputs'],['cards','Cards & Métricas'],['table','Tablas'],['avatars','Avatares & Dots'],
+    ['timeline','Timeline'],['states','Estados'],['overlays','Overlays'],
+  ];
+
+  ctx.content.innerHTML = `<div class="os-content__max"><div class="ds-grid2">
+    <nav class="ds-toc">${SECS.map(([id,l])=>`<a href="#ds-${id}">${l}</a>`).join('')}</nav>
+    <div>
+      ${sec('tokens','01','Fundamentos · Color', `
+        <div class="grid grid--4" style="gap:12px">${swatches.map(([v,n,hex])=>`
+          <div class="ds-swatch"><div class="ds-swatch__c" style="background:var(${v})"></div><div class="ds-swatch__m"><b>${n}</b><span class="t-dim3 t-num">${hex}</span></div></div>`).join('')}</div>
+        <div style="margin-top:var(--s3)" class="t-dim">Espaciado base 8 · Radios 12/16/20/24 + Squircle (progressive enhancement Chrome 139+) · Sombras suaves · Transiciones 180ms · Cinzel + Inter Variable wght@300..700 + SF Pro Display</div>`)}
+
+      ${sec('type','02','Tipografía', `
+        <div class="ds-demo" style="flex-direction:column;align-items:flex-start;gap:10px">
+          <div class="t-brand" style="font-size:26px">SP OS · CINZEL BRAND</div>
+          <div class="t-h1">Título H1 — Centro de control</div>
+          <div class="t-h2">Título H2 — Sección</div>
+          <div class="t-h3">Título H3 — Card</div>
+          <div>Texto de interfaz (Inter 14px) para todo el producto.</div>
+          <div style="font-weight:450">Inter 450 — smoke-test del eje variable</div>
+          <div style="font-weight:550">Inter 550 — smoke-test del eje variable</div>
+          <div style="font-weight:650">Inter 650 — smoke-test del eje variable</div>
+          <div class="t-dim">Texto secundario atenuado.</div>
+          <div class="t-label">ETIQUETA · LABEL</div>
+          <div class="t-num" style="font-size:28px;font-weight:600">1,234,567</div>
+          <div class="t-dim3" style="font-size:12px">Tabular nums · Tracking display −0.022em / title −0.016em / body −0.011em</div>
+        </div>
+        <div class="t-dim3" style="margin-top:8px;font-size:11px">Nota: Google Fonts sirve solo el eje wght de Inter; opsz (imitación SF Text/Display) aún no disponible en CDN de Google.</div>`)}
+
+      ${sec('gradsq','03','Gradientes & Squircle', `
+        <div class="ds-demo" style="flex-direction:column;align-items:flex-start;gap:12px">
+          <div class="grid grid--3" style="gap:8px;width:100%">
+            <div class="ds-swatch"><div class="ds-swatch__c" style="background:var(--grad-gold)"></div><div class="ds-swatch__m"><b>--grad-gold</b><span class="t-dim3">140° oro button</span></div></div>
+            <div class="ds-swatch"><div class="ds-swatch__c" style="background:var(--grad-gold-deep)"></div><div class="ds-swatch__m"><b>--grad-gold-deep</b><span class="t-dim3">140° deep</span></div></div>
+            <div class="ds-swatch"><div class="ds-swatch__c" style="background:var(--grad-gold-text)"></div><div class="ds-swatch__m"><b>--grad-gold-text</b><span class="t-dim3">135° text/brand</span></div></div>
+            <div class="ds-swatch"><div class="ds-swatch__c" style="background:var(--grad-gold-bar)"></div><div class="ds-swatch__m"><b>--grad-gold-bar</b><span class="t-dim3">90° bar/segment</span></div></div>
+            <div class="ds-swatch"><div class="ds-swatch__c" style="background:var(--grad-surface)"></div><div class="ds-swatch__m"><b>--grad-surface</b><span class="t-dim3">180° wash volumen</span></div></div>
+          </div>
+          <div class="u-row u-gap2" style="padding-top:8px;border-top:1px solid var(--border-soft);width:100%">
+            <div style="width:80px;height:80px;border-radius:20px;background:var(--grad-gold);display:grid;place-items:center;color:#000;font-weight:700" id="sqDemoRound">R</div>
+            <div style="width:80px;height:80px;border-radius:20px;border:1px solid var(--gold-line);background:var(--bg-2);display:grid;place-items:center;color:var(--text-2);font-size:11px;" id="sqDemoSquircle" class="t-dim">Fallback</div>
+            <span class="badge badge--mute" id="sqBadge">Verificando…</span>
+          </div>
+          <div class="t-dim3" style="font-size:11px">round (ref) · squircle (Chrome 139+ via @supports) · badge dinámico vía CSS.supports()</div>
+        </div>`)}
+      ${sec('buttons','04','Botones', `
+        <div class="ds-demo">
+          <button class="btn btn--gold">${ICONS.plus}Primario</button>
+          <button class="btn btn--ghost">Ghost</button>
+          <button class="btn btn--quiet">Quiet</button>
+          <button class="btn btn--danger">Peligro</button>
+          <button class="btn btn--gold btn--sm">Small</button>
+          <button class="btn btn--ghost btn--icon">${ICONS.settings}</button>
+          <button class="btn btn--gold" disabled>Deshabilitado</button>
+        </div>`)}
+
+      ${sec('badges','05','Badges & Chips', `
+        <div class="ds-demo">
+          <span class="badge badge--gold">Gold</span><span class="badge badge--green">Vendido</span>
+          <span class="badge badge--red">Urgente</span><span class="badge badge--amber">Cita</span>
+          <span class="badge badge--blue">Interesado</span><span class="badge badge--mute">Nuevo</span>
+        </div>
+        <div class="ds-demo" style="margin-top:12px">
+          <button class="chip active">Todos</button><button class="chip">WhatsApp</button>
+          <button class="chip">Instagram</button><button class="chip">Messenger</button>
+        </div>`)}
+
+      ${sec('inputs','06','Inputs', `
+        <div class="ds-demo" style="align-items:flex-start;gap:18px">
+          <div class="field" style="flex:1;min-width:200px"><label class="field__label">Nombre</label><input class="input" placeholder="Escribe aquí…"></div>
+          <div class="field" style="flex:1;min-width:200px"><label class="field__label">Etapa</label><select class="input"><option>Interesado</option><option>Negociación</option></select></div>
+          <div class="field" style="flex:1;min-width:200px"><label class="field__label">Nota</label><textarea class="input" placeholder="Nota interna…"></textarea></div>
+        </div>`)}
+
+      ${sec('cards','07','Cards & Métricas', `
+        <div class="grid grid--3">
+          <div class="metric"><div class="metric__top"><div class="metric__icon">${ICONS.leads}</div><span class="metric__delta up">${ICONS.up}+12%</span></div><div><div class="metric__value t-num">342</div><div class="metric__label">Leads totales</div></div></div>
+          <div class="metric"><div class="metric__top"><div class="metric__icon">${ICONS.money}</div></div><div><div class="metric__value t-num">47</div><div class="metric__label">Cierres del mes</div></div></div>
+          <div class="card card--pad card--float"><div class="t-h3" style="margin-bottom:6px">Card estándar</div><div class="t-dim" style="font-size:13px">Superficie base con hover flotante para contenido general.</div></div>
+        </div>`)}
+
+      ${sec('table','08','Tablas', `
+        <div class="card" style="overflow:hidden"><table class="table">
+          <thead><tr><th>Asesor</th><th>Leads</th><th>Conversión</th></tr></thead>
+          <tbody>
+            <tr><td>Carlos García</td><td class="t-num">98</td><td><span class="badge badge--green">16%</span></td></tr>
+            <tr><td>Andrea López</td><td class="t-num">84</td><td><span class="badge badge--gold">12%</span></td></tr>
+          </tbody></table></div>`)}
+
+      ${sec('avatars','09','Avatares & Dots', `
+        <div class="ds-demo">
+          <div class="avatar avatar--sm" style="background:var(--gold)">SP</div>
+          <div class="avatar avatar--md" style="background:var(--green)">JP</div>
+          <div class="avatar avatar--lg" style="background:var(--blue)">MG</div>
+          <span class="u-row u-gap1"><span class="dot dot--green"></span> Activo</span>
+          <span class="u-row u-gap1"><span class="dot dot--gold"></span> Pendiente</span>
+          <span class="u-row u-gap1"><span class="dot dot--mute"></span> Inactivo</span>
+        </div>`)}
+
+      ${sec('timeline','10','Timeline', `
+        <div class="card card--pad"><div class="tl">
+          ${tl('msg','Mensaje recibido','hace 2 min')}
+          ${tl('leads','Asignado a Carlos García','hace 8 min')}
+          ${tl('spark','Lead creado · campaña Meta','hace 1 h')}
+        </div></div>`)}
+
+      ${sec('states','11','Estados', `
+        <div class="grid grid--2">
+          <div class="card card--pad"><div class="empty">${ICONS.inbox}<div><div class="t-h3">Sin conversaciones</div><div class="t-dim3" style="font-size:12px;margin-top:4px">Cuando llegue un lead aparecerá aquí</div></div></div></div>
+          <div class="card card--pad u-col u-gap2"><div class="t-label">Skeleton (loading)</div>
+            <div class="skel" style="height:16px;width:70%"></div><div class="skel" style="height:16px;width:50%"></div><div class="skel" style="height:44px;width:100%"></div></div>
+        </div>`)}
+
+      ${sec('overlays','12','Overlays', `
+        <div class="ds-demo">
+          <button class="btn btn--ghost" onclick="SPOS.toast('Cambios guardados','ok')">Toast éxito</button>
+          <button class="btn btn--ghost" onclick="SPOS.toast('No se pudo enviar','err')">Toast error</button>
+          <button class="btn btn--ghost" onclick="SPOS.toast('Copiloto en la Fase IA')">Toast info</button>
+          <span class="ai-dock" style="position:static">${dockInner()}</span>
+        </div>`)}
+    </div>
+  </div></div>`;
+
+  /* Squircle badge en vivo */
+  requestAnimationFrame(() => {
+    const sq = document.getElementById('sqDemoSquircle');
+    const bg = document.getElementById('sqBadge');
+    if (sq && bg) {
+      const ok = CSS.supports('corner-shape','squircle');
+      bg.className = 'badge badge--' + (ok ? 'green' : 'mute');
+      bg.textContent = ok ? 'Squircle activo ✓' : 'Fallback round';
+      if (ok) { sq.textContent = 'S'; sq.style.cssText += ';corner-shape:squircle;border:1px solid var(--gold);color:#000;font-weight:700'; }
+    }
+  });
+
+  function sec(id,n,title,body){ return `<section class="ds-sec" id="ds-${id}"><div class="ds-sec__h"><span class="ds-sec__n">${n}</span><h2 class="t-h2">${title}</h2></div>${body}</section>`; }
+  function tl(ic,t,s){ return `<div class="tl-item"><div class="tl-item__dot">${ICONS[ic].replace('<svg ','<svg style="width:13px;height:13px" ')}</div><div class="tl-item__body"><div class="tl-item__title">${t}</div><div class="tl-item__time">${s}</div></div></div>`; }
+  function dockInner(){ return `<div class="ai-dock__spark">${ICONS.spark.replace('<svg ','<svg style="width:16px;height:16px" ')}</div><span class="ai-dock__label">Copiloto SP</span><span class="ai-dock__hint">⌘J</span>`; }
+})();
+</script>
+</body>
+</html>

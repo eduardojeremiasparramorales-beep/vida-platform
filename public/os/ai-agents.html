@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Agentes IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+.agent-card { cursor: pointer; transition: border-color .15s, transform .15s; }
+.agent-card:hover { border-color: var(--gold-line); transform: translateY(-2px); }
+.agent-card.selected { border-color: var(--gold); background: var(--gold-soft); }
+.agent-icon { width: 48px; height: 48px; border-radius: 14px; background: var(--bg-3); display: grid; place-items: center; font-size: 22px; flex-shrink: 0; }
+.chat-msg { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.chat-msg.user { background: var(--gold-soft); border: 1px solid var(--gold-line); border-bottom-right-radius: 4px; margin-left: auto; }
+.chat-msg.bot { background: var(--bg-3); border: 1px solid var(--border-soft); border-bottom-left-radius: 4px; }
+.typing { display: flex; gap: 4px; padding: 8px 14px; }
+.typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-3); animation: typeDot 1.4s infinite; }
+.typing span:nth-child(2) { animation-delay: .2s; }
+.typing span:nth-child(3) { animation-delay: .4s; }
+@keyframes typeDot { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS, api } = SPOS;
+  const ctx = await SPOS.mount({ active: 'ai-agents', title: 'Agentes IA', crumb: 'Motor de IA especializado', padded: false });
+  if (!ctx) return;
+  ctx.content.style.cssText = 'flex:1;min-height:0;overflow:hidden;padding:0;display:flex;flex-direction:column';
+
+  const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  let agentes = [];
+  let agenteActual = null;
+  let mensajes = [];
+  let enviando = false;
+
+  ctx.content.innerHTML = `
+    <div style="display:grid;grid-template-columns:280px 1fr;height:100%;overflow:hidden">
+      <div style="border-right:1px solid var(--border-soft);overflow-y:auto;padding:var(--s3)">
+        <div class="t-h3" style="margin-bottom:var(--s2)">Agentes</div>
+        <div id="agentList"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+        <div id="chatHeader" style="padding:var(--s2) var(--s3);border-bottom:1px solid var(--border-soft);display:flex;align-items:center;gap:12px">
+          <div class="agent-icon" id="chatIcon">🤖</div>
+          <div><div style="font-weight:600" id="chatName">Selecciona un agente</div><div class="t-dim3" style="font-size:12px" id="chatDesc">Elige un agente para comenzar</div></div>
+        </div>
+        <div id="chatMessages" style="flex:1;overflow-y:auto;padding:var(--s3);display:flex;flex-direction:column;gap:12px"></div>
+        <div style="padding:var(--s2) var(--s3);border-top:1px solid var(--border-soft);display:flex;gap:8px">
+          <input class="input" id="chatInput" placeholder="Escribe tu mensaje…" style="flex:1" disabled>
+          <button class="btn btn--gold btn--sm" id="chatSend" disabled>Enviar</button>
+        </div>
+      </div>
+    </div>`;
+
+  async function cargarAgentes() {
+    agentes = await api('/api/ai-agents') || [];
+    const list = document.getElementById('agentList');
+    list.innerHTML = agentes.map(a => `
+      <div class="card agent-card" data-id="${a.id}" style="padding:12px;margin-bottom:8px;cursor:pointer">
+        <div class="u-row u-gap2" style="align-items:center">
+          <div class="agent-icon" style="width:36px;height:36px;font-size:16px;border-radius:10px">${a.icono}</div>
+          <div><div style="font-size:13px;font-weight:600">${esc(a.nombre)}</div><div class="t-dim3" style="font-size:11px">${esc(a.descripcion)}</div></div>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('[data-id]').forEach(el => el.addEventListener('click', () => {
+      const id = el.getAttribute('data-id');
+      seleccionarAgente(id);
+    }));
+  }
+
+  function seleccionarAgente(id) {
+    agenteActual = agentes.find(a => a.id === id);
+    if (!agenteActual) return;
+    document.querySelectorAll('.agent-card').forEach(c => c.classList.toggle('selected', c.getAttribute('data-id') === id));
+    document.getElementById('chatIcon').textContent = agenteActual.icono;
+    document.getElementById('chatName').textContent = agenteActual.nombre;
+    document.getElementById('chatDesc').textContent = agenteActual.descripcion;
+    document.getElementById('chatInput').disabled = false;
+    document.getElementById('chatSend').disabled = false;
+    mensajes = [];
+    renderChat();
+  }
+
+  function renderChat() {
+    const el = document.getElementById('chatMessages');
+    if (!mensajes.length) {
+      el.innerHTML = `<div class="empty" style="margin:auto">对话 con ${agenteActual ? agenteActual.nombre : 'un agente'}</div>`;
+      return;
+    }
+    el.innerHTML = mensajes.map(m => `
+      <div class="chat-msg ${m.role}">${esc(m.content)}</div>
+    `).join('');
+    el.scrollTop = el.scrollHeight;
+  }
+
+  async function enviar() {
+    if (enviando || !agenteActual) return;
+    const input = document.getElementById('chatInput');
+    const texto = input.value.trim();
+    if (!texto) return;
+
+    input.value = '';
+    mensajes.push({ role: 'user', content: texto });
+    renderChat();
+    enviando = true;
+
+    // Typing indicator
+    const el = document.getElementById('chatMessages');
+    const typing = document.createElement('div');
+    typing.className = 'typing';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    el.appendChild(typing);
+    el.scrollTop = el.scrollHeight;
+
+    const r = await api(`/api/ai-agents/${agenteActual.id}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensaje: texto }),
+    });
+
+    typing.remove();
+    if (r && r.ok) {
+      mensajes.push({ role: 'bot', content: r.reply });
+    } else {
+      mensajes.push({ role: 'bot', content: 'Error: ' + (r.error || 'No se pudo obtener respuesta') });
+    }
+    renderChat();
+    enviando = false;
+  }
+
+  document.getElementById('chatSend').addEventListener('click', enviar);
+  document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } });
+
+  await cargarAgentes();
+})();
+</script>
+</body>
+</html>

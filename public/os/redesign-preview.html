@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Preview Rediseño A/B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  .pv-note { margin-bottom: var(--s3); padding: 12px 16px; border: 1px dashed var(--gold-line); border-radius: var(--r-sm); background: var(--gold-soft); font-size: 12.5px; color: var(--text-2); }
+  .pv-sec { margin-bottom: var(--s5); }
+  .pv-sec__h { display: flex; align-items: baseline; gap: 12px; margin-bottom: var(--s3); padding-bottom: 10px; border-bottom: 1px solid var(--border-soft); }
+  .pv-sec__n { font-family: var(--f-num); font-size: 11px; color: var(--gold); letter-spacing: .08em; }
+  .os-content { padding-bottom: 130px; }
+  .tb-btn { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--text-2); background: var(--glass); border: 1px solid var(--glass-border); transition: all var(--dur) var(--ease); }
+  .tb-btn:hover { color: var(--gold); border-color: var(--gold-line); background: var(--glass-2); }
+  .tb-btn.on { color: var(--gold); border-color: var(--gold-line); background: var(--gold-soft); }
+  .tb-btn svg { width: 16px; height: 16px; }
+
+  .pv-bar { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 500; display: flex; align-items: center; gap: 12px; padding: 9px 14px; background: var(--glass-2); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--glass-border); border-radius: 18px; box-shadow: var(--glass-edge), var(--sh-3); }
+  .pv-seg { display: flex; align-items: center; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 11px; padding: 3px; gap: 3px; }
+  .pv-seg b { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); padding: 0 6px 0 8px; }
+  .pv-seg button { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-2); transition: all .15s var(--ease); }
+  .pv-seg button:hover { color: var(--text); }
+  .pv-seg button.on { background: var(--gold-soft); color: var(--gold); }
+  .pv-seg button.on.warn { background: var(--amber-soft); color: var(--amber); }
+
+  .pv-phones { display: flex; flex-wrap: wrap; gap: 26px; }
+  .pv-phone { width: 342px; height: 664px; border-radius: 46px; border: 1px solid var(--glass-border); box-shadow: var(--sh-3), inset 0 0 0 7px rgba(0,0,0,.30); background: var(--bg-0); padding: 11px; position: relative; }
+  .pv-screen { position: relative; width: 100%; height: 100%; border-radius: 36px; overflow: hidden; display: flex; flex-direction: column;
+    background:
+      radial-gradient(circle 230px at 16% 10%, var(--aurora-1a), var(--aurora-1b) 55%, transparent 65%),
+      radial-gradient(circle 190px at 88% 26%, var(--aurora-2a), var(--aurora-2b) 55%, transparent 65%),
+      radial-gradient(320px 260px at 50% 115%, var(--aurora-gold-1), transparent 60%),
+      radial-gradient(300px 240px at -8% 100%, var(--aurora-green), transparent 62%),
+      var(--bg-0); }
+  .pv-notch { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 108px; height: 26px; border-radius: 14px; background: rgba(0,0,0,.88); z-index: 6; }
+  .pv-phone__cap { padding: 46px 14px 10px; font-family: var(--f-title); font-size: 12px; letter-spacing: .14em; color: var(--text-3); border-bottom: 1px solid var(--border-soft); margin-bottom: 12px; }
+
+  .pv-chat { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .pv-chat-head { display: flex; align-items: center; gap: 9px; padding: 44px 14px 10px; background: var(--glass); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border-bottom: 1px solid var(--glass-border); }
+  .pv-chat-body { flex: 1; overflow: hidden; padding: 14px; display: flex; flex-direction: column; gap: 9px; }
+  .pv-chat-body .pv-date { align-self: center; font-size: 10.5px; color: var(--text-3); background: var(--glass); border: 1px solid var(--glass-border); padding: 3px 10px; border-radius: 999px; backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); }
+  .pv-bub { max-width: 78%; padding: 9px 12px; border-radius: 16px; font-size: 12.5px; line-height: 1.45; }
+  .pv-bub.in { align-self: flex-start; background: var(--glass-2); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border: 1px solid var(--glass-border); border-bottom-left-radius: 5px; }
+  .pv-bub.out { align-self: flex-end; background: linear-gradient(160deg, #2A5C4E, #1E4A3E); color: #F0F5F2; border-bottom-right-radius: 5px; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+  .pv-bub .tm { display: block; text-align: right; font-size: 9.5px; opacity: .55; margin-top: 3px; }
+  .pv-chat-bar { display: flex; align-items: center; gap: 8px; padding: 10px 12px 14px; background: var(--glass); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border-top: 1px solid var(--glass-border); }
+  .pv-chat-bar .inp { flex: 1; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 999px; padding: 9px 14px; font-size: 12.5px; color: var(--text); }
+  .pv-icobtn { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color: var(--text-2); background: var(--glass); border: 1px solid var(--glass-border); }
+  .pv-icobtn.gold { background: var(--grad-gold); color: #0A0A0A; box-shadow: 0 3px 14px rgba(212,175,55,.3); border: none; }
+  .pv-tabs { display: flex; justify-content: space-around; padding: 9px 6px; background: var(--glass); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border-top: 1px solid var(--glass-border); }
+  .pv-tabs span { display: grid; place-items: center; width: 46px; height: 30px; border-radius: 9px; color: var(--text-3); }
+  .pv-tabs span.on { background: var(--gold-soft); color: var(--gold); }
+
+  .pv-login { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 18px 22px 24px; }
+  .pv-logo { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; background: var(--glass-2); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border: 1px solid var(--glass-border); box-shadow: var(--glass-edge), var(--sh-2); }
+  .pv-login .t-brand { font-size: 15px; }
+  .pv-login .sub { font-size: 10.5px; color: var(--text-3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+  .pv-linput { width: 100%; display: flex; align-items: center; gap: 9px; background: var(--glass); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border: 1.5px solid var(--glass-border); border-radius: 13px; padding: 13px 14px; font-size: 14px; color: var(--text); }
+  .pv-dots { display: flex; gap: 8px; }
+  .pv-dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--glass-2); border: 1px solid var(--glass-border); }
+  .pv-dots i.on { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 8px rgba(212,175,55,.6); }
+  .pv-kp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; width: 100%; }
+  .pv-kp button { height: 52px; border-radius: 14px; background: var(--glass); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border: 1px solid var(--glass-border); font-size: 17px; font-weight: 600; color: var(--text); }
+  .pv-kp button:active { background: var(--glass-2); transform: scale(.95); }
+  .pv-goldbtn { width: 100%; height: 50px; border-radius: 14px; background: var(--grad-gold); color: #0A0A0A; font-weight: 700; font-size: 14px; letter-spacing: .04em; box-shadow: 0 4px 20px rgba(212,175,55,.28), inset 0 1px 0 rgba(255,255,255,.35); }
+  .pv-goldbtn:active { transform: scale(.97); }
+
+  .pv-sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,.45); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); z-index: 400; opacity: 0; pointer-events: none; transition: opacity .3s var(--ease); }
+  .pv-sheet-bg.show { opacity: 1; pointer-events: auto; }
+  .pv-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 401; background: var(--glass-2); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border-top: 1px solid var(--glass-border); border-radius: 26px 26px 0 0; box-shadow: var(--glass-edge), 0 -20px 50px rgba(0,0,0,.45); transform: translateY(105%); transition: transform .38s var(--ease-out); max-height: 70vh; display: flex; flex-direction: column; }
+  .pv-sheet.show { transform: none; }
+  .pv-grab { width: 38px; height: 5px; border-radius: 3px; background: var(--border-strong); margin: 10px auto 4px; flex-shrink: 0; }
+  .pv-sheet__head { display: flex; align-items: center; justify-content: space-between; padding: 4px 20px 12px; border-bottom: 1px solid var(--border-soft); }
+  .pv-sheet__body { overflow-y: auto; padding: 10px 14px 26px; display: flex; flex-direction: column; gap: 2px; }
+  .pv-sheet__body button { display: flex; align-items: center; gap: 11px; padding: 12px 10px; border-radius: 12px; text-align: left; font-size: 13.5px; font-weight: 500; color: var(--text); }
+  .pv-sheet__body button:hover { background: var(--bg-3); }
+
+  .pv-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border); font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+  .pv-chip.on { background: var(--gold-soft); color: var(--gold); border-color: var(--gold-line); }
+
+  .pv-tester { position: fixed; inset: 0; z-index: 320; display: none; align-items: center; justify-content: center; padding: 22px; }
+  .pv-tester.show { display: flex; }
+  .pv-tester__scrim { position: absolute; inset: 0; z-index: 320; background: rgba(8, 8, 8, .34); }
+  html[data-theme="light"] .pv-tester__scrim { background: rgba(140, 110, 60, .10); }
+  .pv-tester__blobs { position: absolute; inset: 0; z-index: 321; pointer-events: none; }
+  .pv-blob { position: absolute; border-radius: 50%; animation: pvFloat 6.5s ease-in-out infinite alternate; }
+  .pv-blob.pb1 { width: 230px; height: 230px; left: calc(50% - 115px); top: 24%; background: radial-gradient(circle at 35% 35%, #F3D37E, #D4AF37 55%, #8E7028); }
+  .pv-blob.pb2 { width: 185px; height: 185px; left: 27%; top: 54%; background: radial-gradient(circle at 35% 35%, #8FBF7E, #4E7B46 60%, #2C4A26); animation-duration: 8s; animation-delay: .8s; }
+  .pv-blob.pb3 { width: 150px; height: 150px; left: 62%; top: 46%; background: radial-gradient(circle at 35% 35%, #9FBCF5, #5B8DEF 60%, #2E5AB8); animation-duration: 7.2s; animation-delay: 1.4s; }
+  .pv-blob.pb4 { width: 120px; height: 120px; left: 66%; top: 66%; background: radial-gradient(circle at 35% 35%, #F7B0A8, #E57A6B 60%, #B04A3E); animation-duration: 9s; animation-delay: .4s; }
+  .pv-blob.pb5 { width: 160px; height: 160px; left: 36%; top: 30%; background: radial-gradient(circle at 35% 35%, #C9AEE8, #9B6FD1 60%, #6B3FA0); animation-duration: 7.8s; animation-delay: 2s; }
+  .pv-blob.pb6 { width: 200px; height: 200px; left: calc(50% - 100px); top: 52%; background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.5), rgba(255,255,255,.12) 60%, transparent); animation-duration: 6s; animation-delay: 1s; }
+  .pv-fake { position: absolute; z-index: 321; border-radius: 9px; }
+  .pv-fake.f1 { width: 170px; height: 14px; left: 18%; top: 40%; background: linear-gradient(90deg, rgba(212,175,55,.75), rgba(212,175,55,.25)); }
+  .pv-fake.f2 { width: 130px; height: 14px; left: 64%; top: 26%; background: linear-gradient(90deg, rgba(78,123,70,.75), rgba(78,123,70,.25)); }
+  .pv-fake.f3 { width: 90px; height: 34px; left: 22%; top: 66%; background: linear-gradient(135deg, rgba(91,141,239,.7), rgba(91,141,239,.3)); border-radius: 11px; }
+  .pv-fake.f4 { width: 60px; height: 22px; left: 58%; top: 60%; background: linear-gradient(135deg, rgba(229,72,77,.7), rgba(229,72,77,.3)); border-radius: 999px; }
+  @keyframes pvFloat { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(12px, -20px, 0) scale(1.07); } }
+  .pv-tester__card {
+    position: relative; z-index: 322; width: 100%; max-width: 430px;
+    padding: 22px; border-radius: 24px;
+    background: rgba(42, 38, 30, var(--glass-t, .10));
+    backdrop-filter: saturate(1.7) blur(var(--blur-t, 10px)); -webkit-backdrop-filter: saturate(1.7) blur(var(--blur-t, 10px));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-edge), 0 24px 70px rgba(0,0,0,.5);
+    display: flex; flex-direction: column; gap: 10px;
+    animation: pvCardIn .34s var(--ease-out);
+  }
+  html[data-theme="light"] .pv-tester__card { background: rgba(255, 251, 241, var(--glass-t, .30)); }
+  @keyframes pvCardIn { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+  .pv-sliders { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 2px; }
+  .pv-sliders label { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; font-weight: 600; color: var(--text-2); padding: 5px 0; }
+  .pv-sliders label output { font-family: var(--f-num); color: var(--gold); }
+  .pv-sliders input[type=range] { width: 100%; accent-color: var(--gold); height: 4px; }
+
+  @media (max-width: 900px) {
+    .pv-bar { flex-wrap: wrap; justify-content: center; max-width: 94vw; }
+    .pv-phones { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="os-app has-panel">
+
+  <nav class="os-nav">
+    <div class="os-brand">
+      <div class="os-brand__mark"><img src="/icons/logo.png" alt=""></div>
+      <div>
+        <div class="os-brand__name">LEONS GROUP</div>
+        <div class="os-brand__sub">Asesores Comerciales</div>
+      </div>
+    </div>
+    <div class="os-workspace">
+      <div class="os-workspace__logo">SP</div>
+      <div>
+        <div class="os-workspace__name">Workspace Principal</div>
+        <div class="os-workspace__plan">Plan · CRM</div>
+      </div>
+    </div>
+    <div class="os-nav__scroll">
+      <div class="os-nav__group"><div class="os-nav__title">Operación</div>
+        <a class="os-nav__item active"><span id="iDashboard"></span><span>Dashboard</span></a>
+        <a class="os-nav__item"><span id="iInbox"></span><span>Inbox</span><span class="os-nav__badge">3</span></a>
+        <a class="os-nav__item"><span id="iLeads"></span><span>CRM · Leads</span></a>
+        <a class="os-nav__item"><span id="iPipeline"></span><span>Pipeline</span></a>
+      </div>
+      <div class="os-nav__group"><div class="os-nav__title">Negocio</div>
+        <a class="os-nav__item"><span id="iProjects"></span><span>Proyectos</span></a>
+        <a class="os-nav__item"><span id="iCampaigns"></span><span>Campañas</span></a>
+        <a class="os-nav__item"><span id="iCalendar"></span><span>Calendario</span></a>
+        <a class="os-nav__item"><span id="iAnalytics"></span><span>Reportes</span></a>
+      </div>
+      <div class="os-nav__group"><div class="os-nav__title">Organización</div>
+        <a class="os-nav__item"><span id="iTeam"></span><span>Equipo</span></a>
+        <a class="os-nav__item"><span id="iAi"></span><span>Chat IA</span></a>
+        <a class="os-nav__item"><span id="iSettings"></span><span>Configuración</span></a>
+      </div>
+    </div>
+    <div class="os-nav__foot"><a class="os-nav__item"><span id="iLogout"></span><span>Cerrar sesión</span></a></div>
+  </nav>
+
+  <main class="os-main">
+    <header class="os-topbar">
+      <div>
+        <div class="os-topbar__title">Preview Rediseño</div>
+        <div class="os-topbar__crumb">A/B test · ninguna superficie en producción se modifica</div>
+      </div>
+      <div style="flex:1"></div>
+      <div class="os-search"><span id="iSearch"></span><input placeholder="Buscar en el preview…"><kbd>⌘K</kbd></div>
+      <button class="tb-btn" id="tbTheme" title="Tema oscuro / claro"></button>
+      <button class="tb-btn" id="tbAB" title="Actual / Rediseño"></button>
+      <button class="tb-btn" id="tbLite" title="Glass-lite (gama baja)"></button>
+    </header>
+
+    <div class="os-content">
+      <div class="os-content__max">
+
+        <div class="pv-note" id="pvLegend">Actual — aurora tenue · glass .15 · superficies planas · modo claro marfil lavado. Usa la barra inferior para cambiar de versión, tema y glass-lite.</div>
+
+        <section class="pv-sec">
+          <div class="pv-sec__h"><span class="pv-sec__n">01</span><h2 class="t-h2">Métricas</h2></div>
+          <div class="grid grid--4">
+            <div class="metric"><div class="metric__top"><div class="metric__icon" id="iLeads2"></div><span class="metric__delta up" id="iUp"></span></div><div><div class="metric__value t-num">342</div><div class="metric__label">Leads totales</div></div></div>
+            <div class="metric"><div class="metric__top"><div class="metric__icon" id="iMoney"></div><span class="metric__delta up" id="iUp2"></span></div><div><div class="metric__value t-num">47</div><div class="metric__label">Cierres del mes</div></div></div>
+            <div class="metric"><div class="metric__top"><div class="metric__icon" id="iFlame"></div><span class="metric__delta down" id="iDown"></span></div><div><div class="metric__value t-num">12</div><div class="metric__label">Ventas calientes</div></div></div>
+            <div class="metric"><div class="metric__top"><div class="metric__icon" id="iClock"></div><span class="metric__delta flat">—</span></div><div><div class="metric__value t-num">$ 4.2M</div><div class="metric__label">Valor en cierre</div></div></div>
+          </div>
+        </section>
+
+        <section class="pv-sec">
+          <div class="pv-sec__h"><span class="pv-sec__n">02</span><h2 class="t-h2">Cards & superficies</h2></div>
+          <div class="grid grid--3">
+            <div class="card card--pad"><div class="t-h3" style="margin-bottom:6px">Card estándar</div><div class="t-dim" style="font-size:13px">Vidrio con gradiente de luz vertical, borde superior oro, edge completo iluminado.</div></div>
+            <div class="card card--pad card--float"><div class="t-h3" style="margin-bottom:6px">Card flotante</div><div class="t-dim" style="font-size:13px">Hover con elevación y halo dorado ambiental.</div></div>
+            <div class="card card--pad card--hover" style="border-color:var(--gold-line);background:linear-gradient(160deg,var(--bg-2),rgba(200,164,90,.05))"><div class="t-h3" style="margin-bottom:6px">Card destacada</div><div class="t-dim" style="font-size:13px">Acento dorado suave para contenido protagonista.</div></div>
+          </div>
+        </section>
+
+        <section class="pv-sec">
+          <div class="pv-sec__h"><span class="pv-sec__n">03</span><h2 class="t-h2">Pipeline</h2></div>
+          <div class="kanban">
+            <div class="kan-col">
+              <div class="kan-col__head"><div class="kan-col__title"><span class="dot dot--gold"></span>Interesados</div><span class="kan-col__count">6</span></div>
+              <div class="kan-col__body">
+                <div class="kan-card"><div class="u-between"><b style="font-size:13px">Carlos García</b><span class="badge badge--blue">WhatsApp</span></div><div class="t-dim3" style="font-size:11.5px;margin-top:4px">Pregunta por lote en Tocaima · hace 8 min</div></div>
+                <div class="kan-card"><div class="u-between"><b style="font-size:13px">Andrea López</b><span class="badge badge--gold">Instagram</span></div><div class="t-dim3" style="font-size:11.5px;margin-top:4px">Pide catálogo de La Bendición · hace 1 h</div></div>
+                <div class="kan-card"><div class="u-between"><b style="font-size:13px">María Gómez</b><span class="badge badge--mute">Messenger</span></div><div class="t-dim3" style="font-size:11.5px;margin-top:4px">Interesada en financiación · hace 2 h</div></div>
+              </div>
+            </div>
+            <div class="kan-col">
+              <div class="kan-col__head"><div class="kan-col__title"><span class="dot dot--green"></span>Negociación</div><span class="kan-col__count">3</span></div>
+              <div class="kan-col__body">
+                <div class="kan-card"><div class="u-between"><b style="font-size:13px">Jorge Rivera</b><span class="badge badge--amber">Cita</span></div><div class="t-dim3" style="font-size:11.5px;margin-top:4px">Visita el sábado 10 AM · Tocaima</div></div>
+                <div class="kan-card"><div class="u-between"><b style="font-size:13px">Diana Rojas</b><span class="badge badge--green">Apartado</span></div><div class="t-dim3" style="font-size:11.5px;margin-top:4px">En revisión con asesor legal · hoy</div></div>
+              </div>
+            </div>
+            <div class="kan-col">
+              <div class="kan-col__head"><div class="kan-col__title"><span class="dot dot--red"></span>Cerrados</div><span class="kan-col__count">2</span></div>
+              <div class="kan-col__body">
+                <div class="kan-card"><div class="u-between"><b style="font-size:13px">Héctor Parra</b><span class="badge badge--green">Vendido</span></div><div class="t-dim3" style="font-size:11.5px;margin-top:4px">Lote 24 · Porvenir · este mes</div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="pv-sec">
+          <div class="pv-sec__h"><span class="pv-sec__n">04</span><h2 class="t-h2">Tabla & timeline</h2></div>
+          <div class="grid grid--main">
+            <div class="card" style="overflow:hidden"><table class="table">
+              <thead><tr><th>Asesor</th><th>Leads</th><th>Conversión</th><th>Estado</th></tr></thead>
+              <tbody>
+                <tr><td><div class="u-row u-gap1"><div class="avatar avatar--sm" style="background:var(--gold)">EP</div>Eduardo Parra</div></td><td class="t-num">98</td><td><span class="badge badge--green">16%</span></td><td><span class="u-row u-gap1"><span class="dot dot--green"></span>Activo</span></td></tr>
+                <tr><td><div class="u-row u-gap1"><div class="avatar avatar--sm" style="background:var(--green)">SP</div>Sergio Parra</div></td><td class="t-num">84</td><td><span class="badge badge--gold">12%</span></td><td><span class="u-row u-gap1"><span class="dot dot--green"></span>Activo</span></td></tr>
+                <tr><td><div class="u-row u-gap1"><div class="avatar avatar--sm" style="background:var(--blue)">MG</div>María González</div></td><td class="t-num">51</td><td><span class="badge badge--mute">9%</span></td><td><span class="u-row u-gap1"><span class="dot dot--mute"></span>Suspendido</span></td></tr>
+              </tbody></table></div>
+            <div class="card card--pad"><div class="tl">
+              <div class="tl-item"><div class="tl-item__dot" id="iMsg2"></div><div class="tl-item__body"><div class="tl-item__title">Mensaje recibido</div><div class="tl-item__time">hace 2 min</div></div></div>
+              <div class="tl-item"><div class="tl-item__dot" id="iLeads3"></div><div class="tl-item__body"><div class="tl-item__title">Asignado a Eduardo Parra</div><div class="tl-item__time">hace 8 min</div></div></div>
+              <div class="tl-item"><div class="tl-item__dot" id="iSpark"></div><div class="tl-item__body"><div class="tl-item__title">Lead creado · campaña Meta</div><div class="tl-item__time">hace 1 h</div></div></div>
+            </div></div>
+          </div>
+        </section>
+
+        <section class="pv-sec">
+          <div class="pv-sec__h"><span class="pv-sec__n">05</span><h2 class="t-h2">Componentes</h2></div>
+          <div class="grid grid--2">
+            <div class="card card--pad u-col u-gap2">
+              <span class="t-label">Botones</span>
+              <div class="u-row u-gap1 u-wrap">
+                <button class="btn btn--gold" id="iPlus">Primario</button>
+                <button class="btn btn--ghost">Ghost</button>
+                <button class="btn btn--quiet">Quiet</button>
+                <button class="btn btn--danger">Peligro</button>
+                <button class="btn btn--gold btn--sm">Small</button>
+                <button class="btn btn--ghost btn--icon" id="iSettings2"></button>
+                <button class="btn btn--gold" disabled>Deshabilitado</button>
+              </div>
+              <span class="t-label">Toasts</span>
+              <div class="u-row u-gap1 u-wrap">
+                <button class="btn btn--ghost btn--sm" onclick="pvToast('Cambios guardados','ok')">Toast éxito</button>
+                <button class="btn btn--ghost btn--sm" onclick="pvToast('No se pudo enviar','err')">Toast error</button>
+                <button class="btn btn--ghost btn--sm" onclick="pvToast('Copiloto en la Fase IA')">Toast info</button>
+                <button class="btn btn--ghost btn--sm" onclick="pvSheet(true)">Bottom sheet</button>
+                <button class="btn btn--gold btn--sm" onclick="pvTester(true)">Probar vidrio</button>
+              </div>
+            </div>
+            <div class="card card--pad u-col u-gap2">
+              <span class="t-label">Chips & badges</span>
+              <div class="u-row u-gap1 u-wrap">
+                <button class="pv-chip on">Todos</button><button class="pv-chip">WhatsApp</button><button class="pv-chip">Instagram</button><button class="pv-chip">Messenger</button>
+              </div>
+              <div class="u-row u-gap1 u-wrap">
+                <span class="badge badge--gold">Gold</span><span class="badge badge--green">Vendido</span><span class="badge badge--red">Urgente</span><span class="badge badge--amber">Cita</span><span class="badge badge--blue">Interesado</span><span class="badge badge--mute">Nuevo</span>
+              </div>
+              <span class="t-label">Avatares & dots</span>
+              <div class="u-row u-gap1">
+                <div class="avatar avatar--sm" style="background:var(--gold)">SP</div>
+                <div class="avatar avatar--md" style="background:var(--green)">EP</div>
+                <div class="avatar avatar--lg" style="background:var(--blue)">MG</div>
+                <span class="u-row u-gap1"><span class="dot dot--green"></span>Activo</span>
+                <span class="u-row u-gap1"><span class="dot dot--gold"></span>Pendiente</span>
+                <span class="u-row u-gap1"><span class="dot dot--mute"></span>Inactivo</span>
+              </div>
+            </div>
+            <div class="card card--pad u-col u-gap2">
+              <span class="t-label">Inputs</span>
+              <div class="field"><label class="field__label">Nombre del cliente</label><input class="input" placeholder="Escribe aquí…"></div>
+              <div class="field"><label class="field__label">Etapa del pipeline</label><select class="input"><option>Interesado</option><option>Negociación</option><option>Cerrado</option></select></div>
+              <div class="field"><label class="field__label">Nota interna</label><textarea class="input" placeholder="Detalles de la visita…"></textarea></div>
+            </div>
+            <div class="card card--pad u-col u-gap2">
+              <span class="t-label">Tabs</span>
+              <div class="tabs" id="pvTabs">
+                <button class="tabs__item active">WhatsApp</button>
+                <button class="tabs__item">Instagram</button>
+                <button class="tabs__item">Messenger</button>
+                <button class="tabs__item">IA</button>
+              </div>
+              <span class="t-label">Estados</span>
+              <div class="u-row u-gap2" style="align-items:stretch">
+                <div class="card" style="flex:1;padding:16px"><div class="empty" style="padding:20px 8px"><span id="iInbox2"></span><div><div class="t-h3" style="font-size:14px">Sin conversaciones</div><div class="t-dim3" style="font-size:11.5px;margin-top:4px">Cuando llegue un lead aparecerá aquí</div></div></div></div>
+                <div class="u-col u-gap2" style="flex:1;justify-content:center">
+                  <div class="skel" style="height:14px;width:80%"></div>
+                  <div class="skel" style="height:14px;width:55%"></div>
+                  <div class="skel" style="height:40px;width:100%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="pv-sec">
+          <div class="pv-sec__h"><span class="pv-sec__n">06</span><h2 class="t-h2">SP Feed</h2></div>
+          <div class="feed-wrap">
+            <div class="feed-card">
+              <div class="feed-card__side"><div class="feed-card__icon feed--ventas" id="iSpark2"></div></div>
+              <div>
+                <div class="feed-card__top"><div class="feed-card__avatar" style="background:var(--gold-soft)">EP</div><div><div class="feed-card__who">Eduardo Parra</div><div class="feed-card__time">hace 12 min</div></div><span class="feed-cat feed--ventas">Ventas</span></div>
+                <div class="feed-card__title">Apartado del lote 24 — Proyecto Porvenir</div>
+                <div class="feed-card__desc">Se firmó el apartado inicial por $4.5M con seña del 10%. Cierre programado para la próxima semana.</div>
+                <div class="feed-card__foot"><div class="feed-actions"><button class="btn btn--ghost btn--sm" id="iCheck">Confirmar</button><button class="btn btn--quiet btn--sm" id="iMsg3">Comentar</button></div><div class="feed-reacts"><span class="feed-emoji">👍<span>4</span></span><span class="feed-emoji mine">🎉<span>2</span></span></div></div>
+              </div>
+            </div>
+            <div class="feed-card">
+              <div class="feed-card__side"><div class="feed-card__icon feed--leads" id="iLeads4"></div></div>
+              <div>
+                <div class="feed-card__top"><div class="feed-card__avatar" style="background:var(--blue-soft)">SP</div><div><div class="feed-card__who">Sistema · Meta Ads</div><div class="feed-card__time">hace 40 min</div></div><span class="feed-cat feed--leads">Leads</span></div>
+                <div class="feed-card__title">Lead nuevo de campaña Tocaima</div>
+                <div class="feed-card__desc">Carlos García (WhatsApp) fue asignado a Eduardo Parra por round-robin. Primera respuesta pendiente.</div>
+                <div class="feed-card__foot"><div class="feed-actions"><button class="btn btn--gold btn--sm" id="iMsg4">Abrir chat</button></div><div class="feed-reacts"><span class="feed-emoji">💬<span>1</span></span></div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="pv-sec">
+          <div class="pv-sec__h"><span class="pv-sec__n">07</span><h2 class="t-h2">Panel móvil — Chat del asesor</h2></div>
+          <div class="pv-phones">
+            <div class="pv-phone"><div class="pv-notch"></div><div class="pv-screen">
+              <div class="pv-chat-head">
+                <button class="pv-icobtn" id="iBack"></button>
+                <div class="avatar avatar--sm" style="background:var(--green)">CG</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:600">Carlos García</div><div style="font-size:10.5px;color:var(--green)">en línea</div></div>
+                <button class="pv-icobtn" id="iPhone"></button>
+              </div>
+              <div class="pv-chat-body">
+                <div class="pv-date">Hoy</div>
+                <div class="pv-bub in">Hola, vi el anuncio de los lotes en Tocaima. ¿Qué precios manejan?<span class="tm">9:41</span></div>
+                <div class="pv-bub out">¡Hola Carlos! Con gusto te comparto precios y formas de pago. ¿Te muestro las opciones dentro de tu presupuesto?<span class="tm">9:42</span></div>
+                <div class="pv-bub in">Sí, por favor. Estoy buscando algo alrededor de 40 millones<span class="tm">9:43</span></div>
+              </div>
+              <div class="pv-chat-bar">
+                <button class="pv-icobtn" id="iPlus2"></button>
+                <div class="inp">Escribe un mensaje…</div>
+                <button class="pv-icobtn gold" id="iSend"></button>
+              </div>
+              <div class="pv-tabs">
+                <span class="on" id="iT1"></span><span id="iT2"></span><span id="iT3"></span><span id="iT4"></span><span id="iT5"></span>
+              </div>
+            </div></div>
+
+            <div class="pv-phone"><div class="pv-notch"></div><div class="pv-screen">
+              <div class="pv-login">
+                <div class="pv-logo"><div class="avatar avatar--lg" style="background:none"><img src="/icons/logo.png" alt="" style="width:44px;height:44px;border-radius:12px"></div></div>
+                <div class="t-brand">LEONS GROUP</div>
+                <div class="sub">Acceso asesores</div>
+                <div class="pv-linput" id="iPhone2"><span>+57</span><b style="width:1px;height:20px;background:var(--glass-border)"></b><span style="color:var(--text-3)">321 462 5618</span></div>
+                <div class="pv-dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+                <div class="pv-kp">
+                  <button>1</button><button>2</button><button>3</button>
+                  <button>4</button><button>5</button><button>6</button>
+                  <button>7</button><button>8</button><button>9</button>
+                  <button style="opacity:.35"></button><button>0</button><button style="opacity:.35"></button>
+                </div>
+                <button class="pv-goldbtn">Entrar</button>
+              </div>
+            </div></div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <aside class="os-panel">
+    <div class="os-panel__head"><div class="t-h3" style="font-size:14px">Cliente</div><span class="badge badge--gold">Negociación</span></div>
+    <div class="os-panel__body u-col u-gap2">
+      <div class="u-row u-gap2">
+        <div class="avatar avatar--lg" style="background:var(--green)">CG</div>
+        <div><div class="t-h3" style="font-size:15px">Carlos García</div><div class="t-dim3" style="font-size:12px">+57 321 000 0000 · WhatsApp</div></div>
+      </div>
+      <div class="field"><label class="field__label">Nota interna</label><textarea class="input" style="min-height:64px" placeholder="Detalles de la visita…"></textarea></div>
+      <div class="card card--pad" style="padding:var(--s2)">
+        <div class="tl">
+          <div class="tl-item"><div class="tl-item__dot" id="iMsg5"></div><div class="tl-item__body"><div class="tl-item__title">Mensaje recibido</div><div class="tl-item__time">hace 2 min</div></div></div>
+          <div class="tl-item"><div class="tl-item__dot" id="iSpark3"></div><div class="tl-item__body"><div class="tl-item__title">Asignado a Eduardo Parra</div><div class="tl-item__time">hace 8 min</div></div></div>
+        </div>
+      </div>
+      <div class="u-row u-gap1 u-wrap">
+        <button class="btn btn--gold btn--sm" id="iMsg6">Responder</button>
+        <button class="btn btn--ghost btn--sm" id="iPhone3">Llamar</button>
+        <button class="btn btn--quiet btn--sm" id="iZap">Automatizar</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="os-toasts"></div>
+
+<div class="pv-sheet-bg" id="pvSheetBg"></div>
+<div class="pv-sheet" id="pvSheet">
+  <div class="pv-grab"></div>
+  <div class="pv-sheet__head"><div class="sheet__title" style="font-family:var(--f-title);font-size:16px;font-weight:600">Adjuntar</div><button class="sheet__x" style="width:30px;height:30px;border-radius:50%;background:var(--bg-3);border:1px solid var(--border);display:grid;place-items:center;color:var(--text-2)" id="iX"></button></div>
+  <div class="pv-sheet__body">
+    <button id="iCamera">Cámara</button>
+    <button id="iImg">Galería</button>
+    <button id="iDoc">Documento</button>
+    <button id="iLoc">Ubicación</button>
+    <button id="iTpl">Plantilla Meta</button>
+  </div>
+</div>
+
+<div class="ai-dock"><div class="ai-dock__spark" id="iSpark4"></div><span class="ai-dock__label">Copiloto SP</span><span class="ai-dock__hint">⌘J</span></div>
+
+<div class="pv-bar">
+  <div class="pv-seg"><b>A/B</b><button class="on" data-ab="off">Actual</button><button data-ab="on">Rediseño</button></div>
+  <div class="pv-seg"><b>Tema</b><button data-theme="dark">Oscuro</button><button data-theme="light">Claro</button></div>
+  <div class="pv-seg"><b>Rendimiento</b><button class="on" data-lite="off">Glass</button><button data-lite="on" class="warn">Glass-lite</button></div>
+  <div class="pv-seg"><b>Vidrio</b><button class="on" onclick="pvTester(true)" style="color:var(--gold)">Probar</button></div>
+</div>
+
+<div class="pv-tester" id="pvTester">
+  <div class="pv-tester__scrim"></div>
+  <div class="pv-tester__blobs">
+    <div class="pv-blob pb1"></div>
+    <div class="pv-blob pb2"></div>
+    <div class="pv-blob pb3"></div>
+    <div class="pv-blob pb4"></div>
+    <div class="pv-blob pb5"></div>
+    <div class="pv-blob pb6"></div>
+    <div class="pv-fake f1"></div>
+    <div class="pv-fake f2"></div>
+    <div class="pv-fake f3"></div>
+    <div class="pv-fake f4"></div>
+  </div>
+  <div class="pv-tester__card">
+    <div class="pv-grab"></div>
+    <div class="t-h3">Prueba de vidrio en vivo</div>
+    <p class="t-dim" style="font-size:12.5px">Los orbes y bloques de color detrás se mueven — mueve los sliders y mira cómo la transparencia y el desenfoque cambian el frost sobre ellos.</p>
+    <div class="u-row u-gap1 u-wrap">
+      <span class="badge badge--gold">Oro</span>
+      <span class="badge badge--green">Verde</span>
+      <span class="badge badge--blue">Azul</span>
+      <span class="badge badge--red">Coral</span>
+      <span class="badge badge--mute">Violeta</span>
+    </div>
+    <div class="pv-sliders">
+      <label>Transparencia <output id="pvAlphaVal">10%</output></label>
+      <input type="range" id="pvAlpha" min="4" max="60" value="10">
+      <label>Desenfoque <output id="pvBlurVal">10px</output></label>
+      <input type="range" id="pvBlur" min="0" max="80" value="10">
+    </div>
+    <div class="u-row u-gap1 u-wrap">
+      <button class="btn btn--gold btn--sm" onclick="pvTester(false)">Cerrar</button>
+      <button class="btn btn--ghost btn--sm" onclick="pvTesterReset()">Valores recomendados</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  body.redesign {
+    --glass: rgba(42, 38, 30, .10);
+    --glass-2: rgba(50, 45, 35, .16);
+    --glass-border: rgba(248, 244, 230, .14);
+    --glass-edge: inset 0 1px 0 rgba(255,255,255,.42), inset 0 -1px 0 rgba(255,255,255,.06), inset 1px 0 0 rgba(255,255,255,.08), inset -1px 0 0 rgba(255,255,255,.08);
+    --glass-gold: rgba(212, 175, 55, .14);
+    --glass-deep: rgba(12, 11, 9, .14);
+    --glass-light: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0) 42%);
+    --glass-sheen: linear-gradient(115deg, rgba(255,255,255,.11) 0%, rgba(255,255,255,.03) 26%, rgba(255,255,255,0) 46%);
+    --blur: saturate(1.7) blur(10px);
+    --blur-sm: saturate(1.6) blur(10px);
+    --grad-surface: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,0) 48%);
+    --aurora-1a: rgba(248, 248, 248, .15); --aurora-1b: rgba(248, 248, 248, .05);
+    --aurora-2a: rgba(248, 248, 248, .11); --aurora-2b: rgba(248, 248, 248, .04);
+    --aurora-3a: rgba(248, 248, 248, .08); --aurora-3b: rgba(248, 248, 248, .03);
+    --aurora-gold-1: rgba(212, 175, 55, .22);
+    --aurora-green: rgba(78, 123, 70, .16);
+    --aurora-gold-2: rgba(212, 175, 55, .10);
+    --aurora-gold-3: rgba(237, 204, 96, .07);
+    --sh-2: 0 4px 18px rgba(0,0,0,.36), 0 1px 3px rgba(0,0,0,.28);
+    --sh-3: 0 12px 44px rgba(0,0,0,.52), 0 4px 14px rgba(0,0,0,.30);
+    --sh-pop: 0 8px 32px rgba(0,0,0,.5), 0 0 0 1px var(--glass-border);
+  }
+  body.redesign {
+    background:
+      radial-gradient(circle 460px at 14% 12%, var(--aurora-1a), var(--aurora-1b) 52%, transparent 62%),
+      radial-gradient(circle 340px at 82% 34%, var(--aurora-2a), var(--aurora-2b) 54%, transparent 64%),
+      radial-gradient(circle 520px at 55% 108%, var(--aurora-3a), var(--aurora-3b) 54%, transparent 64%),
+      radial-gradient(860px 640px at 82% -14%, var(--aurora-gold-1), transparent 60%),
+      radial-gradient(760px 700px at -10% 102%, var(--aurora-green), transparent 60%),
+      radial-gradient(640px 520px at 50% 46%, var(--aurora-gold-2), transparent 70%),
+      radial-gradient(560px 460px at 50% 92%, var(--aurora-gold-3), transparent 62%),
+      var(--bg-0);
+    background-attachment: fixed;
+  }
+  body.redesign .os-app { background: transparent; }
+  body.redesign .os-nav { background: var(--glass-sheen), var(--glass-deep); box-shadow: 1px 0 26px rgba(0,0,0,.38); }
+  body.redesign .os-panel { background: var(--glass-sheen), var(--glass-deep); box-shadow: -1px 0 26px rgba(0,0,0,.38); }
+  body.redesign .os-topbar { background: var(--glass-sheen), var(--glass); }
+  body.redesign .os-workspace, body.redesign .os-search, body.redesign .input, body.redesign .chip, body.redesign .btn--ghost { background: var(--glass-sheen), var(--glass-light), var(--glass); }
+  body.redesign .card, body.redesign .surface, body.redesign .metric, body.redesign .kan-col, body.redesign .kan-card { background: var(--glass-sheen), var(--glass-light), var(--glass); box-shadow: var(--glass-edge), inset 0 -14px 26px rgba(0,0,0,.10), var(--sh-1); }
+  body.redesign .card--hover:hover, body.redesign .metric:hover { box-shadow: 0 8px 32px rgba(212,175,55,.16), 0 0 0 1px var(--gold-line); }
+  body.redesign .card--float:hover { box-shadow: var(--glass-edge), 0 10px 34px rgba(212,175,55,.14); }
+  body.redesign .btn--gold { box-shadow: 0 4px 24px rgba(212,175,55,.28), inset 0 1px 0 rgba(255,255,255,.35); }
+  body.redesign .btn--gold:hover { box-shadow: 0 6px 30px rgba(212,175,55,.42), inset 0 1px 0 rgba(255,255,255,.35); }
+  body.redesign .os-nav__item.active { box-shadow: inset 3px 0 0 var(--gold), 0 0 18px rgba(212,175,55,.12); }
+  body.redesign .os-search:focus-within, body.redesign .input:focus { box-shadow: 0 0 0 3px var(--gold-soft), 0 4px 14px rgba(212,175,55,.14); }
+  body.redesign .tabs__item.active { text-shadow: 0 0 14px rgba(212,175,55,.4); }
+  body.redesign .ai-dock { box-shadow: 0 8px 34px rgba(212,175,55,.22), var(--sh-3); }
+  body.redesign .os-toast { background: var(--glass-sheen), var(--glass-light), var(--glass-2); }
+  body.redesign .pv-sheet { background: var(--glass-sheen), var(--glass-light), var(--glass-2); }
+  body.redesign::before {
+    content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: .05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E");
+  }
+
+  html[data-theme="light"] body.redesign {
+    --bg-0: #F4EFE3;
+    --bg-1: #FAF6ED;
+    --bg-2: #FFFCF4;
+    --bg-3: #F3EDDC;
+    --bg-4: #E9E1CC;
+    --border: #E0D7BF;
+    --border-soft: #E9E1CD;
+    --border-strong: #D2C7A7;
+    --gold-ink: #7D5F24;
+    --green: #3F6538;
+    --green-soft: rgba(63, 101, 56, .13);
+    --text: #221C10;
+    --text-2: rgba(34, 28, 16, .66);
+    --text-3: rgba(34, 28, 16, .47);
+    --text-4: rgba(34, 28, 16, .26);
+    --red: #C23A40; --red-soft: rgba(194, 58, 64, .13);
+    --amber: #8F5E14; --amber-soft: rgba(143, 94, 20, .14);
+    --blue: #3563C9; --blue-soft: rgba(53, 99, 201, .13);
+    --sh-1: 0 1px 2px rgba(120, 98, 58, .08);
+    --sh-2: 0 4px 16px rgba(120, 98, 58, .12);
+    --sh-3: 0 12px 40px rgba(120, 98, 58, .16);
+    --sh-pop: 0 8px 30px rgba(120, 98, 58, .18), 0 0 0 1px var(--border);
+    --glass: rgba(255, 251, 241, .30);
+    --glass-2: rgba(255, 252, 245, .44);
+    --glass-border: rgba(168, 138, 78, .15);
+    --glass-edge: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(160,128,64,.10);
+    --glass-deep: rgba(255, 251, 240, .50);
+    --glass-light: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,0) 45%);
+    --glass-sheen: linear-gradient(115deg, rgba(255,255,255,.6) 0%, rgba(255,255,255,.22) 26%, rgba(255,255,255,0) 46%);
+    --grad-surface: linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,0) 48%);
+    --aurora-1a: rgba(212, 175, 55, .14); --aurora-1b: rgba(212, 175, 55, .04);
+    --aurora-2a: rgba(200, 160, 80, .09); --aurora-2b: rgba(200, 160, 80, .03);
+    --aurora-3a: rgba(63, 101, 56, .09); --aurora-3b: rgba(63, 101, 56, .03);
+    --aurora-gold-1: rgba(212, 175, 55, .20);
+    --aurora-green: rgba(78, 123, 70, .13);
+    --aurora-gold-2: rgba(237, 204, 96, .12);
+    --aurora-gold-3: rgba(214, 178, 96, .09);
+  }
+  html[data-theme="light"] body.redesign::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.14 0 0 0 0 0.11 0 0 0 0 0.06 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E");
+    opacity: .05;
+  }
+  html[data-theme="light"] body.redesign .os-nav, html[data-theme="light"] body.redesign .os-panel { box-shadow: none; border-color: var(--glass-border); }
+  html[data-theme="light"] body.redesign .card, html[data-theme="light"] body.redesign .surface, html[data-theme="light"] body.redesign .metric, html[data-theme="light"] body.redesign .kan-col, html[data-theme="light"] body.redesign .kan-card { box-shadow: var(--glass-edge), inset 0 -14px 26px rgba(160,128,64,.06), var(--sh-1); }
+  html[data-theme="light"] body.redesign .card--hover:hover, html[data-theme="light"] body.redesign .metric:hover { box-shadow: 0 8px 32px rgba(212,175,55,.18), 0 0 0 1px var(--gold-line); }
+
+  body.glass-lite .os-app { background: var(--bg-0); }
+  body.glass-lite .os-nav, body.glass-lite .os-panel { background: var(--bg-1); box-shadow: none; }
+  body.glass-lite .os-topbar { background: var(--bg-0); }
+  body.glass-lite .card, body.glass-lite .surface, body.glass-lite .metric, body.glass-lite .kan-col { background: var(--bg-2); }
+  body.glass-lite .kan-card { background: var(--bg-3); }
+  body.glass-lite .os-search, body.glass-lite .input, body.glass-lite .btn--ghost, body.glass-lite .os-workspace { background: var(--bg-2); border-color: var(--border-soft); }
+  body.glass-lite .chip { background: var(--bg-4); border-color: transparent; }
+  body.glass-lite .pv-sheet { background: var(--bg-1); }
+</style>
+
+<script>
+  const P = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const ICONS = {
+    dashboard: P('<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/>'),
+    inbox: P('<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13l3.5 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/>'),
+    leads: P('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'),
+    pipeline: P('<path d="M3 3v18h18"/><rect x="7" y="9" width="3" height="8" rx="1"/><rect x="13" y="5" width="3" height="12" rx="1"/>'),
+    projects: P('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/>'),
+    campaigns: P('<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>'),
+    calendar: P('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>'),
+    analytics: P('<path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/>'),
+    team: P('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>'),
+    ai: P('<path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/><path d="M18.5 15.5l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7z"/>'),
+    settings: P('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.9 1.13V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 6 19.4a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 6 6a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 3.6a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 18 6a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 12H21a2 2 0 1 1 0 4z"/>'),
+    logout: P('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/>'),
+    search: P('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'),
+    plus: P('<path d="M12 5v14M5 12h14"/>'),
+    up: P('<path d="M7 17 17 7M7 7h10v10"/>'),
+    down: P('<path d="M7 7 17 17M17 7v10H7"/>'),
+    check: P('<path d="M20 6 9 17l-5-5"/>'),
+    clock: P('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    msg: P('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
+    flame: P('<path d="M12 2s4 4 4 8a4 4 0 0 1-8 0c0-1 .5-2 .5-2S6 10 6 14a6 6 0 0 0 12 0c0-5-6-12-6-12z"/>'),
+    spark: P('<path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/>'),
+    money: P('<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5a2.5 2.5 0 0 1 5 0c0 2.5-5 1-5 3.5a2.5 2.5 0 0 0 5 0"/>'),
+    zap: P('<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>'),
+    sun: P('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+    moon: P('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'),
+    back: P('<path d="M19 12H5M12 19l-7-7 7-7"/>'),
+    phone: P('<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>'),
+    send: P('<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>'),
+    home: P('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>'),
+    target: P('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>'),
+    user: P('<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>'),
+    camera: P('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>'),
+    image: P('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>'),
+    doc: P('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>'),
+    pin: P('<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>'),
+    tpl: P('<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 9h10M7 13h6"/>'),
+    x: P('<path d="M18 6 6 18M6 6l12 12"/>'),
+  };
+  const I = (n, s) => ICONS[n].replace('<svg ', `<svg style="width:${s||18}px;height:${s||18}px" `);
+
+  const MAP = {
+    iDashboard: 'dashboard', iInbox: 'inbox', iLeads: 'leads', iLeads2: 'leads', iLeads3: 'leads', iLeads4: 'leads',
+    iPipeline: 'pipeline', iProjects: 'projects', iCampaigns: 'campaigns', iCalendar: 'calendar', iAnalytics: 'analytics',
+    iTeam: 'team', iAi: 'ai', iSettings: 'settings', iSettings2: 'settings', iLogout: 'logout', iSearch: 'search',
+    iPlus: 'plus', iPlus2: 'plus', iUp: 'up', iUp2: 'up', iDown: 'down', iMoney: 'money', iFlame: 'flame', iClock: 'clock',
+    iMsg2: 'msg', iMsg3: 'msg', iMsg4: 'msg', iMsg5: 'msg', iMsg6: 'msg', iSpark: 'spark', iSpark2: 'spark', iSpark3: 'spark', iSpark4: 'spark',
+    iInbox2: 'inbox', iCheck: 'check', iBack: 'back', iPhone: 'phone', iPhone2: 'phone', iPhone3: 'phone', iSend: 'send',
+    iT1: 'msg', iT2: 'home', iT3: 'target', iT4: 'spark', iT5: 'user', iX: 'x', iZap: 'zap',
+    iCamera: 'camera', iImg: 'image', iDoc: 'doc', iLoc: 'pin', iTpl: 'tpl',
+  };
+  Object.keys(MAP).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.innerHTML = I(MAP[id], id.startsWith('iT') ? 17 : 18); if (id === 'iT1') el.innerHTML = I('msg', 17); }
+  });
+  document.getElementById('tbTheme').innerHTML = I(VidaTheme.resolved() === 'light' ? 'sun' : 'moon', 16);
+  document.getElementById('tbAB').innerHTML = I('spark', 16);
+  document.getElementById('tbLite').innerHTML = I('zap', 16);
+
+  function pvToast(msg, kind) {
+    const h = document.querySelector('.os-toasts');
+    const t = document.createElement('div');
+    t.className = 'os-toast' + (kind === 'ok' ? ' os-toast--ok' : kind === 'err' ? ' os-toast--err' : '');
+    t.innerHTML = (kind === 'ok' ? I('check', 15) : kind === 'err' ? I('inbox', 15) : I('spark', 15)) + '<span>' + msg + '</span>';
+    h.appendChild(t);
+    setTimeout(() => { t.style.transition = 'opacity .3s, transform .3s'; t.style.opacity = '0'; t.style.transform = 'translateY(8px)'; setTimeout(() => t.remove(), 320); }, 2600);
+  }
+  function pvSheet(open) {
+    document.getElementById('pvSheetBg').classList.toggle('show', open);
+    document.getElementById('pvSheet').classList.toggle('show', open);
+  }
+  document.getElementById('pvSheetBg').onclick = () => pvSheet(false);
+  document.getElementById('iX').onclick = () => pvSheet(false);
+
+  const pvTestCard = document.getElementById('pvTester').querySelector('.pv-tester__card');
+  const pvAlpha = document.getElementById('pvAlpha');
+  const pvBlur = document.getElementById('pvBlur');
+  const pvAlphaVal = document.getElementById('pvAlphaVal');
+  const pvBlurVal = document.getElementById('pvBlurVal');
+  function pvTester(open) { document.getElementById('pvTester').classList.toggle('show', open); }
+  function pvTesterApply() {
+    pvTestCard.style.setProperty('--glass-t', (pvAlpha.value / 100).toFixed(2));
+    pvTestCard.style.setProperty('--blur-t', pvBlur.value + 'px');
+    pvAlphaVal.textContent = pvAlpha.value + '%';
+    pvBlurVal.textContent = pvBlur.value + 'px';
+  }
+  function pvTesterReset() { pvAlpha.value = 10; pvBlur.value = 10; pvTesterApply(); }
+  pvAlpha.addEventListener('input', pvTesterApply);
+  pvBlur.addEventListener('input', pvTesterApply);
+  pvTesterApply();
+
+  document.getElementById('pvTabs').addEventListener('click', e => {
+    const b = e.target.closest('.tabs__item'); if (!b) return;
+    document.querySelectorAll('#pvTabs .tabs__item').forEach(x => x.classList.toggle('active', x === b));
+  });
+  document.querySelectorAll('.pv-chip').forEach(c => c.onclick = () => document.querySelectorAll('.pv-chip').forEach(x => x.classList.toggle('on', x === c)));
+
+  const segSel = (root, group, val) => { root.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset[group] === val)); };
+  const AB_TEXT = {
+    off: 'Actual — aurora tenue · glass .15 · superficies planas · modo claro marfil lavado. Usa la barra inferior para cambiar de versión, tema y glass-lite.',
+    on: 'Rediseño Vidrio — glass .10 supertransparente (cristal casi puro) · orbes blancos/gold suaves (sin saturar) · blur 10px frost sutil · edge 4 lados · prueba de vidrio en vivo con sliders de transparencia y desenfoque · modo claro Champagne Ivory.',
+  };
+  function setAB(v) {
+    document.body.classList.toggle('redesign', v === 'on');
+    document.querySelectorAll('[data-ab]').forEach(b => { b.classList.toggle('on', b.dataset.ab === v); });
+    document.getElementById('pvLegend').textContent = AB_TEXT[v];
+    document.getElementById('tbAB').classList.toggle('on', v === 'on');
+  }
+  function setLite(v) {
+    document.body.classList.toggle('glass-lite', v === 'on');
+    document.querySelectorAll('[data-lite]').forEach(b => { b.classList.toggle('on', b.dataset.lite === v); });
+    document.getElementById('tbLite').classList.toggle('on', v === 'on');
+  }
+  function setTheme(v) {
+    document.querySelectorAll('[data-theme]').forEach(b => { b.classList.toggle('on', b.dataset.theme === v); });
+    document.getElementById('tbTheme').innerHTML = I(v === 'light' ? 'sun' : 'moon', 16);
+    VidaTheme.set(v);
+  }
+  document.querySelectorAll('.pv-bar [data-ab]').forEach(b => b.onclick = () => setAB(b.dataset.ab));
+  document.querySelectorAll('.pv-bar [data-theme]').forEach(b => b.onclick = () => setTheme(b.dataset.theme));
+  document.querySelectorAll('.pv-bar [data-lite]').forEach(b => b.onclick = () => setLite(b.dataset.lite));
+  document.getElementById('tbTheme').onclick = () => setTheme(VidaTheme.resolved() === 'light' ? 'dark' : 'light');
+  document.getElementById('tbAB').onclick = () => setAB(document.body.classList.contains('redesign') ? 'off' : 'on');
+  document.getElementById('tbLite').onclick = () => setLite(document.body.classList.contains('glass-lite') ? 'off' : 'on');
+
+  const initTheme = VidaTheme.resolved();
+  setTheme(initTheme);
+  setAB('off');
+  setLite(document.body.classList.contains('glass-lite') ? 'on' : 'off');
+  document.addEventListener('vida:theme-changed', e => {
+    if (e.detail) setTheme(e.detail.resolved);
+  });
+</script>
+</body>
+</html>

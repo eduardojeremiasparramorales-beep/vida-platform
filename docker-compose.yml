@@ -1,0 +1,28 @@
+services:
+  crm:
+    build: .
+    container_name: sp-crm
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      - TZ=America/Bogota
+    # Tope de memoria: sin esto, una fuga de memoria o un pico de trafico puede
+    # consumir todo el RAM de la VM (1GB en e2-micro) y tumbar hasta el acceso SSH.
+    # Deja ~300MB libres para el sistema operativo, Caddy y el propio Docker daemon.
+    mem_limit: 700m
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => { let d=''; r.on('data',c=>d+=c); r.on('end',()=>{const j=JSON.parse(d);if(j.status!=='ok'||!j.db)throw new Error(j.status)}) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

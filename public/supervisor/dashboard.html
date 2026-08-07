@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Dashboard · Supervisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script src="/supervisor/supervisor-shell.js"></script>
+<script>
+(async function () {
+  const { me, content, esc } = await SPS.mount({ active: 'dashboard', title: 'Dashboard', crumb: 'Supervisor Center · Vista del equipo' });
+  if (!content) return;
+
+  const ICONS = (window.SPOS && window.SPOS.ICONS) || {};
+  const fmt = (window.SPOS && window.SPOS.fmt) || {
+    n: (v) => (v == null ? '—' : Number(v).toLocaleString('es-CO')),
+    pct: (v) => (v == null ? '—' : v + '%'),
+  };
+  const avatarColor = (window.SPS && SPS.avatarColor) || (() => '#D4AF37');
+  const initials = (window.SPS && SPS.initials) || ((n) => String(n || '?').slice(0, 2).toUpperCase());
+
+  // Datos del dashboard del supervisor — endpoint propio auto-contenido (no
+  // necesita /api/metricas ni /api/leads abiertos al supervisor).
+  let d = await SPS.api('/api/supervisor/dashboard');
+  if (!d) { content.innerHTML = `<div class="empty">${ICONS.activity || ''}<div>No se pudo cargar el dashboard. ¿Hay conexión?</div></div>`; return; }
+  const k = d.kpis, embudo = d.embudo, equipo = d.equipo || [], ranking = d.ranking || [];
+
+  // Trayecto del embudo en orden comercial — mismo lenguaje visual que el dashboard admin
+  const pipeline = [
+    { k: 'sin_clasificar', label: 'Nuevos', color: 'var(--text-3)' },
+    { k: 'interesado', label: 'Interesados', color: 'var(--blue)' },
+    { k: 'negociacion', label: 'Negociación', color: 'var(--gold)' },
+    { k: 'cita', label: 'Cita agendada', color: 'var(--amber)' },
+    { k: 'vendido', label: 'Vendidos', color: 'var(--green)' },
+  ];
+  const pipeMax = Math.max(1, ...pipeline.map(p => embudo[p.k] || 0));
+
+  const metric = (icon, label, value, hint, hintKind) => `
+    <div class="metric card--float">
+      <div class="metric__top">
+        <div class="metric__icon">${ICONS[icon] || ICONS.spark || ''}</div>
+        ${hint ? `<span class="metric__delta ${hintKind||'flat'}">${hintKind==='up'?ICONS.up||'':hintKind==='down'?ICONS.down||'':''}${hint}</span>` : ''}
+      </div>
+      <div><div class="metric__value t-num">${value}</div><div class="metric__label">${label}</div></div>
+    </div>`;
+
+  // Dona SVG del embudo (inline, sin libs — copiado del dashboard admin)
+  function donutChart(segments, size = 168, stroke = 24) {
+    const r = (size - stroke) / 2, cx = size / 2, cy = size / 2, circ = 2 * Math.PI * r;
+    const total = segments.reduce((a, s) => a + s.value, 0);
+    let offset = 0;
+    const arcs = total > 0 ? segments.filter(s => s.value > 0).map(s => {
+      const len = (s.value / total) * circ;
+      const el = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${stroke}" stroke-dasharray="${len} ${circ - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"><title>${s.label}: ${s.value}</title></circle>`;
+      offset += len; return el;
+    }).join('') : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--bg-4)" stroke-width="${stroke}"></circle>`;
+    return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block;margin:0 auto">
+      ${arcs}
+      <text x="${cx}" y="${cy - 2}" text-anchor="middle" class="t-num" style="font-size:30px;font-weight:700;fill:var(--text)">${total}</text>
+      <text x="${cx}" y="${cy + 18}" text-anchor="middle" style="font-size:11px;fill:var(--text-3);letter-spacing:.05em">LEADS</text>
+    </svg>`;
+  }
+  const donutSegs = pipeline.map(p => ({ label: p.label, value: embudo[p.k] || 0, color: p.color }));
+  const donutLegend = donutSegs.map(s => `<div class="u-row u-gap2" style="font-size:12px">
+      <span style="width:10px;height:10px;border-radius:3px;background:${s.color};flex-shrink:0"></span>
+      <span style="flex:1">${s.label}</span><span class="t-num t-dim">${fmt.n(s.value)}</span>
+    </div>`).join('');
+
+  // Highlight si hay leads sin responder (alerta prioritaria del supervisor)
+  const alertaActiva = k.leadsSinResponder > 0;
+
+  content.innerHTML = `
+   <div class="os-content__max">
+    <!-- Métricas núcleo del equipo -->
+    <div class="grid grid--4 rise rise-1" style="margin-bottom:var(--s3)">
+      ${metric('leads', 'Leads activos', fmt.n(k.leadsActivos), null, 'flat')}
+      ${metric('money', 'Cierres totales', fmt.n(k.vendidos), null, 'flat')}
+      ${metric('target', 'Conversión global', fmt.pct(k.conversionGlobal), null, 'flat')}
+      ${metric('clock', 'Resp. promedio', (k.tiempoRespuestaPromedio != null ? k.tiempoRespuestaPromedio + ' min' : '—'), null, 'flat')}
+    </div>
+
+    <!-- Banner de alerta: leads sin responder (solo si hay) -->
+    ${alertaActiva ? `
+    <div class="card rise rise-2" style="margin-bottom:var(--s3);border-color:rgba(200,164,90,.4);background:linear-gradient(160deg,var(--bg-2),rgba(200,164,90,.04))">
+      <div class="card--pad">
+        <div class="u-row u-gap3 u-align-center" style="flex-wrap:wrap">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(200,164,90,.12);display:grid;place-items:center;color:var(--gold)">${(ICONS.bell || ICONS.notifications || '').replace('<svg ','<svg style="width:22px;height:22px" ')}</div>
+          <div class="u-grow">
+            <div style="font-size:15px;font-weight:600">${fmt.n(k.leadsSinResponder)} ${k.leadsSinResponder === 1 ? 'lead sin responder' : 'leads sin responder'}</div>
+            <div class="t-dim3" style="font-size:12px;margin-top:2px">Atención prioritaria del supervisor — ve a <b>Alertas</b> para resolver</div>
+          </div>
+          <a class="btn btn--gold btn--sm" href="/supervisor/alertas.html" style="text-decoration:none">Ir a Alertas</a>
+        </div>
+      </div>
+    </div>` : ''}
+
+    <div class="grid grid--main">
+      <!-- Columna izquierda: embudo + equipo -->
+      <div class="u-col u-gap3">
+        <!-- Embudo comercial -->
+        <div class="card card--pad rise rise-2">
+          <div class="u-between" style="margin-bottom:var(--s3)">
+            <div><div class="t-h3">Embudo comercial</div><div class="t-dim3" style="font-size:12px">Distribución de ${fmt.n(k.totalLeads)} leads por etapa</div></div>
+          </div>
+          <div class="u-col u-gap2">
+            ${pipeline.map(p => {
+              const val = embudo[p.k] || 0; const w = Math.round((val / pipeMax) * 100);
+              return `<div>
+                <div class="u-between" style="margin-bottom:6px">
+                  <span style="font-size:13px;font-weight:500">${p.label}</span>
+                  <span class="t-num t-dim" style="font-size:13px">${fmt.n(val)}</span>
+                </div>
+                <div style="height:10px;background:var(--bg-4);border-radius:999px;overflow:hidden">
+                  <div style="height:100%;width:${w}%;background:${p.color};border-radius:999px;transition:width .8s var(--ease-out)"></div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Rendimiento del equipo (tabla resumen) -->
+        <div class="card rise rise-3">
+          <div class="u-between card--pad" style="padding-bottom:var(--s2)">
+            <div class="t-h3">Rendimiento del equipo</div>
+            <a class="btn btn--quiet btn--sm" href="/supervisor/equipo.html">Ver equipo</a>
+          </div>
+          <table class="table">
+            <thead><tr><th>Asesor</th><th>Leads</th><th>Activos</th><th>Cierres</th><th>Conversión</th></tr></thead>
+            <tbody>
+              ${equipo.slice(0, 8).map(v => `
+                <tr>
+                  <td><div class="u-row u-gap2">
+                    <div class="avatar avatar--sm" style="background:${avatarColor(v.nombre)}">${initials(v.nombre)}</div>
+                    <div><div style="font-weight:500">${esc(v.nombre)}</div>
+                    <div class="u-row u-gap1" style="font-size:11px"><span class="dot dot--${v.estado==='activo'?'green':'mute'}"></span><span class="t-dim3">${esc(v.estado)}</span></div></div>
+                  </div></td>
+                  <td class="t-num">${fmt.n(v.total)}</td>
+                  <td class="t-num t-dim">${fmt.n(v.activos)}</td>
+                  <td class="t-num">${fmt.n(v.vendidos)}</td>
+                  <td><span class="badge badge--${v.conversion>=15?'green':v.conversion>=8?'gold':'mute'}">${v.conversion}%</span></td>
+                </tr>`).join('') || `<tr><td colspan="5" class="t-dim3" style="text-align:center;padding:var(--s4)">Sin asesores en el equipo</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Columna derecha: ranking + estado -->
+      <div class="u-col u-gap3">
+        <!-- Ranking del mes -->
+        <div class="card card--pad rise rise-1">
+          <div class="t-label" style="margin-bottom:var(--s2)">Ranking del mes</div>
+          ${ranking.length ? `<div class="u-col u-gap2" style="margin-top:var(--s2)">
+            ${ranking.slice(0, 5).map((r, i) => `
+              <div class="u-row u-gap2 u-align-center">
+                <div style="width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:700;color:${i===0?'#0A0A0A':'var(--gold)'};background:${i===0?'var(--grad-gold)':'rgba(200,164,90,.1)'}">${i+1}</div>
+                <div class="u-grow"><div style="font-size:13px;font-weight:500">${esc(r.nombre)}</div><div class="t-dim3" style="font-size:11px">${fmt.n(r.activos)} activos · ${fmt.n(r.vendidos)} cierres totales</div></div>
+                <div style="text-align:right"><div class="t-num" style="font-weight:600;color:var(--gold)">${fmt.n(r.vendidosMes)}</div><div class="t-dim3" style="font-size:10px">del mes</div></div>
+              </div>`).join('')}
+          </div>` : `<div class="t-dim3" style="font-size:13px;padding:var(--s2) 0">Todavía no hay cierres registrados este mes.</div>`}
+        </div>
+
+        <!-- Distribución del pipeline (dona) -->
+        <div class="card card--pad rise rise-2">
+          <div class="t-label" style="margin-bottom:var(--s2)">Distribución del pipeline</div>
+          <div style="margin:var(--s2) 0 var(--s3)">${donutChart(donutSegs)}</div>
+          <div class="u-col u-gap1">${donutLegend}</div>
+        </div>
+
+        <!-- Estado del equipo -->
+        <div class="card card--pad rise rise-3">
+          <div class="t-label" style="margin-bottom:var(--s2)">Estado del equipo</div>
+          <div class="u-col u-gap2">
+            ${statRow('dot--green', fmt.n(k.totalAsesores) + ' asesores', 'En el negocio')}
+            ${statRow(alertaActiva ? 'dot--gold' : 'dot--green', fmt.n(k.leadsSinResponder) + ' sin responder', alertaActiva ? 'Requieren atención' : 'Bandeja al día')}
+            ${statRow('dot--green', fmt.n(k.respondidos) + ' respondidos', 'Histórico del equipo')}
+          </div>
+        </div>
+      </div>
+    </div>
+   </div>`;
+
+  function statRow(dot, title, sub) {
+    return `<div class="u-row u-gap2">
+      <span class="dot ${dot}" style="margin-top:6px"></span>
+      <div><div style="font-size:13px;font-weight:500">${title}</div><div class="t-dim3" style="font-size:11.5px">${sub}</div></div>
+    </div>`;
+  }
+})();
+</script>
+</body>
+</html>

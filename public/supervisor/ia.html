@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · IA Copiloto · Supervisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script src="/supervisor/supervisor-shell.js"></script>
+<style>
+  .ia-chat { display:flex; flex-direction:column; height:calc(100vh - 150px); min-height:380px; max-height:820px; }
+  .ia-mensajes { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:12px; padding:4px 2px; }
+  .ia-burbuja { max-width:78%; padding:11px 14px; border-radius:14px; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; }
+  .ia-burbuja--user { align-self:flex-end; background:var(--gold-soft,rgba(212,175,55,.14)); border:1px solid rgba(212,175,55,.35); color:var(--text); border-bottom-right-radius:4px; }
+  .ia-burbuja--bot { align-self:flex-start; background:var(--bg-2); border:1px solid var(--border); color:var(--text); border-bottom-left-radius:4px; }
+  .ia-burbuja--err { align-self:flex-start; background:rgba(224,93,93,.08); border:1px solid rgba(224,93,93,.35); color:#e05d5d; }
+  .ia-chip { border:1px solid var(--border); background:transparent; color:var(--text-2); border-radius:999px; padding:7px 13px; font-size:12px; cursor:pointer; transition:all .2s; }
+  .ia-chip:hover { border-color:var(--gold,#D4AF37); color:var(--gold,#D4AF37); }
+  .ia-cursor::after { content:'▍'; animation:iaBlink 1s steps(1) infinite; color:var(--gold,#D4AF37); }
+  @keyframes iaBlink { 50% { opacity:0; } }
+</style>
+<script>
+(async function () {
+  const { me, content, esc } = await SPS.mount({ active: 'ia', title: 'IA Copiloto', crumb: 'Supervisor Center · Inteligencia con datos reales del equipo' });
+  if (!content) return;
+
+  const ICONS = (window.SPOS && window.SPOS.ICONS) || {};
+
+  // Estado del copiloto: ¿hay proveedor de IA configurado? (determina si las
+  // respuestas vienen del LLM o del fallback local con reglas sobre la snapshot)
+  const estado = await SPS.api('/api/supervisor/copiloto/estado');
+  const sugerencias = (estado && estado.sugerencias) || ['¿Qué asesor necesita más apoyo hoy?', 'Resumen del equipo en una frase'];
+
+  content.innerHTML = `
+   <div class="os-content__max" style="display:flex;flex-direction:column;height:100%">
+    <div class="u-row u-gap2 u-align-center" style="margin-bottom:var(--s3);flex-wrap:wrap">
+      <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--gold,#D4AF37),#a8852e);display:grid;place-items:center;color:#0A0A0A">${(ICONS.ai || '').replace('<svg ','<svg style="width:20px;height:20px" ')}</div>
+      <div class="u-grow">
+        <div style="font-weight:600;font-size:15px">Copiloto del supervisor</div>
+        <div class="t-dim3" style="font-size:12px">Analiza al equipo con números en tiempo real: embudo, ranking, bandeja y canales</div>
+      </div>
+      <span class="badge badge--${estado && estado.activo ? 'green' : 'amber'}">${estado && estado.activo ? 'IA en línea' : 'Modo local (sin API key)'}</span>
+    </div>
+
+    <div class="card ia-chat rise" style="overflow:hidden">
+      <div class="ia-mensajes card--pad" id="iaMensajes">
+        <div class="ia-burbuja ia-burbuja--bot">Hola ${esc(me.nombre.split(' ')[0] || 'supervisor')} 👋 Soy tu copiloto de supervisión. Pregúntame sobre el equipo, las ventas o los leads sin responder — siempre con los datos actuales del CRM.${estado && !estado.activo ? '\n\n(Estoy en modo local: sin API key de IA, respondo con reglas sobre los datos reales. Para respuestas completas configura un proveedor en el panel admin → Chat IA.)' : ''}</div>
+      </div>
+      <div class="card--pad" style="border-top:1px solid var(--border);padding-top:var(--s3)">
+        <div class="u-row u-gap2" style="flex-wrap:wrap;margin-bottom:var(--s3)" id="iaChips">
+          ${sugerencias.map(s => `<button class="ia-chip" data-q="${esc(s)}">${esc(s)}</button>`).join('')}
+        </div>
+        <div class="u-row u-gap2">
+          <input id="iaInput" class="input u-grow" placeholder="Pregunta sobre el equipo… (ej: ¿quién va mejor este mes?)" autocomplete="off" style="min-width:120px">
+          <button class="btn btn--gold" id="iaSend" style="flex-shrink:0">Enviar</button>
+        </div>
+      </div>
+    </div>
+   </div>`;
+
+  const lista = document.getElementById('iaMensajes');
+  const input = document.getElementById('iaInput');
+  const btn = document.getElementById('iaSend');
+  const chips = document.getElementById('iaChips');
+
+  function addBurbuja(html, kind) {
+    const el = document.createElement('div');
+    el.className = 'ia-burbuja ia-burbuja--' + (kind || 'bot');
+    el.innerHTML = html;
+    lista.appendChild(el);
+    lista.scrollTop = lista.scrollHeight;
+    return el;
+  }
+
+  let enviando = false;
+  async function consultar(q) {
+    q = String(q || '').trim();
+    if (!q || enviando) return;
+    enviando = true;
+    addBurbuja(esc(q), 'user');
+    input.value = '';
+    btn.disabled = true;
+    const cursor = addBurbuja('<span class="ia-cursor">Pensando</span>', 'bot');
+    try {
+      const r = await SPS.api('/api/supervisor/copiloto/consulta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensaje: q }),
+      });
+      if (!r) { cursor.innerHTML = 'Sin conexión con el servidor.'; cursor.className += ' ia-burbuja--err'; }
+      else if (r.ok === false || r.error) { cursor.innerHTML = esc(r.error || 'No pude responder.'); cursor.className += ' ia-burbuja--err'; }
+      else {
+        cursor.innerHTML = esc(r.reply) + (r.fuente === 'local' ? '<div class="t-dim3" style="font-size:10.5px;margin-top:8px">respuesta local · sin API key</div>' : '');
+      }
+    } catch (e) {
+      cursor.innerHTML = 'Error inesperado: ' + esc(e.message);
+      cursor.className += ' ia-burbuja--err';
+    } finally {
+      enviando = false;
+      btn.disabled = false;
+      input.focus();
+      lista.scrollTop = lista.scrollHeight;
+    }
+  }
+
+  btn.addEventListener('click', () => consultar(input.value));
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') consultar(input.value); });
+  chips.addEventListener('click', (e) => {
+    const b = e.target.closest('.ia-chip');
+    if (b) consultar(b.getAttribute('data-q'));
+  });
+  input.focus();
+})();
+</script>
+</body>
+</html>

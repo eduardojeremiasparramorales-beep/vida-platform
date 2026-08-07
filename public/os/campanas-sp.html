@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Campañas SP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  .csp-page { max-width: 960px; margin: 0 auto; }
+  .csp-sec { background: var(--bg-1); border: 1px solid var(--border-soft); border-radius: var(--r); padding: var(--s3); margin-bottom: var(--s3); }
+  .csp-sec h3 { font-family: var(--f-title); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+  .csp-sec p { font-size: 12.5px; color: var(--text-3); margin-bottom: var(--s2); }
+  .csp-field { margin-bottom: 14px; }
+  .csp-field label { display: block; font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
+  .csp-field input, .csp-field select, .csp-field textarea { width: 100%; background: var(--bg-3); border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--text); padding: 10px 12px; font-family: var(--f-ui); font-size: 13.5px; outline: none; }
+  .csp-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .csp-row > .csp-field { flex: 1; min-width: 160px; }
+  .csp-btn { height: 38px; padding: 0 20px; background: var(--gold); color: #000; border: none; border-radius: var(--r-sm); font-weight: 600; font-size: 13px; cursor: pointer; font-family: var(--f-ui); }
+  .csp-btn--ghost { background: var(--bg-3); color: var(--text); border: 1px solid var(--border); }
+  .csp-btn--danger { background: #c0392b; color: #fff; }
+  .csp-btn:disabled { opacity: .4; cursor: default; }
+  .csp-badge { font-size: 10.5px; padding: 2px 9px; border-radius: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .csp-badge--draft { background: rgba(150,150,150,.15); color: var(--text-3); }
+  .csp-badge--generating { background: rgba(200,164,90,.18); color: var(--gold); }
+  .csp-badge--ready { background: rgba(78,123,70,.18); color: var(--green); }
+  .csp-badge--error { background: rgba(255,80,80,.15); color: #ff5050; }
+  .csp-empty { text-align: center; padding: 40px 20px; color: var(--text-3); background: var(--bg-2); border-radius: 16px; border: 1px dashed var(--border); }
+
+  /* Proyect cards */
+  .csp-card { border: 1px solid var(--border-soft); border-radius: 12px; padding: 16px; margin-bottom: 10px; background: var(--bg-2); }
+  .csp-card__top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .csp-card__name { font-size: 15px; font-weight: 600; }
+  .csp-card__meta { font-size: 12px; color: var(--text-3); margin: 4px 0; }
+  .csp-card__actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .csp-card__actions button { height: 32px; padding: 0 14px; font-size: 12px; }
+
+  /* Asset grid */
+  .csp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 12px 0; }
+  .csp-asset { background: var(--bg-3); border-radius: 8px; padding: 8px; text-align: center; border: 1px solid var(--border); }
+  .csp-asset img { width: 100%; height: auto; border-radius: 6px; }
+
+  /* Wizard steps */
+  .csp-steps { display: flex; gap: 4px; margin-bottom: 20px; }
+  .csp-step { flex: 1; padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; text-align: center; background: var(--bg-3); color: var(--text-3); }
+  .csp-step.active { background: rgba(200,164,90,.15); color: var(--gold); }
+  .csp-step.done { background: rgba(78,123,70,.15); color: var(--green); }
+  .csp-wizard { display: none; }
+  .csp-wizard.active { display: block; }
+
+  /* Analyze results */
+  .csp-tag { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 12px; margin: 2px; background: rgba(200,164,90,.12); color: var(--gold); }
+  .csp-img-thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+
+  /* Checklist */
+  .csp-check { display: flex; gap: 10px; flex-wrap: wrap; }
+  .csp-check label { display: flex; align-items: center; gap: 8px; background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: 10px; padding: 10px 16px; cursor: pointer; font-size: 13px; }
+  .csp-check label input { width: auto; }
+  .csp-check label.checked { border-color: var(--gold); background: rgba(200,164,90,.08); }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const { api, toast } = SPOS;
+  const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  const ctx = await SPOS.mount({
+    active: 'campanas-sp', title: 'Campañas SP', crumb: 'Generación de Assets', padded: true, adminOnly: true,
+    action: `<button class="btn btn--gold btn--sm" id="btnNewWizard">Nuevo proyecto</button>`
+  });
+  if (!ctx) return;
+
+  let projects = [];
+  let currentProject = null;
+  let aiResult = null;
+
+  // ===== MAIN RENDER =====
+  async function render() {
+    await loadProjects();
+    ctx.content.innerHTML = `
+      <div class="csp-page">
+        <div id="projectList"></div>
+      </div>`;
+    renderProjectList();
+    document.getElementById('btnNewWizard').addEventListener('click', openWizard);
+  }
+
+  async function loadProjects() {
+    projects = await api('/api/campanas-sp/projects') || [];
+  }
+
+  function renderProjectList() {
+    const box = document.getElementById('projectList');
+    if (!projects.length) {
+      box.innerHTML = '<div class="csp-sec"><div class="csp-empty">No hay proyectos. Crea uno nuevo con "Nuevo proyecto".</div></div>';
+      return;
+    }
+    box.innerHTML = '<div class="csp-sec"><h3>Mis proyectos</h3>' + projects.map(p => {
+      const assets = parseAssets(p.assets_result);
+      const statusLabel = { draft: 'Borrador', generating: 'Generando…', ready: 'Listo', error: 'Error' }[p.status] || p.status;
+      const badgeCls = `csp-badge csp-badge--${p.status === 'ready' ? 'ready' : p.status === 'error' ? 'error' : p.status === 'generating' ? 'generating' : 'draft'}`;
+      return `<div class="csp-card">
+        <div class="csp-card__top">
+          <div><span class="csp-card__name">${esc(p.name)}</span> <span class="${badgeCls}">${statusLabel}</span></div>
+        </div>
+        <div class="csp-card__meta">${esc(p.location || '')} ${p.template ? '· ' + esc(p.template) : ''}</div>
+        <div class="csp-card__meta">${p.price ? esc(p.price) + (p.area ? ' · ' + esc(p.area) : '') : ''} ${assets && assets.total ? '· ' + assets.total + ' assets' : ''}</div>
+        ${p.error ? '<div style="font-size:11px;color:#ff5050;margin:4px 0">' + esc(p.error) + '</div>' : ''}
+        <div class="csp-card__actions">
+          <button data-edit="${p.id}" class="csp-btn csp-btn--ghost">Editar</button>
+          ${p.status === 'draft' || p.status === 'error' ? `<button data-gen="${p.id}" class="csp-btn">Generar 27</button>` : ''}
+          ${p.status === 'ready' ? `<button data-preview="${p.id}" class="csp-btn csp-btn--ghost">Ver</button>` : ''}
+          <button data-del="${p.id}" class="csp-btn csp-btn--danger" style="background:transparent;border:1px solid var(--border);color:var(--text-3)">Eliminar</button>
+        </div>
+        <div id="preview-${p.id}"></div>
+      </div>`;
+    }).join('') + '</div>';
+
+    box.querySelectorAll('[data-gen]').forEach(b => b.addEventListener('click', () => generateProject(Number(b.dataset.gen))));
+    box.querySelectorAll('[data-preview]').forEach(b => b.addEventListener('click', () => togglePreview(Number(b.dataset.preview))));
+    box.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => { currentProject = projects.find(x => x.id === Number(b.dataset.edit)); openWizard(); }));
+    box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Eliminar?')) return;
+      const r = await api('/api/campanas-sp/projects/' + b.dataset.del, { method: 'DELETE' });
+      if (r && r.ok) { toast('Eliminado', 'ok'); render(); }
+    }));
+  }
+
+  function parseAssets(s) {
+    if (!s || s === '{}') return null;
+    try { return JSON.parse(s); } catch (e) { return null; }
+  }
+
+  async function generateProject(id) {
+    const r = await api('/api/campanas-sp/projects/' + id + '/generate', { method: 'POST' });
+    if (r && r.ok) toast('Generados ' + r.total + ' assets en ' + r.time_ms + 'ms', 'ok');
+    else toast('Error: ' + ((r && r.error) || 'falló'), 'err');
+    render();
+  }
+
+  function fileUrl(projectId, category, filename) {
+    return `/api/campanas-sp/projects/${projectId}/file/${encodeURIComponent(category)}/${encodeURIComponent(filename)}`;
+  }
+
+  async function togglePreview(id) {
+    const box = document.getElementById('preview-' + id);
+    if (!box) return;
+    if (box.dataset.open === '1') { box.innerHTML = ''; box.dataset.open = '0'; return; }
+    box.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:8px">Cargando…</div>';
+    const p = projects.find(x => x.id === id);
+    const assets = parseAssets(p.assets_result);
+    if (!assets || !assets.assets) { box.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:8px">Sin datos</div>'; return; }
+    box.dataset.open = '1';
+    let html = '';
+
+    // Reel en video real (Fase 3) — si el ensamblado con ffmpeg funcionó, va primero
+    // y con reproductor propio; si falló, se avisa pero los frames siguen abajo igual.
+    if (assets.reel_video) {
+      const videoUrl = fileUrl(id, 'reel', 'reel.mp4');
+      html += `<div style="margin-top:8px">
+        <strong style="font-size:11px;color:var(--gold);text-transform:uppercase">Reel (video)</strong>
+        <div style="margin-top:6px"><video controls playsinline preload="metadata" style="width:100%;max-width:280px;border-radius:10px;background:#000" src="${videoUrl}"></video></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <a class="csp-btn csp-btn--ghost" href="${videoUrl}" download="reel-${esc(p.slug)}.mp4">Descargar</a>
+          <button class="csp-btn csp-btn--ghost" data-compartir-reel="${id}">Compartir al chat</button>
+        </div>
+      </div>`;
+    } else if (assets.reel_video_error) {
+      html += `<div style="margin-top:8px;font-size:11.5px;color:var(--text-3)">⚠️ El reel en video no se pudo generar (${esc(assets.reel_video_error)}) — quedan los frames estáticos abajo.</div>`;
+    }
+
+    for (const [cat, files] of Object.entries(assets.assets)) {
+      const imgs = (files || []).filter(f => /\.(png|jpe?g)$/i.test(f));
+      if (!imgs.length) continue;
+      html += `<div style="margin-top:8px"><strong style="font-size:11px;color:var(--gold);text-transform:uppercase">${esc(cat)}</strong>`;
+      html += '<div class="csp-grid">' + imgs.map(f => `
+        <div class="csp-asset">
+          <a href="${fileUrl(id, cat, f)}" download="${esc(f)}" style="display:block;text-decoration:none">
+            <img src="${fileUrl(id, cat, f)}" loading="lazy" alt="${esc(f)}">
+          </a>
+          <span style="font-size:9.5px;color:var(--text-3);display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f)}</span>
+          <button class="csp-btn csp-btn--ghost" style="height:24px;padding:0 8px;font-size:9.5px;margin-top:4px;width:100%" data-share-asset data-cat="${esc(cat)}" data-file="${esc(f)}">Compartir al chat</button>
+        </div>`).join('') + '</div></div>';
+    }
+    box.innerHTML = html || '<div style="font-size:12px;color:var(--text-3);padding:8px">Sin assets</div>';
+
+    box.querySelector('[data-compartir-reel]')?.addEventListener('click', () => {
+      openShareModal(id, 'reel', 'reel.mp4');
+    });
+
+    box.querySelectorAll('[data-share-asset]').forEach(el => {
+      el.addEventListener('click', () => openShareModal(id, el.dataset.cat, el.dataset.file));
+    });
+  }
+
+  // Compartir un asset generado (imagen o el reel) directo al chat de un lead — selector
+  // con búsqueda + POST a /share-asset. Solo WhatsApp por ahora (el backend lo valida igual).
+  async function openShareModal(projectId, category, filename) {
+    const existing = document.getElementById('cspShareModal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'cspShareModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55)';
+    modal.innerHTML = `
+      <div style="background:var(--bg-1);border-radius:14px;padding:20px;width:92%;max-width:420px;max-height:80vh;overflow:auto;border:1px solid var(--border-soft)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <h3 style="margin:0;color:var(--text-1);font-size:15px">Compartir al chat</h3>
+          <button id="csmClose" style="background:none;border:none;color:var(--text-3);font-size:20px;cursor:pointer">✕</button>
+        </div>
+        <input id="csmSearch" placeholder="Buscar lead por nombre o teléfono…" style="width:100%;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px;margin-bottom:10px;outline:none">
+        <div id="csmList" style="font-size:12px;color:var(--text-3)">Cargando leads…</div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#csmClose').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+    const leads = (await api('/api/leads')) || [];
+    const list = modal.querySelector('#csmList');
+    function renderList(filter) {
+      const f = (filter || '').toLowerCase();
+      const filtered = !f ? leads : leads.filter(l =>
+        (l.customer_name || '').toLowerCase().includes(f) || (l.customer_phone || '').includes(f));
+      if (!filtered.length) { list.innerHTML = '<div style="padding:16px 0;text-align:center">Sin resultados</div>'; return; }
+      list.innerHTML = filtered.slice(0, 30).map(l => `
+        <div data-lead="${l.id}" style="display:flex;justify-content:space-between;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border-soft);cursor:pointer">
+          <span style="color:var(--text-1)">${esc(l.customer_name || 'Sin nombre')} <span style="color:var(--text-3)">· ${esc(l.customer_phone || '')}</span></span>
+          <button class="csp-btn csp-btn--ghost" style="height:28px;padding:0 10px;font-size:11px" data-send="${l.id}">Enviar</button>
+        </div>`).join('');
+      list.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Enviando…';
+        const r = await api(`/api/campanas-sp/projects/${projectId}/share-asset`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ leadId: Number(btn.dataset.send), category, filename }),
+        });
+        if (r && r.ok) {
+          toast('Enviado al chat', 'ok');
+          modal.remove();
+        } else {
+          toast('Error: ' + ((r && (r.detalle || r.error)) || 'no se pudo enviar'), 'err');
+          btn.disabled = false;
+          btn.textContent = 'Enviar';
+        }
+      }));
+    }
+    renderList('');
+    modal.querySelector('#csmSearch').addEventListener('input', (e) => renderList(e.target.value));
+  }
+
+  // ===== WIZARD =====
+  const TEMPLATES = [
+    { value: 'premium', label: 'Premium — oscuro, dorado, sobrio' },
+    { value: 'moderna', label: 'Moderna — claro, contemporáneo' },
+    { value: 'clasica', label: 'Clásica — dorado fuerte, tradicional' },
+  ];
+
+  let wizardState = { step: 1, projectId: null, slug: '', name: '', location: '', price: '', area: '', features: [], template: 'premium', images: [], files: [] };
+
+  function openWizard() {
+    const existing = document.getElementById('cspWizard');
+    if (existing) existing.remove();
+    if (currentProject) {
+      wizardState = {
+        step: 4, projectId: currentProject.id, slug: currentProject.slug,
+        name: currentProject.name, location: currentProject.location || '',
+        price: currentProject.price || '', area: currentProject.area || '',
+        features: safeArr(currentProject.features), template: currentProject.template || 'premium',
+        images: [], files: [],
+      };
+    } else {
+      wizardState = { step: 1, projectId: null, slug: '', name: '', location: '', price: '', area: '', features: [], template: 'premium', images: [] };
+    }
+    renderWizard();
+  }
+
+  function safeArr(v) {
+    if (!v) return [];
+    if (Array.isArray(v)) return v;
+    try { return JSON.parse(v); } catch (e) { return []; }
+  }
+
+  function renderWizard() {
+    const existing = document.getElementById('cspWizard');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'cspWizard';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55)';
+    modal.innerHTML = `
+      <div style="background:var(--bg-1);border-radius:14px;padding:24px;width:94%;max-width:620px;max-height:92vh;overflow:auto;border:1px solid var(--border-soft)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <h3 style="margin:0;color:var(--text-1);font-size:16px">${currentProject ? 'Editar: ' + esc(currentProject.name) : 'Nuevo Proyecto SP'}</h3>
+          <button id="cspClose" style="background:none;border:none;color:var(--text-3);font-size:20px;cursor:pointer">✕</button>
+        </div>
+        <div class="csp-steps" id="cspSteps">
+          <div class="csp-step" data-s="1">1. Nombre</div>
+          <div class="csp-step" data-s="2">2. Imágenes</div>
+          <div class="csp-step" data-s="3">3. AI analiza</div>
+          <div class="csp-step" data-s="4">4. Precio</div>
+          <div class="csp-step" data-s="5">5. Generar</div>
+        </div>
+        <div id="cspBody"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#cspClose').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    renderStep();
+  }
+
+  function updateSteps() {
+    document.querySelectorAll('.csp-step').forEach(el => {
+      el.classList.toggle('active', Number(el.dataset.s) === wizardState.step);
+      el.classList.toggle('done', Number(el.dataset.s) < wizardState.step);
+    });
+  }
+
+  function renderStep() {
+    updateSteps();
+    const body = document.getElementById('cspBody');
+    if (!body) return;
+    if (wizardState.step === 1) renderStep1(body);
+    else if (wizardState.step === 2) renderStep2(body);
+    else if (wizardState.step === 3) renderStep3(body);
+    else if (wizardState.step === 4) renderStep4(body);
+    else if (wizardState.step === 5) renderStep5(body);
+  }
+
+  // STEP 1: Name + Template
+  function renderStep1(body) {
+    body.innerHTML = `
+      <div class="csp-field"><label>Nombre del proyecto</label><input id="wsName" value="${esc(wizardState.name)}" placeholder="Ej: Porvenir"></div>
+      <div class="csp-field"><label>Ubicación</label><input id="wsLocation" value="${esc(wizardState.location)}" placeholder="Tocaima, Cundinamarca"></div>
+      <div class="csp-field"><label>Slug (URL-safe)</label><input id="wsSlug" value="${esc(wizardState.slug)}" placeholder="porvenir"></div>
+      <div class="csp-field"><label>Template visual</label>
+        <select id="wsTemplate">${TEMPLATES.map(t => `<option value="${t.value}" ${wizardState.template === t.value ? 'selected' : ''}>${esc(t.label)}</option>`).join('')}</select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button class="csp-btn csp-btn--ghost" id="wsNext1">Siguiente →</button>
+      </div>`;
+    body.querySelector('#wsNext1').addEventListener('click', () => {
+      wizardState.name = document.getElementById('wsName').value.trim();
+      wizardState.location = document.getElementById('wsLocation').value.trim();
+      wizardState.slug = document.getElementById('wsSlug').value.trim() || wizardState.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+      wizardState.template = document.getElementById('wsTemplate').value;
+      if (!wizardState.name) { toast('Nombre requerido', 'err'); return; }
+      wizardState.step = 2;
+      renderStep();
+    });
+  }
+
+  // STEP 2: Elegir imágenes (se suben al proyecto en el paso 4; aquí solo se filtran y se
+  // manda una muestra a analizar). Antes este paso solo tocaba /analyze-images — el proyecto
+  // se guardaba con images_dir vacío y "Generar" fallaba después con "images_dir no existe".
+  const CSP_MAX_FILES = 50;
+  const CSP_MAX_SIZE = 20 * 1024 * 1024;
+  function isImageFile(f) {
+    if (f.type && f.type.startsWith('image/')) return true;
+    return /\.(png|jpe?g|webp)$/i.test(f.name || '');
+  }
+  function renderStep2(body) {
+    const hasFiles = wizardState.files && wizardState.files.length;
+    body.innerHTML = `
+      <p>Elige las fotos reales del proyecto. Se suben al guardar y una muestra se analiza con IA.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <label class="csp-btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px">
+          Elegir carpeta
+          <input type="file" webkitdirectory multiple accept="image/*" id="wsFolder" style="display:none">
+        </label>
+        <label class="csp-btn csp-btn--ghost" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px">
+          Elegir archivos
+          <input type="file" multiple accept="image/*" id="wsFiles" style="display:none">
+        </label>
+      </div>
+      <div id="wsImgList" style="font-size:12px;color:var(--text-3);margin-bottom:8px">${hasFiles ? wizardState.files.length + ' imagen(es) incluidas' : 'Ninguna imagen seleccionada'}</div>
+      <div id="wsUploadProg" style="font-size:12px;color:var(--text-3);margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px">
+        <button class="csp-btn csp-btn--ghost" id="wsPrev2">← Atrás</button>
+        <button class="csp-btn" id="wsNext2" ${!hasFiles ? 'disabled' : ''}>Siguiente →</button>
+      </div>`;
+    body.querySelector('#wsPrev2').addEventListener('click', () => { wizardState.step = 1; renderStep(); });
+
+    function selectFiles(fileList) {
+      const all = Array.from(fileList || []);
+      const imagenes = all.filter(isImageFile).filter(f => f.size <= CSP_MAX_SIZE);
+      const incluidas = imagenes.slice(0, CSP_MAX_FILES);
+      const descartadas = all.length - incluidas.length;
+      wizardState.files = incluidas;
+      wizardState.images = incluidas.map(f => f.name);
+      document.getElementById('wsImgList').textContent = incluidas.length + ' imagen(es) incluidas'
+        + (descartadas > 0 ? ' · ' + descartadas + ' descartada(s) (no-imagen o >20MB)' : '');
+      document.getElementById('wsNext2').disabled = !incluidas.length;
+      if (incluidas.length) analyzeSample(incluidas);
+    }
+
+    async function analyzeSample(files) {
+      const sample = files.slice(0, 5);
+      const form = new FormData();
+      for (const f of sample) form.append('images', f);
+      const btn = document.getElementById('wsNext2');
+      const prog = document.getElementById('wsUploadProg');
+      prog.textContent = 'Analizando ' + sample.length + ' imagen(es) con IA…';
+      btn.disabled = true;
+      try {
+        const r = await fetch('/api/campanas-sp/analyze-images', { method: 'POST', body: form, credentials: 'same-origin' });
+        const data = await r.json().catch(() => null);
+        if (r.ok && data && !data.error) {
+          aiResult = data;
+          if (data.nombre_sugerido && !wizardState.name) wizardState.name = data.nombre_sugerido;
+          if (data.ubicacion && !wizardState.location) wizardState.location = data.ubicacion;
+          if (data.features && data.features.length) wizardState.features = data.features;
+          if (data.precio_visible && !wizardState.price) wizardState.price = data.precio_visible;
+          if (data.area_visible && !wizardState.area) wizardState.area = data.area_visible;
+          prog.textContent = 'IA analizó las imágenes ✓';
+        } else {
+          aiResult = null;
+          prog.textContent = 'Sin análisis de IA: ' + ((data && data.error) || 'no se pudo analizar') + ' — puedes seguir manualmente';
+        }
+      } catch (e) {
+        aiResult = null;
+        prog.textContent = 'Sin análisis de IA (error de conexión) — puedes seguir manualmente';
+      }
+      btn.disabled = !(wizardState.files && wizardState.files.length);
+    }
+
+    body.querySelector('#wsFolder').addEventListener('change', function() { selectFiles(this.files); this.value = ''; });
+    body.querySelector('#wsFiles').addEventListener('change', function() { selectFiles(this.files); this.value = ''; });
+    body.querySelector('#wsNext2').addEventListener('click', () => { wizardState.step = 3; renderStep(); });
+  }
+
+  // STEP 3: AI Analysis review
+  function renderStep3(body) {
+    const hasAi = aiResult && aiResult.nombre_sugerido;
+    body.innerHTML = `
+      <p>${hasAi ? 'El sistema analizó tus imágenes y sugirió estos datos. Revisa y confirma:' : 'Sin análisis de imágenes disponible. Completa los datos manualmente.'}</p>
+      <div class="csp-row">
+        <div class="csp-field" style="flex:2"><label>Nombre sugerido</label><input id="ws3Name" value="${esc(wizardState.name)}"></div>
+        <div class="csp-field" style="flex:1"><label>Ubicación</label><input id="ws3Location" value="${esc(wizardState.location)}"></div>
+      </div>
+      <div class="csp-row">
+        <div class="csp-field"><label>Precio</label><input id="ws3Price" value="${esc(wizardState.price)}" placeholder="Ej: $45.000.000"></div>
+        <div class="csp-field"><label>Área</label><input id="ws3Area" value="${esc(wizardState.area)}" placeholder="Ej: 112m2"></div>
+      </div>
+      <div class="csp-field"><label>Features (uno por línea)</label>
+        <textarea id="ws3Features" rows="3">${wizardState.features.join('\n')}</textarea>
+      </div>
+      ${hasAi && aiResult.categorias ? '<div style="font-size:11px;color:var(--text-3);margin:8px 0">Categorización de imágenes: ' + Object.entries(aiResult.categorias || {}).filter(([,v]) => v.length).map(([k,v]) => `<span class="csp-tag">${esc(k)}: ${v.join(', ')}</span>`).join('') + '</div>' : ''}
+      <div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px">
+        <button class="csp-btn csp-btn--ghost" id="wsPrev3">← Atrás</button>
+        <button class="csp-btn" id="wsNext3">Confirmar y seguir →</button>
+      </div>`;
+    body.querySelector('#wsPrev3').addEventListener('click', () => { wizardState.step = 2; renderStep(); });
+    body.querySelector('#wsNext3').addEventListener('click', async () => {
+      wizardState.name = document.getElementById('ws3Name').value.trim();
+      wizardState.location = document.getElementById('ws3Location').value.trim();
+      wizardState.price = document.getElementById('ws3Price').value.trim();
+      wizardState.area = document.getElementById('ws3Area').value.trim();
+      wizardState.features = document.getElementById('ws3Features').value.split('\n').map(s => s.trim()).filter(Boolean);
+      if (!wizardState.name) { toast('Nombre requerido', 'err'); return; }
+      wizardState.step = 4;
+      renderStep();
+    });
+  }
+
+  // STEP 4: Price from CRM or manual
+  function renderStep4(body) {
+    body.innerHTML = `
+      <p>El precio se mostrará en los assets. Puedes auto-llenarlo desde un proyecto del CRM o escribirlo manualmente.</p>
+      <div class="csp-row">
+        <div class="csp-field" style="flex:1"><label>Desde proyecto CRM</label>
+          <select id="ws4Proyecto"><option value="">Manual</option></select>
+        </div>
+        <div class="csp-field" style="flex:1"><label>Precio</label><input id="ws4Price" value="${esc(wizardState.price)}" placeholder="Ej: $45.000.000"></div>
+      </div>
+      <div class="csp-field"><label>Área</label><input id="ws4Area" value="${esc(wizardState.area)}" placeholder="Ej: 112m2"></div>
+      <div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px">
+        <button class="csp-btn csp-btn--ghost" id="wsPrev4">← Atrás</button>
+        <button class="csp-btn" id="wsNext4">Guardar proyecto →</button>
+      </div>`;
+    // Cargar proyectos del CRM para auto-fill
+    api('/api/proyectos').then(proys => {
+      const sel = document.getElementById('ws4Proyecto');
+      if (proys && proys.length) {
+        proys.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.nombre + ' (' + (p.precio_min ? '$' + Number(p.precio_min).toLocaleString('es-CO') : 'sin precio') + ')';
+          sel.appendChild(opt);
+        });
+        sel.addEventListener('change', async () => {
+          if (!sel.value) return;
+          const data = await api('/api/campanas-sp/auto-fill/' + sel.value);
+          if (data && data.price) document.getElementById('ws4Price').value = data.price;
+          if (data && data.name && !wizardState.name) wizardState.name = data.name;
+        });
+      }
+    });
+    body.querySelector('#wsPrev4').addEventListener('click', () => { wizardState.step = 3; renderStep(); });
+    body.querySelector('#wsNext4').addEventListener('click', async () => {
+      const btn = document.getElementById('wsNext4');
+      btn.disabled = true;
+      btn.textContent = 'Guardando…';
+      wizardState.price = document.getElementById('ws4Price').value.trim();
+      wizardState.area = document.getElementById('ws4Area').value.trim();
+      // Save project to DB
+      const data = {
+        name: wizardState.name,
+        slug: wizardState.slug || wizardState.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),
+        location: wizardState.location,
+        price: wizardState.price,
+        area: wizardState.area,
+        features: wizardState.features,
+        highlights: [],
+        template: wizardState.template,
+      };
+      let result;
+      if (wizardState.projectId) {
+        result = await api('/api/campanas-sp/projects/' + wizardState.projectId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      } else {
+        result = await api('/api/campanas-sp/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      }
+      if (result && result.id) {
+        wizardState.projectId = result.id;
+        toast('Proyecto guardado', 'ok');
+        if (wizardState.files && wizardState.files.length) {
+          btn.textContent = 'Subiendo ' + wizardState.files.length + ' imagen(es)…';
+          await uploadProjectImages(result.id);
+        }
+        wizardState.step = 5;
+        renderStep();
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Guardar proyecto →';
+        toast('Error: ' + ((result && result.error) || 'no se pudo guardar'), 'err');
+      }
+    });
+  }
+
+  // Sube las fotos ya filtradas del paso 2 a la carpeta persistida del proyecto — sin esto
+  // images_dir queda vacío y "Generar" falla más adelante con "images_dir no existe".
+  async function uploadProjectImages(projectId) {
+    const form = new FormData();
+    for (const f of wizardState.files) form.append('images', f);
+    try {
+      const r = await fetch('/api/campanas-sp/projects/' + projectId + '/upload-images', { method: 'POST', body: form, credentials: 'same-origin' });
+      const data = await r.json().catch(() => null);
+      if (r.ok && data && data.ok) {
+        toast(data.count + ' imagen(es) subidas al proyecto', 'ok');
+      } else {
+        toast('No se pudieron subir las imágenes: ' + ((data && (data.detalle || data.error)) || 'error desconocido'), 'err');
+      }
+    } catch (e) {
+      toast('Error de conexión subiendo imágenes', 'err');
+    }
+  }
+
+  // STEP 5: Generate
+  function renderStep5(body) {
+    body.innerHTML = `
+      <p>Todo listo. El proyecto se guardó con los datos confirmados. Ahora puedes generar los 27 assets.</p>
+      <div style="background:var(--bg-2);border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:600">${esc(wizardState.name)}</div>
+        <div style="font-size:12px;color:var(--text-3);margin:4px 0">${esc(wizardState.location)} ${wizardState.price ? '· ' + esc(wizardState.price) : ''}</div>
+        <div style="font-size:11px;color:var(--text-3)">Template: ${wizardState.template} · ${wizardState.features.length} features</div>
+      </div>
+      <div class="csp-check" style="margin-bottom:14px">
+        <label class="checked"><input type="checkbox" checked disabled>Portada (2)</label>
+        <label class="checked"><input type="checkbox" checked disabled>Feed (6)</label>
+        <label class="checked"><input type="checkbox" checked disabled>Carrusel (6)</label>
+        <label class="checked"><input type="checkbox" checked disabled>Stories (5)</label>
+        <label class="checked"><input type="checkbox" checked disabled>Banners (2)</label>
+        <label class="checked"><input type="checkbox" checked disabled>Reel (6)</label>
+      </div>
+      <div id="ws5Status" style="font-size:13px;color:var(--text-3);margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px;justify-content:space-between">
+        <button class="csp-btn csp-btn--ghost" id="wsPrev5">← Atrás</button>
+        <button class="csp-btn" id="wsGenerate">Generar 27 Assets</button>
+      </div>`;
+    body.querySelector('#wsPrev5').addEventListener('click', () => { wizardState.step = 4; renderStep(); });
+    body.querySelector('#wsGenerate').addEventListener('click', async () => {
+      const btn = document.getElementById('wsGenerate');
+      const status = document.getElementById('ws5Status');
+      btn.disabled = true;
+      status.textContent = 'Generando assets… esto toma ~30-40 segundos';
+      const r = await api('/api/campanas-sp/projects/' + wizardState.projectId + '/generate', { method: 'POST' });
+      btn.disabled = false;
+      if (r && r.ok) {
+        status.innerHTML = '<span style="color:var(--green)">✓ Generados ' + r.total + ' assets en ' + (r.time_ms / 1000).toFixed(1) + ' segundos</span>';
+        toast('Campana generada exitosamente', 'ok');
+        // Close wizard after a moment
+        setTimeout(() => { document.getElementById('cspWizard')?.remove(); render(); }, 2000);
+      } else {
+        status.innerHTML = '<span style="color:#ff5050">Error: ' + esc((r && r.error) || 'falló la generación') + '</span>';
+      }
+    });
+  }
+
+  await render();
+})();
+</script>
+</body>
+</html>

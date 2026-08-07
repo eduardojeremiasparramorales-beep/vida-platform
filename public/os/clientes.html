@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Clientes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  .cl-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); cursor: pointer; transition: background .12s; border-radius: var(--r-sm); }
+  .cl-row:hover { background: var(--bg-1); }
+  .cl-row.active { background: var(--bg-2); }
+  .cl-row__info { flex: 1; min-width: 0; }
+  .cl-row__name { font-size: 13.5px; font-weight: 600; color: var(--text); }
+  .cl-row__sub { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+  .cl-chip { font-size: 10.5px; padding: 2px 8px; border-radius: 999px; background: var(--bg-3); color: var(--text-2); }
+  .os-panel__head { padding: 16px var(--s3) 12px; border-bottom: 1px solid var(--border-soft); display: flex; align-items: center; justify-content: space-between; }
+  .os-panel__body { padding: var(--s3); overflow-y: auto; flex: 1; }
+  .cl-field { margin-bottom: 12px; }
+  .cl-field label { display: block; font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 5px; }
+  .cl-field input, .cl-field textarea { width: 100%; background: var(--bg-3); border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--text); padding: 9px 12px; font-family: var(--f-ui); font-size: 13px; outline: none; resize: vertical; }
+  .cl-field input:focus, .cl-field textarea:focus { border-color: var(--gold-line); }
+  .cl-save { width: 100%; height: 38px; background: var(--gold); color: #000; border: none; border-radius: var(--r-sm); font-weight: 600; font-size: 13px; cursor: pointer; font-family: var(--f-ui); margin-top: 4px; }
+  .cl-save:disabled { opacity: .4; }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const { ICONS, api, toast, avatarColor, initials, fmtPhone } = SPOS;
+
+  const ctx = await SPOS.mount({ active: 'clients', title: 'Clientes', crumb: 'Base unificada de contactos', padded: false, panel: true });
+  if (!ctx) return;
+
+  let clientes = [], actual = null, query = '';
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+  ctx.content.innerHTML = `
+    <div style="padding:var(--s3)">
+      <div class="u-between u-gap2" style="margin-bottom:var(--s3)">
+        <label class="os-search" style="width:100%;max-width:360px">${ICONS.search}<input id="q" placeholder="Buscar por nombre o teléfono…"></label>
+        <span class="t-dim3" style="font-size:12.5px" id="total"></span>
+      </div>
+      <div id="lista"></div>
+    </div>`;
+
+  panelVacio();
+
+  async function cargar() {
+    const r = await api('/api/v2/customers?limite=100' + (query ? '&busqueda=' + encodeURIComponent(query) : ''));
+    clientes = (r && Array.isArray(r.data)) ? r.data : [];
+    render();
+  }
+
+  function render() {
+    document.getElementById('total').textContent = clientes.length + ' cliente(s)';
+    const lista = document.getElementById('lista');
+    if (!clientes.length) {
+      lista.innerHTML = `<div class="empty" style="padding:40px 0">${ICONS.clients}<div><div class="t-h3">Sin clientes todavía</div><div class="t-dim3" style="font-size:12px;margin-top:4px">Los clientes se crean automáticamente cuando llega su primer mensaje</div></div></div>`;
+      return;
+    }
+    lista.innerHTML = clientes.map(c => `
+      <div class="cl-row${actual && actual.id === c.id ? ' active' : ''}" data-id="${c.id}">
+        <div class="avatar avatar--sm" style="background:${avatarColor(c.name)}">${initials(c.name)}</div>
+        <div class="cl-row__info">
+          <div class="cl-row__name">${esc(c.name || 'Sin nombre')}</div>
+          <div class="cl-row__sub">${esc(fmtPhone(c.phone)) || esc(c.email) || '—'}</div>
+        </div>
+        ${c.email ? '<span class="cl-chip">✉️ email</span>' : ''}
+      </div>`).join('');
+    lista.querySelectorAll('.cl-row').forEach(el =>
+      el.addEventListener('click', () => abrir(Number(el.dataset.id))));
+  }
+
+  function panelVacio() {
+    ctx.panel.innerHTML = `<div class="os-panel__head"><div class="t-label">Ficha del cliente</div></div>
+      <div class="os-panel__body"><div class="empty">${ICONS.clients}<div><div class="t-h3">Selecciona un cliente</div><div class="t-dim3" style="font-size:12px;margin-top:4px">Verás sus datos, canales y conversaciones</div></div></div></div>`;
+  }
+
+  async function abrir(id) {
+    const r = await api('/api/v2/customers/' + id);
+    if (!r || !r.data) { toast('No se pudo cargar el cliente', 'err'); return; }
+    const { customer, channels, conversations } = r.data;
+    actual = customer; render();
+
+    const CH_EMOJI = { whatsapp: '🟢 WhatsApp', messenger: '🔵 Messenger', instagram: '🟣 Instagram' };
+    ctx.panel.innerHTML = `
+      <div class="os-panel__head">
+        <div class="t-label">Ficha del cliente</div>
+        ${conversations.length ? `<a class="btn btn--gold btn--sm" href="/os/inbox.html">${ICONS.msg}Chat</a>` : ''}
+      </div>
+      <div class="os-panel__body">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:var(--s3);text-align:center">
+          <div class="avatar avatar--lg" style="background:${avatarColor(customer.name)}">${initials(customer.name)}</div>
+          <div style="font-weight:700;font-size:15px">${esc(customer.name || 'Sin nombre')}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center">
+            ${channels.map(ch => `<span class="cl-chip">${CH_EMOJI[ch.channel] || ch.channel}</span>`).join('') || '<span class="cl-chip">Sin canales</span>'}
+          </div>
+        </div>
+
+        <form id="fEdit">
+          <div class="cl-field"><label>Nombre</label><input id="fName" value="${esc(customer.name || '')}" maxlength="120"></div>
+          <div class="cl-field"><label>Teléfono</label><input id="fPhone" value="${esc(customer.phone || '')}" maxlength="20"></div>
+          <div class="cl-field"><label>Email</label><input id="fEmail" type="email" value="${esc(customer.email || '')}" maxlength="120"></div>
+          <div class="cl-field"><label>Notas</label><textarea id="fNotes" rows="3" maxlength="1000">${esc(customer.notes || '')}</textarea></div>
+          <button type="submit" class="cl-save" id="btnSave">Guardar cambios</button>
+        </form>
+
+        <div class="t-label" style="margin:var(--s3) 0 var(--s2)">Conversaciones activas · ${conversations.length}</div>
+        ${conversations.length
+          ? conversations.map(cv => `<div style="padding:8px 0;border-bottom:1px solid var(--border-soft);font-size:12.5px;color:var(--text-2)">${CH_EMOJI[cv.channel] || cv.channel} · ${esc((cv.last_message || '—').slice(0, 50))}</div>`).join('')
+          : '<div class="t-dim3" style="font-size:12px">Sin conversaciones abiertas</div>'}
+      </div>`;
+
+    document.getElementById('fEdit').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const btn = document.getElementById('btnSave');
+      btn.disabled = true; btn.textContent = 'Guardando…';
+      const body = {
+        name: document.getElementById('fName').value.trim(),
+        phone: document.getElementById('fPhone').value.trim(),
+        email: document.getElementById('fEmail').value.trim(),
+        notes: document.getElementById('fNotes').value.trim(),
+      };
+      const rr = await api('/api/v2/customers/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      btn.disabled = false; btn.textContent = 'Guardar cambios';
+      if (rr && rr.data) { toast('Cliente actualizado', 'ok'); await cargar(); abrir(id); }
+      else toast('Error al guardar', 'err');
+    });
+  }
+
+  let debounce = null;
+  document.getElementById('q').addEventListener('input', e => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => { query = e.target.value.trim(); cargar(); }, 300);
+  });
+
+  await cargar();
+})();
+</script>
+</body>
+</html>

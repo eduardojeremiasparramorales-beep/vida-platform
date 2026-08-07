@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Reservas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+.countdown { font-family: var(--f-num); font-size: 22px; font-weight: 600; letter-spacing: var(--track-display); }
+.countdown.urgente { color: var(--red); animation: pulse 1.5s infinite; }
+.countdown.ok { color: var(--green); }
+.countdown.warn { color: var(--amber); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+.reserva-bar { height: 4px; border-radius: 2px; background: var(--bg-4); overflow: hidden; margin-top: 8px; }
+.reserva-bar__fill { height: 100%; border-radius: 2px; transition: width 1s linear; }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS, api, fmt, avatarColor, initials } = SPOS;
+  const ctx = await SPOS.mount({ active: 'reservas', title: 'Reservas', crumb: 'Leons Group · Gestión de reservas', padded: true });
+
+  const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  let reservas = [];
+  let filtro = 'activa';
+
+  ctx.content.innerHTML = `
+   <div class="os-content__max">
+    <div class="u-between" style="margin-bottom:var(--s3)">
+      <div>
+        <div class="t-h2">Gestión de Reservas</div>
+        <div class="t-dim3" style="font-size:13px;margin-top:4px" id="resumen">—</div>
+      </div>
+      <div class="u-row u-gap2">
+        <select class="input" id="filtro" style="width:auto">
+          <option value="activa">Activas</option>
+          <option value="vencida">Vencidas</option>
+          <option value="completada">Completadas</option>
+          <option value="cancelada">Canceladas</option>
+          <option value="">Todas</option>
+        </select>
+      </div>
+    </div>
+    <div id="stats" class="grid grid--4" style="margin-bottom:var(--s3)"></div>
+    <div id="lista"><div class="empty">Cargando reservas…</div></div>
+   </div>`;
+
+  document.getElementById('filtro').addEventListener('change', e => { filtro = e.target.value; cargar(); });
+
+  async function cargar() {
+    const r = await api('/api/reservas' + (filtro ? '?estado=' + filtro : ''));
+    reservas = r || [];
+    render();
+  }
+
+  function render() {
+    document.getElementById('resumen').textContent = `${reservas.length} reserva(s)`;
+    const statsEl = document.getElementById('stats');
+    const activas = reservas.filter(r => r.estado === 'activa').length;
+    const urgentes = reservas.filter(r => r.estado === 'activa' && new Date(r.fecha_vence) - Date.now() < 4 * 3600000).length;
+    statsEl.innerHTML = `
+      <div class="metric card--float"><div class="metric__top"><div class="metric__icon">${ICONS.clock || '⏱'}</div></div><div class="metric__label">Activas</div><div class="metric__value">${activas}</div></div>
+      <div class="metric card--float"><div class="metric__top"><div class="metric__icon" style="color:var(--red)">⚠</div></div><div class="metric__label">Urgentes (&lt;4h)</div><div class="metric__value" style="color:var(--red)">${urgentes}</div></div>
+      <div class="metric card--float"><div class="metric__top"><div class="metric__icon">${ICONS.check || '✓'}</div></div><div class="metric__label">Completadas</div><div class="metric__value" style="color:var(--green)">${reservas.filter(r => r.estado === 'completada').length}</div></div>
+      <div class="metric card--float"><div class="metric__top"><div class="metric__icon">${ICONS.down || '↓'}</div></div><div class="metric__label">Vencidas</div><div class="metric__value" style="color:var(--amber)">${reservas.filter(r => r.estado === 'vencida').length}</div></div>
+    `;
+
+    const lista = document.getElementById('lista');
+    if (!reservas.length) { lista.innerHTML = '<div class="empty">No hay reservas en esta categoría.</div>'; return; }
+
+    lista.innerHTML = reservas.map(r => {
+      const vence = new Date(r.fecha_vence);
+      const ahora = Date.now();
+      const restanteMs = Math.max(0, vence.getTime() - ahora);
+      const horas = Math.floor(restanteMs / 3600000);
+      const mins = Math.floor((restanteMs % 3600000) / 60000);
+      const pct = Math.max(0, Math.min(100, (restanteMs / (r.horas_limite * 3600000)) * 100));
+      const urgente = horas < 4 && r.estado === 'activa';
+      const cls = urgente ? 'urgente' : r.estado === 'completada' ? 'ok' : r.estado === 'vencida' ? 'urgente' : 'warn';
+      const barColor = urgente ? 'var(--red)' : pct > 50 ? 'var(--green)' : 'var(--amber)';
+
+      return `<div class="card card--float" style="padding:var(--s3);margin-bottom:var(--s2)">
+        <div class="u-between" style="flex-wrap:wrap;gap:var(--s2)">
+          <div class="u-row u-gap3" style="align-items:center">
+            <div class="avatar avatar--md" style="background:${avatarColor(r.vendedor_nombre)}">${initials(r.vendedor_nombre)}</div>
+            <div>
+              <div style="font-weight:600">${esc(r.vendedor_nombre || 'Sin asesor')}</div>
+              <div class="t-dim3" style="font-size:12px">Lead #${r.lead_id}${r.lote_numero ? ' · Lote ' + esc(r.lote_numero) : ''}${r.proyecto_nombre ? ' · ' + esc(r.proyecto_nombre) : ''}</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            ${r.estado === 'activa' ? `<div class="countdown ${cls}">${horas}h ${mins}m</div><div class="t-dim3" style="font-size:11px">vence ${vence.toLocaleString('es-CO', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</div>` : `<div class="badge badge--${r.estado === 'completada' ? 'green' : r.estado === 'vencida' ? 'red' : 'mute'}">${r.estado}</div>`}
+          </div>
+        </div>
+        ${r.estado === 'activa' ? `<div class="reserva-bar"><div class="reserva-bar__fill" style="width:${pct}%;background:${barColor}"></div></div>` : ''}
+        ${r.estado === 'activa' ? `<div class="u-row u-gap2" style="margin-top:var(--s2);justify-content:flex-end">
+          <button class="btn btn--ghost btn--sm" data-extend="${r.id}">+24h</button>
+          <button class="btn btn--gold btn--sm" data-confirm="${r.id}">Confirmar venta</button>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+
+    lista.querySelectorAll('[data-confirm]').forEach(b => b.addEventListener('click', async () => {
+      const id = b.getAttribute('data-confirm');
+      b.disabled = true; b.textContent = '…';
+      const r = await api(`/api/reservas/${id}/confirmar`, { method: 'POST' });
+      if (r && r.ok) { SPS.toast('Venta confirmada', 'ok'); await cargar(); }
+      else { b.disabled = false; b.textContent = 'Confirmar venta'; SPS.toast('Error: ' + (r.error || 'desconocido'), 'err'); }
+    }));
+
+    lista.querySelectorAll('[data-extend]').forEach(b => b.addEventListener('click', async () => {
+      const id = b.getAttribute('data-extend');
+      b.disabled = true;
+      const r = await api(`/api/reservas/${id}/extender`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ horas: 24 }) });
+      if (r && r.ok) { SPS.toast('Reserva extendida +24h', 'ok'); await cargar(); }
+      else { b.disabled = false; SPS.toast('Error al extender', 'err'); }
+    }));
+  }
+
+  await cargar();
+})();
+</script>
+</body>
+</html>

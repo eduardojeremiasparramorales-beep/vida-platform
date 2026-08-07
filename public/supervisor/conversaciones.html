@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Conversaciones · Supervisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script src="/supervisor/supervisor-shell.js"></script>
+<style>
+  .btn-back { display: none; }
+  @media (max-width: 860px) {
+    #listaCard.hide { display: none; }
+    #detalle.hide { display: none; }
+    .btn-back { display: inline-flex !important; }
+    #detalle { position: fixed; inset: 0; z-index: 70; background: var(--bg-0); overflow: auto; padding: var(--s3); }
+  }
+</style>
+<script>
+(async function () {
+  'use strict';
+  const { me, content, esc } = await SPS.mount({ active: 'conversaciones', title: 'Conversaciones', crumb: 'Supervisor Center · Inbox del equipo' });
+  if (!content) return;
+
+  const ICONS = (window.SPOS && window.SPOS.ICONS) || {};
+  const fmt = (window.SPOS && window.SPOS.fmt) || {
+    n: (v) => (v == null ? '—' : Number(v).toLocaleString('es-CO')),
+  };
+  const avatarColor = (window.SPS && SPS.avatarColor) || (() => '#D4AF37');
+  const initials = (window.SPS && SPS.initials) || ((n) => String(n || '?').slice(0, 2).toUpperCase());
+
+  const ETIQUETAS = {
+    sin_clasificar: { label: 'Nuevo', cls: 'mute' },
+    interesado:    { label: 'Interesado', cls: 'blue' },
+    negociacion:   { label: 'Negociación', cls: 'gold' },
+    cita:          { label: 'Cita', cls: 'amber' },
+    vendido:       { label: 'Vendido', cls: 'green' },
+    no_interesado: { label: 'No interesado', cls: 'mute' },
+  };
+
+  let asesores = [];
+  let conversaciones = [];
+  let actual = null;      // item seleccionado
+  let filtros = { busqueda: '', vendedorId: '', etiqueta: '', soloSinResponder: false, canal: '' };
+  let totalConversaciones = 0;
+  let offsetConversaciones = 0;
+  const LIMIT_PAG = 50;
+  const leadIdParam = new URLSearchParams(location.search).get('leadId'); // abrir desde el SP Feed
+
+  content.innerHTML = `
+   <div class="os-content__max" style="max-width:none">
+    <div class="u-row u-gap2" style="margin-bottom:var(--s3);flex-wrap:wrap">
+      <input class="input" id="fBusqueda" placeholder="Buscar cliente o teléfono…" style="flex:1;min-width:200px">
+      <select class="input" id="fAsesor" style="width:auto">
+        <option value="">Todos los asesores</option>
+      </select>
+      <select class="input" id="fEtiqueta" style="width:auto">
+        <option value="">Todas las etapas</option>
+        <option value="sin_clasificar">Nuevo</option>
+        <option value="interesado">Interesado</option>
+        <option value="negociacion">Negociación</option>
+        <option value="cita">Cita</option>
+        <option value="vendido">Vendido</option>
+        <option value="no_interesado">No interesado</option>
+      </select>
+      <select class="input" id="fCanal" style="width:auto">
+        <option value="">Todos los canales</option>
+        <option value="whatsapp">WhatsApp</option>
+        <option value="messenger">Messenger</option>
+        <option value="instagram">Instagram</option>
+      </select>
+      <label class="chip" id="fSinResp" style="cursor:pointer;user-select:none">
+        <input type="checkbox" id="fSinRespCb" style="display:none"> Sin responder
+      </label>
+      <button class="btn btn--ghost" id="fRefrescar">${ICONS.refresh ? ICONS.refresh.replace('<svg ', '<svg style="width:15px;height:15px" ') : '↻'}<span style="margin-left:6px">Refrescar</span></button>
+    </div>
+
+    <div class="grid grid--main" style="align-items:start">
+      <div class="card rise rise-1" id="listaCard" style="overflow:hidden">
+        <div class="u-between card--pad" style="padding-bottom:var(--s2)">
+          <div class="t-h3" id="tituloLista">Conversaciones</div>
+          <span class="t-dim3" style="font-size:12px" id="contador"></span>
+        </div>
+        <div id="lista" style="max-height:calc(100vh - 260px);overflow:auto"></div>
+      </div>
+      <div id="detalle"></div>
+    </div>
+   </div>`;
+
+  const listaEl = document.getElementById('lista');
+  const listaCard = document.getElementById('listaCard');
+  const detalleEl = document.getElementById('detalle');
+  const contadorEl = document.getElementById('contador');
+  const isMobile = () => window.innerWidth <= 860;
+
+  /* --- Cargar asesores para el filtro --- */
+  const eq = await SPS.api('/api/supervisor/equipo');
+  if (eq && eq.asesores) {
+    asesores = eq.asesores;
+    document.getElementById('fAsesor').insertAdjacentHTML('beforeend',
+      asesores.map(a => `<option value="${a.id}">${esc(a.nombre)}</option>`).join(''));
+  }
+
+  /* --- Cargar conversaciones --- */
+  async function cargar(append) {
+    if (!append) offsetConversaciones = 0;
+    const qs = new URLSearchParams();
+    qs.set('limit', String(LIMIT_PAG));
+    qs.set('offset', String(append ? offsetConversaciones : 0));
+    if (filtros.busqueda) qs.set('busqueda', filtros.busqueda);
+    if (filtros.vendedorId) qs.set('vendedorId', filtros.vendedorId);
+    if (filtros.etiqueta) qs.set('etiqueta', filtros.etiqueta);
+    if (filtros.canal) qs.set('canal', filtros.canal);
+    if (filtros.soloSinResponder) qs.set('soloSinResponder', '1');
+    const r = await SPS.api('/api/supervisor/conversaciones' + (qs.toString() ? '?' + qs : ''));
+    if (!r) return;
+    const nuevos = r.conversaciones || [];
+    totalConversaciones = r.total || nuevos.length;
+    if (!append) {
+      conversaciones = nuevos;
+      offsetConversaciones = nuevos.length;
+    } else {
+      conversaciones = conversaciones.concat(nuevos);
+      offsetConversaciones += nuevos.length;
+    }
+    const tieneMas = totalConversaciones > conversaciones.length;
+    contadorEl.textContent = fmt.n(conversaciones.length) + ' / ' + fmt.n(totalConversaciones) + ' conversaciones';
+    renderLista();
+    return { hasMore: tieneMas, count: nuevos.length };
+  }
+
+  function timeAgo(ts) {
+    if (!ts) return '—';
+    const t = new Date(String(ts).replace(' ', 'T'));
+    const s = Math.floor((Date.now() - t.getTime()) / 1000);
+    if (s < 60) return 'hace ' + Math.max(1, s) + 's';
+    if (s < 3600) return 'hace ' + Math.floor(s / 60) + 'min';
+    if (s < 86400) return 'hace ' + Math.floor(s / 3600) + 'h';
+    return t.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+  }
+
+  function renderLista() {
+    if (!conversaciones.length) {
+      listaEl.innerHTML = `<div class="empty">${ICONS.inbox || ''}<div>No hay conversaciones con estos filtros.</div></div>`;
+      return;
+    }
+    const tieneMas = totalConversaciones > conversaciones.length;
+    const html = conversaciones.map(c => {
+      const sel = actual && actual.id === c.id && actual._type === c._type;
+      const et = ETIQUETAS[c.etiqueta] || ETIQUETAS.sin_clasificar;
+      return `<div class="os-inbox-item" data-id="${c.id}" data-type="${c._type}" style="padding:12px var(--s3);cursor:pointer;border-bottom:1px solid var(--border-soft);background:${sel ? 'linear-gradient(160deg,var(--bg-2),rgba(200,164,90,.06))' : 'transparent'};${sel ? 'box-shadow:inset 2px 0 0 var(--gold)' : ''}">
+        <div class="u-row u-gap2 u-align-center">
+          <div class="avatar avatar--sm" style="background:${avatarColor(c.customer_name)}">${initials(c.customer_name)}</div>
+          <div class="u-grow" style="min-width:0">
+            <div class="u-between">
+              <div style="font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.customer_name || 'Cliente')}${Number(c.unread_count) > 0 ? `<span class="os-unread-bub" style="display:inline-flex;min-width:18px;height:18px;border-radius:999px;background:var(--btn-danger,#D44);color:#fff;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px;margin-left:6px;vertical-align:middle">${Number(c.unread_count)}</span>` : ''}</div>
+              <span class="t-dim3" style="font-size:11px;flex-shrink:0">${timeAgo(c.updated_at || c.last_message_at)}</span>
+            </div>
+            <div class="u-between" style="margin-top:2px">
+              <div style="font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.last_message || 'Sin mensajes')}</div>
+            </div>
+            <div class="u-row u-gap1" style="margin-top:5px;flex-wrap:wrap">
+              <span class="badge badge--${et.cls}" style="font-size:9.5px">${et.label}</span>
+              <span class="badge badge--mute" style="font-size:9.5px">${esc(c.channel || 'whatsapp')}</span>
+              <span class="t-dim3" style="font-size:10.5px">${esc(c.assigned_to_nombre || 'sin asignar')}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    if (tieneMas) {
+      listaEl.innerHTML = html + `<div class="card--pad" style="text-align:center;padding:var(--s2)"><button class="btn btn--ghost" id="btnCargarMas">Cargar más (${fmt.n(totalConversaciones - conversaciones.length)})</button></div>`;
+    } else {
+      listaEl.innerHTML = html;
+    }
+
+    listaEl.querySelectorAll('.os-inbox-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const id = item.getAttribute('data-id');
+        const type = item.getAttribute('data-type');
+        const c = conversaciones.find(x => String(x.id) === String(id) && x._type === type);
+        if (c) abrir(c);
+      });
+    });
+    const btnMas = listaEl.querySelector('#btnCargarMas');
+    if (btnMas) {
+      btnMas.addEventListener('click', async () => {
+        btnMas.disabled = true; btnMas.textContent = 'Cargando…';
+        const r = await cargar(true);
+        if (!r || r.count === 0) { btnMas.remove(); }
+      });
+    }
+  }
+
+  /* --- Abrir una conversación: header + timeline --- */
+  async function abrir(c) {
+    actual = c;
+    renderLista();
+    // Mobile toggle: ocultar lista, mostrar detalle
+    if (isMobile() && listaCard) listaCard.classList.add('hide');
+    if (isMobile()) detalleEl.classList.remove('hide');
+    const et = ETIQUETAS[c.etiqueta] || ETIQUETAS.sin_clasificar;
+    detalleEl.innerHTML = `
+      <div class="card rise rise-2" style="overflow:hidden">
+        <div class="card--pad u-between" style="padding-bottom:var(--s2);flex-wrap:wrap;gap:var(--s2)">
+          <div class="u-row u-gap2 u-align-center">
+            <button class="btn btn-back btn--ghost btn--sm" id="btnVolver" style="margin-right:6px">← Volver</button>
+            <div class="avatar avatar--md" style="background:${avatarColor(c.customer_name)}">${initials(c.customer_name)}</div>
+            <div>
+              <div style="font-weight:600">${esc(c.customer_name || 'Cliente')}<span id="typingInd" class="t-dim3" style="display:none;margin-left:8px;font-size:11px;font-weight:400;color:var(--green,#4E7B46);animation:pulse-typing 1s infinite">escribiendo...</span></div>
+              <div class="t-dim3" style="font-size:12px">${esc(c.customer_phone || c.channel_conversation_id || '')} · ${esc(c.channel || 'whatsapp')} · ${esc(c.assigned_to_nombre || 'sin asesor')}${c.assigned_to_foto ? ` <img src="${esc(c.assigned_to_foto)}" style="display:inline-block;width:14px;height:14px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-left:2px" alt="">` : ''}</div>
+            </div>
+          </div>
+          <div class="u-row u-gap1 u-align-center">
+            <span class="badge badge--${et.cls}">${et.label}</span>
+            <span class="badge badge--${c.status === 'cerrado' ? 'mute' : 'green'}">${esc(c.status || 'nuevo')}</span>
+            ${c.status !== 'cerrado' ? `<button class="btn btn--danger btn--sm" id="btnCerrar">Archivar</button>` : ''}
+          </div>
+        </div>
+        <div id="timeline" style="min-height:320px;max-height:calc(100vh - 320px);overflow:auto;background:var(--bg-2);padding:var(--s3)"></div>
+      </div>`;
+
+    //Typing animation CSS
+    if (!document.getElementById('_cssTyping')) {
+      const s = document.createElement('style');
+      s.id='_cssTyping';
+      s.textContent='@keyframes pulse-typing{0%,100%{opacity:1}50%{opacity:0.3}}';
+      document.head.appendChild(s);
+    }
+
+    document.getElementById('btnCerrar')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btnCerrar');
+      btn.disabled = true; btn.textContent = '…';
+      let r;
+      if (c._type === 'conversation') {
+        r = await SPS.api(`/api/inbox/conversations/${c.id}/close`, { method: 'POST' });
+      } else {
+        r = await SPS.api(`/api/leads/${c.id}/cerrar`, { method: 'POST' });
+      }
+      if (r && r.ok) {
+        SPS.toast('Conversación archivada', 'ok');
+        actual = null;
+        await cargar();
+      } else {
+        btn.disabled = false; btn.textContent = 'Archivar';
+        SPS.toast('No se pudo archivar', 'err');
+      }
+    });
+
+    // Botón volver (móvil)
+    document.getElementById('btnVolver')?.addEventListener('click', () => {
+      actual = null;
+      if (listaCard) listaCard.classList.remove('hide');
+      detalleEl.classList.add('hide');
+      detalleEl.innerHTML = '';
+      renderLista();
+    });
+
+    const tl = document.getElementById('timeline');
+    tl.innerHTML = `<div class="empty">${ICONS.msg || ''}<div>Cargando historial…</div></div>`;
+    let msgs = [];
+    if (c._type === 'lead') {
+      const r = await SPS.api(`/api/leads/${c.id}/mensajes`);
+      if (r && r.mensajes) msgs = r.mensajes.map(m => ({
+        body: m.body, direction: m.direction, timestamp: m.timestamp,
+        media_type: m.media_type, media_id: m.media_id, msgId: m.id, status: m.status,
+      }));
+    } else {
+      const r = await SPS.api(`/api/inbox/conversations/${c.id}/timeline`);
+      if (r && r.messages) msgs = r.messages.filter(m => m.event_type === 'message').map(m => ({
+        body: m.body, direction: m.direction, timestamp: m.created_at,
+        media_type: m.media_type, media_id: m.media_id, msgId: m._msgId, status: m.direction === 'outgoing' ? 'sent' : null,
+      }));
+    }
+
+    if (!msgs.length) {
+      tl.innerHTML = `<div class="empty">${ICONS.msg || ''}<div>Sin mensajes en esta conversación.</div></div>`;
+      return;
+    }
+    tl.innerHTML = msgs.map(m => {
+      const out = m.direction === 'outgoing';
+      const media = m.media_type && m.media_type.startsWith('image') && m.msgId
+        ? `<img src="/api/media/${m.msgId}" alt="media" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:6px;cursor:zoom-in" onclick="window.open('/api/media/${m.msgId}','_blank')">`
+        : (m.media_type ? `<div class="t-dim3" style="font-size:11.5px;margin-bottom:4px">📎 ${esc(m.media_type)}</div>` : '');
+      return `<div class="u-row u-gap1" style="justify-content:${out ? 'flex-end' : 'flex-start'};margin-bottom:10px">
+        <div style="max-width:75%;background:${out ? 'var(--gold-soft,rgba(212,175,55,.1))' : 'var(--bg-3)'};border:1px solid ${out ? 'var(--gold-line,rgba(212,175,55,.25))' : 'var(--border-soft)'};border-radius:14px 14px ${out ? '4px 14px' : '14px 4px'};padding:9px 12px">
+          ${media}
+          <div style="font-size:13.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word">${esc(m.body || '')}</div>
+          <div class="t-dim3" style="font-size:10px;margin-top:4px;text-align:right">${m.timestamp ? esc(String(m.timestamp).slice(0, 16)) : ''}${m.status === 'read' ? ' · leído' : ''}</div>
+        </div>
+      </div>`;
+    }).join('');
+    setTimeout(function(){ tl.scrollTop = tl.scrollHeight; }, 100);
+  }
+
+  /* --- Filtros --- */
+  let _t;
+  document.getElementById('fBusqueda').addEventListener('input', (e) => {
+    clearTimeout(_t);
+    _t = setTimeout(() => { filtros.busqueda = e.target.value.trim(); cargar(); }, 350);
+  });
+  document.getElementById('fAsesor').addEventListener('change', (e) => { filtros.vendedorId = e.target.value; cargar(); });
+  document.getElementById('fEtiqueta').addEventListener('change', (e) => { filtros.etiqueta = e.target.value; cargar(); });
+  document.getElementById('fCanal').addEventListener('change', (e) => { filtros.canal = e.target.value; cargar(); });
+  document.getElementById('fSinResp').addEventListener('click', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    const cb = document.getElementById('fSinRespCb');
+    cb.checked = !cb.checked;
+    document.getElementById('fSinResp').classList.toggle('active', cb.checked);
+    filtros.soloSinResponder = cb.checked;
+    cargar();
+  });
+  document.getElementById('fSinRespCb').addEventListener('change', (e) => {
+    document.getElementById('fSinResp').classList.toggle('active', e.target.checked);
+    filtros.soloSinResponder = e.target.checked;
+    cargar();
+  });
+  document.getElementById('fRefrescar').addEventListener('click', cargar);
+
+  await cargar();
+
+  // Deep-link desde el SP Feed: abrir la conversación del lead indicado
+  if (leadIdParam) {
+    const target = conversaciones.find(c => String(c.lead_id) === String(leadIdParam) && String(c.status || '') !== 'cerrado')
+      || conversaciones.find(c => String(c.id) === String(leadIdParam) && String(c._type || '') === 'lead')
+      || conversaciones.find(c => String(c.id) === String(leadIdParam));
+    if (target) abrir(target);
+    else SPS.toast('Ese lead ya no está en la lista (cerrado o sin conversación)', 'err');
+  }
+
+  /* --- SSE Live: actualizar lista de conversaciones en tiempo real --- */
+  let _sseConv = null;
+  let _pendingRefresh = 0;
+  function _initSSEConv() {
+    if (_sseConv) { try { _sseConv.close(); } catch(e){} }
+    try {
+      _sseConv = new EventSource('/api/stream');
+      _sseConv.addEventListener('nuevo_mensaje', function(e) {
+        try {
+          var d = JSON.parse(e.data);
+          var cid = d.conversationId || d.leadId;
+          if (!cid) return;
+          var found = conversaciones.find(function(x){ return String(x.id) === String(cid) || String(x.id) === String(d.leadId) || String(x.lead_id) === String(d.leadId); });
+          if (found) {
+            found.last_message = d.body || found.last_message;
+            found.last_message_at = new Date().toISOString().slice(0,19).replace('T',' ');
+            found.updated_at = new Date().toISOString().slice(0,19).replace('T',' ');
+            found.unread_count = (Number(found.unread_count)||0) + 1;
+            // Mover al tope
+            var idx = conversaciones.indexOf(found);
+            if (idx > 0) { conversaciones.splice(idx,1); conversaciones.unshift(found); }
+            renderLista();
+            // Auto-scroll si la conversación está abierta y el usuario está en el fondo
+            if (actual && (String(actual.id)===String(cid) || String(actual.lead_id)===String(d.leadId))) {
+              var tl = document.getElementById('timeline');
+              if (tl && _sAtBottom(tl)) {
+                setTimeout(function(){ if(tl) tl.scrollTop = tl.scrollHeight; }, 150);
+              }
+            }
+          } else {
+            _pendingRefresh++;
+          }
+        } catch(er){}
+      });
+      _sseConv.addEventListener('lead_actualizado', function(e) {
+        try {
+          var d = JSON.parse(e.data);
+          if (!actual) return;
+          if (String(d.leadId) === String(actual.id) || String(d.leadId) === String(actual.lead_id)) {
+            abrir(actual);
+          }
+        } catch(er){}
+      });
+      _sseConv.addEventListener('equipo_typing', function(e) {
+        try {
+          var d = JSON.parse(e.data);
+          if (!actual) return;
+          var ti = document.getElementById('typingInd');
+          if (!ti) return;
+          if (d.from_nombre && String(actual.assigned_to_nombre||'') === String(d.from_nombre)) {
+            ti.style.display = 'inline';
+            clearTimeout(window._ptypingTimer);
+            window.typingTimer = setTimeout(function(){ var t2=document.getElementById('typingInd'); if(t2) t2.style.display='none'; }, 3000);
+          }
+        } catch(er){}
+      });
+      _sseConv.addEventListener('conectado', function() {
+        cargar();
+      });
+      _sseConv.onerror = function() {
+        try { _sseConv.close(); } catch(e) {}
+        _sseConv = null;
+        setTimeout(_initSSEConv, 5000);
+      };
+    } catch(e) {}
+  }
+  function _sAtBottom(el) { return el && (el.scrollHeight - el.scrollTop - el.clientHeight) < 100; }
+  _initSSEConv();
+
+})();
+</script>
+</body>
+</html>

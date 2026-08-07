@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS, api, fmt, avatarColor, initials, toast, fmtPhone } = SPOS;
+
+  const ETQ = {
+    sin_clasificar: { t:'Nuevo', b:'mute' },
+    interesado:     { t:'Interesado', b:'blue' },
+    negociacion:    { t:'Negociación', b:'gold' },
+    cita:           { t:'Cita', b:'amber' },
+    vendido:        { t:'Vendido', b:'green' },
+    no_interesado:  { t:'No interesado', b:'red' },
+  };
+  const FILTERS = [['todos','Todos'],['sin_clasificar','Nuevos'],['interesado','Interesados'],['negociacion','Negociación'],['cita','Citas'],['vendido','Vendidos']];
+
+  const ctx = await SPOS.mount({
+    active: 'crm', title: 'CRM · Leads', crumb: 'Tarjetas inteligentes', padded: false, panel: true,
+    action: `<button class="btn btn--gold btn--sm" id="newLead">${ICONS.plus}Nuevo lead</button>`
+  });
+
+  let leads = await api('/api/leads');
+  if (!Array.isArray(leads)) leads = [];
+
+  let filter = 'todos', query = '';
+
+  ctx.content.innerHTML = `
+    <div style="padding:var(--s3) var(--s3) 0">
+      <div class="u-between u-gap2" style="margin-bottom:var(--s3)">
+        <label class="os-search" style="width:100%;max-width:360px">${ICONS.search}<input id="q" placeholder="Buscar por nombre o teléfono…"></label>
+        <div class="u-row u-gap1 u-wrap" id="filters">${FILTERS.map(([k,l],i)=>`<button class="chip${i===0?' active':''}" data-f="${k}">${l}</button>`).join('')}</div>
+      </div>
+    </div>
+    <div class="os-content" style="padding:0 var(--s3) var(--s3)"><div class="grid grid--3" id="grid"></div></div>`;
+
+  ctx.panel.innerHTML = `<div class="os-panel__body"><div class="empty">${ICONS.leads}<div><div class="t-h3">Selecciona un lead</div><div class="t-dim3" style="font-size:12px;margin-top:4px">Verás su ficha 360°, timeline y acciones</div></div></div></div>`;
+
+  const grid = ctx.content.querySelector('#grid');
+
+  function timeago(ts) {
+    if (!ts) return '';
+    const d = new Date(String(ts).replace(' ', 'T')); if (isNaN(d)) return '';
+    const min = Math.floor((Date.now() - d.getTime()) / 60000);
+    if (min < 1) return 'ahora'; if (min < 60) return min + ' min';
+    const h = Math.floor(min/60); if (h < 24) return h + ' h';
+    return Math.floor(h/24) + ' d';
+  }
+
+  function render() {
+    const items = leads.filter(l => {
+      const okF = filter === 'todos' || (l.etiqueta || 'sin_clasificar') === filter;
+      const okQ = !query || (l.customer_name || '').toLowerCase().includes(query) || (l.customer_phone || '').toLowerCase().includes(query.replace(/\s/g, ''));
+      return okF && okQ;
+    });
+    if (!items.length) { grid.innerHTML = `<div class="empty" style="grid-column:1/-1">${ICONS.leads}<div>Sin leads en esta vista</div></div>`; return; }
+    grid.innerHTML = items.map((l, i) => {
+      const e = ETQ[l.etiqueta || 'sin_clasificar'] || ETQ.sin_clasificar;
+      return `<div class="card card--pad card--float rise rise-${Math.min(4,(i%4)+1)}" data-id="${l.id}" style="cursor:pointer">
+        <div class="u-between" style="margin-bottom:14px">
+          <div class="u-row u-gap2">
+            <div class="avatar avatar--md" style="background:${avatarColor(l.customer_name)}">${initials(l.customer_name)}</div>
+            <div><div style="font-weight:600">${l.customer_name || 'Sin nombre'}</div><div class="t-dim3 t-num" style="font-size:12px">${fmtPhone(l.customer_phone)}</div></div>
+          </div>
+          ${l.unread_count > 0 ? `<span class="os-nav__badge">${l.unread_count}</span>` : ''}
+        </div>
+        <div class="u-between">
+          <span class="badge badge--${e.b}">${e.t}</span>
+          <span class="t-dim3" style="font-size:11.5px">${timeago(l.updated_at)}</span>
+        </div>
+        <div style="height:1px;background:var(--border-soft);margin:13px 0"></div>
+        <div class="u-row u-gap1 t-dim3" style="font-size:12px">
+          ${ICONS.team.replace('<svg ','<svg style="width:14px;height:14px" ')}
+          <span>${l.assigned_to_nombre || 'Sin asignar'}</span>
+        </div>
+      </div>`;
+    }).join('');
+    grid.querySelectorAll('[data-id]').forEach(el => el.addEventListener('click', () => openLead(Number(el.dataset.id))));
+  }
+
+  function openLead(id) {
+    const l = leads.find(x => x.id === id); if (!l) return;
+    const e = ETQ[l.etiqueta || 'sin_clasificar'] || ETQ.sin_clasificar;
+    ctx.panel.innerHTML = `
+      <div class="os-panel__head">
+        <div class="t-label">Ficha del lead</div>
+        <a class="btn btn--gold btn--sm" href="/os/inbox.html">${ICONS.msg}Abrir chat</a>
+      </div>
+      <div class="os-panel__body">
+        <div class="u-col" style="align-items:center;text-align:center;gap:10px;margin-bottom:var(--s3)">
+          <div class="avatar avatar--lg" style="background:${avatarColor(l.customer_name)}">${initials(l.customer_name)}</div>
+          <div><div class="t-h2">${l.customer_name || 'Sin nombre'}</div><div class="t-dim3 t-num" style="font-size:13px">${fmtPhone(l.customer_phone)}</div></div>
+          <span class="badge badge--${e.b}">${e.t}</span>
+        </div>
+        <div class="surface" style="padding:14px;margin-bottom:var(--s3)">
+          ${info('Asesor', l.assigned_to_nombre || 'Sin asignar')}
+          ${info('Estado', l.status || 'nuevo')}
+          ${info('Última actividad', timeago(l.updated_at) + ' atrás')}
+          ${info('Sin leer', (l.unread_count||0) + ' mensajes', true)}
+        </div>
+        <div class="t-label" style="margin-bottom:var(--s2)">Timeline</div>
+        <div class="tl">
+          ${tl('msg', 'Mensaje recibido', timeago(l.updated_at) + ' atrás')}
+          ${tl('leads', 'Asignado a ' + (l.assigned_to_nombre||'—'), 'automático')}
+          ${tl('spark', 'Lead creado', 'origen: campaña Meta')}
+        </div>
+        <div class="u-col u-gap1" style="margin-top:var(--s3)">
+          <button class="btn btn--ghost btn--block btn--sm btn-crm-task" data-lead-id="${l.id}" data-name="${esc(l.customer_name || '')}">${ICONS.clock}Agendar seguimiento</button>
+          <button class="btn btn--ghost btn--block btn--sm btn-crm-ai" data-lead-id="${l.id}" data-name="${esc(l.customer_name || '')}">${ICONS.ai}Sugerir respuesta con IA</button>
+          <button class="btn btn--ghost btn--block btn--sm btn-crm-reset" data-lead-id="${l.id}" style="color:var(--text-3);font-size:11px;border-color:var(--border-soft)">${ICONS.zap}Resetear lead (dejar como nuevo)</button>
+        </div>
+        <div id="crmAiSuggestions" style="display:none;margin-top:8px"></div>
+      </div>`;
+    // Wire Agendar seguimiento button
+    const taskBtn = ctx.panel.querySelector('.btn-crm-task');
+    if (taskBtn) taskBtn.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const leadId = Number(btn.dataset.leadId);
+      const name = btn.dataset.name;
+      const hoy = new Date();
+      const fecha = new Date(hoy.getTime() + 86400000).toISOString().slice(0,10);
+      const texto = 'Seguimiento: ' + name;
+      const r = await fetch('/api/leads/' + leadId + '/tareas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto, fecha_vencimiento: fecha }) });
+      if (r.ok) SPOS.toast('Seguimiento agendado para mañana', 'ok');
+      else SPOS.toast('Error al agendar', 'err');
+    });
+    // Wire AI suggest button
+    const aiBtn = ctx.panel.querySelector('.btn-crm-ai');
+    if (aiBtn) aiBtn.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const leadId = Number(btn.dataset.leadId);
+      const name = btn.dataset.name;
+      btn.disabled = true; btn.textContent = 'Pensando...';
+      const suggestions = await SPOS.sugerirRespuesta(leadId, name);
+      btn.disabled = false; btn.innerHTML = '${ICONS.ai}Sugerir respuesta con IA';
+      const box = document.getElementById('crmAiSuggestions');
+      if (!box) return;
+      if (!suggestions.length) { box.style.display = 'none'; return; }
+      box.style.display = 'block';
+      box.innerHTML = suggestions.map((s, i) =>
+        `<div style="padding:8px 10px;margin-bottom:4px;background:var(--bg-2);border-radius:var(--r-sm);font-size:12.5px;cursor:pointer;border:1px solid transparent;transition:all .12s"
+              onmouseenter="this.style.borderColor='var(--gold-line)'" onmouseleave="this.style.borderColor='transparent'"
+              onclick="var i=prompt('Editar antes de copiar:','${esc(s)}');if(i)prompt('Copiado al portapapeles','${esc(s)}')">${esc(s)}</div>`
+      ).join('');
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    // Wire Reset lead button
+    const resetBtn = ctx.panel.querySelector('.btn-crm-reset');
+    if (resetBtn) resetBtn.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const leadId = Number(btn.dataset.leadId);
+      if (!confirm('¿Resetear este lead? Se marcará como nuevo (sin responder). El historial de mensajes se conserva.')) return;
+      btn.disabled = true; btn.textContent = 'Resetando...';
+      const r = await api('/api/leads/' + leadId + '/reset', { method: 'POST' });
+      btn.disabled = false; btn.innerHTML = '${ICONS.zap}Resetear lead (dejar como nuevo)';
+      if (r) { toast('Lead reseteado — aparece como nuevo', 'ok'); openLead(leadId); } else toast('Error al resetear', 'err');
+    });
+  }
+  const info = (k,v,gold) => `<div class="u-between" style="padding:7px 0"><span class="t-dim3" style="font-size:12.5px">${k}</span><span style="font-size:13px;font-weight:500${gold?';color:var(--gold)':''}">${v}</span></div>`;
+  const tl = (ic,t,s) => `<div class="tl-item"><div class="tl-item__dot">${ICONS[ic].replace('<svg ','<svg style="width:13px;height:13px" ')}</div><div class="tl-item__body"><div class="tl-item__title">${t}</div><div class="tl-item__time">${s}</div></div></div>`;
+
+  ctx.content.querySelector('#q').addEventListener('input', (ev) => { query = ev.target.value.toLowerCase().trim(); render(); });
+  ctx.content.querySelectorAll('#filters .chip').forEach(c => c.addEventListener('click', () => {
+    ctx.content.querySelectorAll('#filters .chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active'); filter = c.dataset.f; render();
+  }));
+  document.getElementById('newLead').addEventListener('click', () => location.href = '/os/inbox.html?newchat=1');
+
+  render();
+})();
+</script>
+</body>
+</html>

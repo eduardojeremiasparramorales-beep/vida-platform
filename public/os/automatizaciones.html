@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Automatizaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS, api, toast } = SPOS;
+  const ctx = await SPOS.mount({ active:'automations', title:'Automatizaciones', crumb:'Flujos y disparadores', padded:true, adminOnly:true,
+    action:`<button class="btn btn--gold btn--sm" id="new">${ICONS.plus}Nuevo flujo</button>` });
+
+  let flujos = [];
+  let cadencia = [];
+  let cadenciaAuto = false;
+  async function cargar() {
+    const r = await api('/api/workflows');
+    flujos = Array.isArray(r) ? r : [];
+    const c = await api('/api/cadencia/pasos');
+    cadencia = Array.isArray(c) ? c : [];
+    const cc = await api('/api/cadencia/config');
+    cadenciaAuto = !!(cc && cc.auto);
+    render();
+  }
+
+  function render() {
+    const activos = flujos.filter(f=>f.activo).length;
+    ctx.content.innerHTML = `<div class="os-content__max">
+      <div class="grid grid--3 rise rise-1" style="margin-bottom:var(--s3)">
+        ${metric('automations','Flujos', flujos.length)}
+        ${metric('activity','Activos', activos)}
+        ${metric('clock','Pausados', flujos.length - activos)}
+      </div>
+
+      <div class="card rise rise-2" style="overflow:hidden">
+        <div class="card--pad" style="padding-bottom:var(--s2)"><div class="t-h3">Todos los flujos</div></div>
+        ${flujos.length ? `<table class="table">
+          <thead><tr><th>Flujo</th><th>Disparador</th><th>Estado</th><th></th></tr></thead>
+          <tbody>${flujos.map(f=>`<tr>
+            <td style="font-weight:500">${String(f.nombre).replace(/</g,'&lt;')}</td>
+            <td><span class="badge badge--mute">${(f.trigger_event||'—').replace(/_/g,' ')}</span></td>
+            <td><span class="badge badge--${f.activo?'green':'mute'}">${f.activo?'Activo':'Pausado'}</span></td>
+            <td style="text-align:right"><button class="btn btn--quiet btn--sm" data-id="${f.id}" data-a="${f.activo?0:1}">${f.activo?'Pausar':'Activar'}</button></td>
+          </tr>`).join('')}</tbody>
+        </table>` : `<div class="card--pad t-dim3" style="font-size:13px;padding-top:0">Aún no hay flujos. Crea el primero con "Nuevo flujo" — por ejemplo: si un lead lleva 30 minutos sin respuesta, avisar al admin.</div>`}
+      </div>
+
+      <!-- Cadencia de seguimiento -->
+      <div class="card rise rise-3" style="overflow:hidden;margin-top:var(--s3)">
+        <div class="u-between card--pad" style="padding-bottom:var(--s2);flex-wrap:wrap;gap:8px">
+          <div><div class="t-h3">Cadencia de seguimiento</div><div class="t-dim3" style="font-size:12px">Mensajes automáticos a los leads inscritos. Se detiene si el cliente responde o el lead se cierra.</div></div>
+          <div class="u-row u-gap2"><button class="btn btn--quiet btn--sm" id="cadAdd">${ICONS.plus||'+'} Agregar paso</button><button class="btn btn--gold btn--sm" id="cadSave">Guardar cadencia</button></div>
+        </div>
+        <div class="card--pad" style="padding-top:0">
+          <label style="display:flex;align-items:center;gap:10px;background:var(--bg-3);border:1px solid var(--border-soft);border-radius:12px;padding:10px 14px;margin-bottom:12px;cursor:pointer">
+            <input type="checkbox" id="cadAuto" ${cadenciaAuto?'checked':''} style="width:18px;height:18px;accent-color:var(--gold);cursor:pointer">
+            <span style="flex:1"><span style="font-size:13px;font-weight:500">Inscribir automáticamente los leads que se enfríen</span><span style="display:block;font-size:11px;color:var(--text-3)">Un lead asignado que lleve +24h sin responder entra solo a la cadencia (una vez por lead). Apagado = solo manual.</span></span>
+          </label>
+          <div style="font-size:11px;color:var(--text-3);margin-bottom:10px">Variables disponibles: <code style="color:var(--gold)">{{nombre}}</code> <code style="color:var(--gold)">{{asesor}}</code> <code style="color:var(--gold)">{{proyecto}}</code> — se reemplazan al enviar.</div>
+          <div id="cadSteps" style="display:flex;flex-direction:column;gap:10px">${cadRowsHTML()}</div>
+        </div>
+      </div>
+    </div>`;
+
+    document.getElementById('new').addEventListener('click', crearFlujo);
+    wireCadencia();
+    ctx.content.querySelectorAll('[data-id]').forEach(b=>b.addEventListener('click', async ()=>{
+      const r = await api('/api/workflows/'+b.dataset.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ activo: b.dataset.a === '1' }) });
+      if (r) { toast('Estado del flujo actualizado','ok'); await cargar(); }
+      else toast('Error al actualizar','err');
+    }));
+  }
+
+  // Editor de flujo: formulario modal completo (trigger + condiciones + acciones).
+  const TRIGGERS = [
+    ['message:incoming','Llega un mensaje del cliente'],
+    ['message:outgoing','Un asesor envía un mensaje'],
+    ['conversation:assigned','Se asigna una conversación'],
+    ['conversation:closed','Se cierra una conversación'],
+    ['lead:tag_changed','Cambia la etiqueta de un lead'],
+  ];
+  const CAMPOS = [['body','Texto del mensaje'],['channel','Canal'],['customer_name','Nombre del cliente'],['etiqueta','Etiqueta'],['status','Estado'],['priority','Prioridad']];
+  const OPERADORES = [['contains','contiene'],['equals','es igual a'],['not_equals','es distinto de'],['regex','coincide (regex)']];
+  const ACCIONES = [
+    ['notify_admin','Notificar al admin','message','Mensaje de la notificación'],
+    ['send_message','Responder al cliente','text','Texto a enviar'],
+    ['tag','Poner etiqueta','value','Etiqueta (ej: interesado)'],
+    ['send_template','Enviar plantilla','name','Nombre de la plantilla'],
+    ['assign','Asignar a un asesor (round-robin)',null,null],
+    ['webhook','Llamar webhook externo','url','URL del webhook'],
+  ];
+
+  function filaCondicion(){ return `<div class="wf-cond" style="display:flex;gap:6px;margin-bottom:6px">
+    <select class="input wf-c-campo" style="flex:1">${CAMPOS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+    <select class="input wf-c-op" style="flex:1">${OPERADORES.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+    <input class="input wf-c-val" placeholder="Valor" style="flex:1">
+    <button class="btn btn--quiet btn--sm wf-c-del" title="Quitar">✕</button>
+  </div>`; }
+  function filaAccion(){ return `<div class="wf-act" style="display:flex;gap:6px;margin-bottom:6px">
+    <select class="input wf-a-tipo" style="flex:1">${ACCIONES.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+    <input class="input wf-a-param" placeholder="${ACCIONES[0][3]}" style="flex:1.4">
+    <button class="btn btn--quiet btn--sm wf-a-del" title="Quitar">✕</button>
+  </div>`; }
+
+  function crearFlujo() {
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:9998;display:grid;place-items:center;padding:20px';
+    overlay.innerHTML=`<div style="background:var(--bg-0);border:1px solid var(--border);border-radius:var(--r,14px);width:100%;max-width:560px;max-height:85vh;overflow-y:auto;padding:22px" id="wfModal">
+      <div class="t-h3" style="margin-bottom:14px">Nuevo flujo automatizado</div>
+      <label class="t-label" style="display:block;margin-bottom:4px">Nombre</label>
+      <input class="input" id="wfNombre" placeholder='Ej: "Avisar cuando pregunten precio"' style="width:100%;margin-bottom:12px">
+      <label class="t-label" style="display:block;margin-bottom:4px">Cuando… (disparador)</label>
+      <select class="input" id="wfTrigger" style="width:100%;margin-bottom:12px">${TRIGGERS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+      <label class="t-label" style="display:block;margin-bottom:4px">Si… (condiciones, opcional — todas deben cumplirse)</label>
+      <div id="wfConds"></div>
+      <button class="btn btn--ghost btn--sm" id="wfAddCond" style="margin-bottom:12px">+ Condición</button>
+      <label class="t-label" style="display:block;margin-bottom:4px">Entonces… (acciones)</label>
+      <div id="wfActs">${filaAccion()}</div>
+      <button class="btn btn--ghost btn--sm" id="wfAddAct" style="margin-bottom:16px">+ Acción</button>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn--ghost" id="wfCancel">Cancelar</button>
+        <button class="btn btn--gold" id="wfSave">Crear flujo</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+    const modal=overlay.querySelector('#wfModal');
+    const wireDel=()=>{ modal.querySelectorAll('.wf-c-del').forEach(b=>b.onclick=()=>b.closest('.wf-cond').remove());
+      modal.querySelectorAll('.wf-a-del').forEach(b=>b.onclick=()=>{ if(modal.querySelectorAll('.wf-act').length>1) b.closest('.wf-act').remove(); });
+      modal.querySelectorAll('.wf-a-tipo').forEach(s=>s.onchange=function(){ const def=ACCIONES.find(a=>a[0]===this.value); const inp=this.closest('.wf-act').querySelector('.wf-a-param'); if(def&&def[3]){ inp.placeholder=def[3]; inp.style.display=''; } else { inp.style.display='none'; inp.value=''; } }); };
+    wireDel();
+    modal.querySelector('#wfAddCond').onclick=()=>{ modal.querySelector('#wfConds').insertAdjacentHTML('beforeend',filaCondicion()); wireDel(); };
+    modal.querySelector('#wfAddAct').onclick=()=>{ modal.querySelector('#wfActs').insertAdjacentHTML('beforeend',filaAccion()); wireDel(); };
+    modal.querySelector('#wfCancel').onclick=()=>overlay.remove();
+    modal.querySelector('#wfSave').onclick=async()=>{
+      const nombre=modal.querySelector('#wfNombre').value.trim();
+      if(!nombre){ toast('Ponle un nombre al flujo','err'); return; }
+      const conditions=[...modal.querySelectorAll('.wf-cond')].map(row=>({
+        field:row.querySelector('.wf-c-campo').value, operator:row.querySelector('.wf-c-op').value, value:row.querySelector('.wf-c-val').value,
+      })).filter(c=>c.value!=='');
+      const actions=[...modal.querySelectorAll('.wf-act')].map(row=>{
+        const tipo=row.querySelector('.wf-a-tipo').value;
+        const def=ACCIONES.find(a=>a[0]===tipo);
+        const params={};
+        if(def&&def[2]) params[def[2]]=row.querySelector('.wf-a-param').value;
+        return { type: tipo, params };
+      });
+      if(!actions.length){ toast('Agrega al menos una acción','err'); return; }
+      const r=await api('/api/workflows',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre,trigger_event:modal.querySelector('#wfTrigger').value,conditions,actions})});
+      if(r){ toast('Flujo creado y activo','ok'); overlay.remove(); await cargar(); }
+      else toast('Error al crear el flujo','err');
+    };
+  }
+
+  await cargar();
+
+  // ── Editor de cadencia de seguimiento ──
+  function cadRow(dia, msg){
+    const esc = s => String(s==null?'':s).replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    return `<div class="cad-row" style="display:flex;gap:10px;align-items:flex-start;background:var(--bg-3);border:1px solid var(--border-soft);border-radius:12px;padding:10px">
+      <div style="flex-shrink:0"><label style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:3px">Día</label>
+        <input class="cad-dia" type="number" min="0" value="${Number(dia)||1}" style="width:64px;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg-2);color:var(--text);font-size:14px;text-align:center"></div>
+      <div style="flex:1"><label style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:3px">Mensaje</label>
+        <textarea class="cad-msg" rows="2" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-2);color:var(--text);font-size:13px;resize:vertical">${esc(msg)}</textarea></div>
+      <button class="cad-del btn btn--quiet btn--sm" title="Quitar paso" style="flex-shrink:0;margin-top:18px;color:var(--red)">✕</button>
+    </div>`;
+  }
+  function cadRowsHTML(){
+    const arr = cadencia.length ? cadencia : [{dia:1,mensaje:''}];
+    return arr.map(p=>cadRow(p.dia, p.mensaje)).join('');
+  }
+  function wireCadencia(){
+    const box = document.getElementById('cadSteps'); if(!box) return;
+    const addBtn = document.getElementById('cadAdd');
+    const saveBtn = document.getElementById('cadSave');
+    if(addBtn) addBtn.onclick = ()=>{ box.insertAdjacentHTML('beforeend', cadRow(1,'')); };
+    const autoChk = document.getElementById('cadAuto');
+    if(autoChk) autoChk.onchange = async ()=>{
+      const r = await api('/api/cadencia/config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ auto: autoChk.checked }) });
+      if(r && r.ok){ cadenciaAuto = autoChk.checked; toast(autoChk.checked?'Auto-inscripción activada':'Auto-inscripción desactivada','ok'); }
+      else { autoChk.checked = !autoChk.checked; toast('No se pudo cambiar','err'); }
+    };
+    box.addEventListener('click', e=>{ const d=e.target.closest('.cad-del'); if(d){ const row=d.closest('.cad-row'); if(box.querySelectorAll('.cad-row').length>1) row.remove(); else toast('Debe quedar al menos un paso','err'); } });
+    if(saveBtn) saveBtn.onclick = async ()=>{
+      const pasos = Array.from(box.querySelectorAll('.cad-row')).map(r=>({
+        dia: Number(r.querySelector('.cad-dia').value)||1,
+        mensaje: r.querySelector('.cad-msg').value.trim(),
+      })).filter(p=>p.mensaje);
+      if(!pasos.length){ toast('Escribe al menos un mensaje','err'); return; }
+      saveBtn.disabled = true; saveBtn.textContent = 'Guardando…';
+      const r = await api('/api/cadencia/pasos', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ pasos }) });
+      saveBtn.disabled = false; saveBtn.textContent = 'Guardar cadencia';
+      if(r && r.ok){ cadencia = r.pasos || pasos; toast('Cadencia guardada','ok'); }
+      else toast('Error al guardar la cadencia','err');
+    };
+  }
+
+  function metric(icon,label,value){ return `<div class="metric"><div class="metric__top"><div class="metric__icon">${ICONS[icon]}</div></div><div><div class="metric__value t-num">${value}</div><div class="metric__label">${label}</div></div></div>`; }
+})();
+</script>
+</body>
+</html>

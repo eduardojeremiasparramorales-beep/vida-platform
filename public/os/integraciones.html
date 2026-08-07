@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Integraciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+<style>
+  .int-card { display:flex; flex-direction:column; gap:14px; }
+  .int-logo { width:46px; height:46px; border-radius:13px; display:grid; place-items:center; font-size:22px; }
+  .int-status { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; }
+</style>
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS, api, toast } = SPOS;
+  const ctx = await SPOS.mount({ active:'integrations', title:'Integraciones', crumb:'Canales y servicios conectados', padded:true });
+
+  const st = await api('/api/channels/status') || {};
+  const conn = (k) => st[k] === true;
+
+  const INTS = [
+    { k:'whatsapp', n:'WhatsApp', e:'🟢', bg:'rgba(87,193,104,.14)', on:conn('whatsapp'), cfg:'/os/whatsapp.html', d:'Número oficial de la empresa' },
+    { k:'instagram', n:'Instagram', e:'🟣', bg:'rgba(200,164,90,.14)', on:conn('instagram'), cfg:'/os/instagram.html', d:'Mensajes directos de IG' },
+    { k:'messenger', n:'Messenger', e:'🔵', bg:'rgba(91,141,239,.14)', on:conn('messenger'), cfg:'/os/messenger.html', d:'Facebook Messenger' },
+    { k:'facebook', n:'Facebook', e:'📘', bg:'rgba(91,141,239,.14)', on:false, soon:true, d:'Comentarios y páginas' },
+    { k:'email', n:'Email', e:'✉️', bg:'rgba(248,248,248,.08)', on:false, soon:true, d:'Correo entrante y saliente' },
+    { k:'telegram', n:'Telegram', e:'🛩️', bg:'rgba(91,141,239,.14)', on:false, soon:true, d:'Bot de Telegram' },
+    { k:'calendar', n:'Google Calendar', e:'📅', bg:'rgba(229,72,77,.12)', on:false, soon:true, d:'Agenda y citas' },
+    { k:'stripe', n:'Stripe', e:'💳', bg:'rgba(120,120,220,.14)', on:false, soon:true, d:'Cobros y suscripciones' },
+  ];
+
+  const connected = INTS.filter(i=>i.on).length;
+
+  ctx.content.innerHTML = `<div class="os-content__max">
+    <div class="grid grid--3 rise rise-1" style="margin-bottom:var(--s3)">
+      ${metric('marketplace','Integraciones', INTS.length)}
+      ${metric('activity','Conectadas', connected)}
+      ${metric('inbox','Canales de mensajería', INTS.filter(i=>['whatsapp','instagram','messenger','facebook','telegram','email'].includes(i.k)&&i.on).length)}
+    </div>
+    <div class="grid grid--4 rise rise-2">
+      ${INTS.map(i=>`
+        <div class="card card--pad card--float int-card"${i.soon?' style="opacity:.7"':''}>
+          <div class="u-between">
+            <div class="int-logo" style="background:${i.bg}">${i.e}</div>
+            ${i.on ? `<span class="int-status" style="color:#83B778"><span class="dot dot--green"></span>Conectado</span>`
+                   : i.soon ? `<span class="int-status" style="color:var(--gold)"><span class="dot" style="background:var(--gold)"></span>Próximamente</span>`
+                   : `<span class="int-status t-dim3"><span class="dot dot--mute"></span>Sin conectar</span>`}
+          </div>
+          <div><div class="t-h3">${i.n}</div><div class="t-dim3" style="font-size:12px;margin-top:2px">${i.d}</div></div>
+          ${i.on
+            ? `<a class="btn btn--ghost btn--sm btn--block" href="${i.cfg||'#'}">${i.cfg?'Configurar':'Gestionar'}</a>`
+            : i.soon
+            ? `<button class="btn btn--ghost btn--sm btn--block" disabled style="opacity:.6;cursor:default">En desarrollo</button>`
+            : `<a class="btn btn--gold btn--sm btn--block" href="${i.cfg||'#'}">Conectar</a>`}
+        </div>`).join('')}
+    </div>
+  </div>`;
+
+  function metric(icon,label,value){ return `<div class="metric"><div class="metric__top"><div class="metric__icon">${ICONS[icon]}</div></div><div><div class="metric__value t-num">${value}</div><div class="metric__label">${label}</div></div></div>`; }
+})();
+</script>
+</body>
+</html>

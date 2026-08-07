@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Leons Group · Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+<script src="/os/theme.js"></script>
+<link rel="stylesheet" href="/os/sp-os.css">
+</head>
+<body>
+<script src="/os/sp-shell.js"></script>
+<script>
+(async function () {
+  const { ICONS, api, fmt, avatarColor, initials } = SPOS;
+
+  const ctx = await SPOS.mount({
+    active: 'dashboard', title: 'Centro de Control', crumb: 'Leons Group · Vista general',
+    padded: true,
+    action: `<a class="btn btn--sm" href="/os/ia-chat.html" style="margin-right:8px">${(ICONS.spark||'').replace('<svg ','<svg style="width:15px;height:15px" ')}Chat IA</a><button class="btn btn--gold btn--sm" id="newLead">${ICONS.plus}Nuevo lead</button>`
+  });
+
+  // --- Datos reales ---
+  let m = await api('/api/metricas');
+  let stats = await api('/api/stats');
+  let leadSources = await api('/api/reports/lead-sources'); // F1: atribución real de campaña
+
+  if (!m) m = { total: 0, vendidos: 0, conversionGlobal: 0, tiempoRespuestaPromedio: null, respondidos: 0, sinResponder: 0, totalMensajes: 0, mensajesEntrantes: 0, porEtiqueta: {}, porEstado: {}, porVendedor: [] };
+  if (!stats) stats = { totalVendedores: 0, vendedoresActivos: 0 };
+  if (!leadSources) leadSources = { campanas: [], organico: 0, pagado: 0 };
+
+  const etq = m.porEtiqueta || {};
+  const pipeline = [
+    { k: 'sin_clasificar', label: 'Nuevos', color: 'var(--text-3)' },
+    { k: 'interesado', label: 'Interesados', color: 'var(--blue)' },
+    { k: 'negociacion', label: 'Negociación', color: 'var(--gold)' },
+    { k: 'cita', label: 'Cita agendada', color: 'var(--amber)' },
+    { k: 'vendido', label: 'Vendidos', color: 'var(--green)' },
+  ];
+  const pipeMax = Math.max(1, ...pipeline.map(p => etq[p.k] || 0));
+
+  const metric = (icon, label, value, delta, deltaKind) => `
+    <div class="metric card--float">
+      <div class="metric__top">
+        <div class="metric__icon">${ICONS[icon]}</div>
+        ${delta != null ? `<span class="metric__delta ${deltaKind}">${deltaKind==='up'?ICONS.up:deltaKind==='down'?ICONS.down:''}${delta}</span>` : ''}
+      </div>
+      <div><div class="metric__value t-num">${value}</div><div class="metric__label">${label}</div></div>
+    </div>`;
+
+  const respRate = m.total ? Math.round((m.respondidos / m.total) * 100) : 0;
+
+  // Dona SVG de distribución del pipeline (datos reales de porEtiqueta) — sin librerías externas.
+  function donutChart(segments, size = 168, stroke = 24) {
+    const r = (size - stroke) / 2, cx = size / 2, cy = size / 2, circ = 2 * Math.PI * r;
+    const total = segments.reduce((a, s) => a + s.value, 0);
+    let offset = 0;
+    const arcs = total > 0 ? segments.filter(s => s.value > 0).map(s => {
+      const len = (s.value / total) * circ;
+      const el = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${stroke}" stroke-dasharray="${len} ${circ - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"><title>${s.label}: ${s.value}</title></circle>`;
+      offset += len; return el;
+    }).join('') : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--bg-4)" stroke-width="${stroke}"></circle>`;
+    return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block;margin:0 auto">
+      ${arcs}
+      <text x="${cx}" y="${cy - 2}" text-anchor="middle" class="t-num" style="font-size:30px;font-weight:700;fill:var(--text)">${total}</text>
+      <text x="${cx}" y="${cy + 18}" text-anchor="middle" style="font-size:11px;fill:var(--text-3);letter-spacing:.05em">LEADS</text>
+    </svg>`;
+  }
+  const donutSegs = pipeline.map(p => ({ label: p.label, value: etq[p.k] || 0, color: p.color }));
+  const donutLegend = donutSegs.map(s => `<div class="u-row u-gap2" style="font-size:12px">
+      <span style="width:10px;height:10px;border-radius:3px;background:${s.color};flex-shrink:0"></span>
+      <span style="flex:1">${s.label}</span><span class="t-num t-dim">${fmt.n(s.value)}</span>
+    </div>`).join('');
+
+  ctx.content.innerHTML = `
+   <div class="os-content__max">
+    <!-- Métricas núcleo -->
+    <div class="grid grid--4 rise rise-1" style="margin-bottom:var(--s3)">
+      ${metric('leads', 'Leads totales', fmt.n(m.total), null, 'flat')}
+      ${metric('money', 'Cierres del mes', fmt.n(m.vendidos), null, 'flat')}
+      ${metric('target', 'Conversión global', fmt.pct(m.conversionGlobal), respRate>60?'estable':'', 'flat')}
+      ${metric('clock', 'Resp. promedio', (m.tiempoRespuestaPromedio!=null?m.tiempoRespuestaPromedio+' min':'—'), m.tiempoRespuestaPromedio!=null&&m.tiempoRespuestaPromedio<15?'ágil':'', 'flat')}
+    </div>
+
+    <div class="grid grid--main">
+      <!-- Columna izquierda -->
+      <div class="u-col u-gap3">
+        <!-- Pipeline comercial -->
+        <div class="card card--pad rise rise-2">
+          <div class="u-between" style="margin-bottom:var(--s3)">
+            <div><div class="t-h3">Embudo comercial</div><div class="t-dim3" style="font-size:12px">Distribución de ${fmt.n(m.total)} leads por etapa</div></div>
+            <a class="btn btn--ghost btn--sm" href="/os/pipeline.html">Abrir pipeline</a>
+          </div>
+          <div class="u-col u-gap2">
+            ${pipeline.map(p => {
+              const val = etq[p.k] || 0; const w = Math.round((val / pipeMax) * 100);
+              return `<div>
+                <div class="u-between" style="margin-bottom:6px">
+                  <span style="font-size:13px;font-weight:500">${p.label}</span>
+                  <span class="t-num t-dim" style="font-size:13px">${fmt.n(val)}</span>
+                </div>
+                <div style="height:10px;background:var(--bg-4);border-radius:999px;overflow:hidden">
+                  <div style="height:100%;width:${w}%;background:${p.color};border-radius:999px;transition:width .8s var(--ease-out)"></div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Rendimiento del equipo -->
+        <div class="card rise rise-3">
+          <div class="u-between card--pad" style="padding-bottom:var(--s2)">
+            <div class="t-h3">Rendimiento del equipo</div>
+            <a class="btn btn--quiet btn--sm" href="/os/equipo.html">Ver equipo</a>
+          </div>
+          <table class="table">
+            <thead><tr><th>Asesor</th><th>Leads</th><th>Activos</th><th>Cierres</th><th>Conversión</th></tr></thead>
+            <tbody>
+              ${(m.porVendedor || []).slice(0, 6).map(v => `
+                <tr>
+                  <td><div class="u-row u-gap2">
+                    <div class="avatar avatar--sm" style="background:${avatarColor(v.nombre)}">${initials(v.nombre)}</div>
+                    <div><div style="font-weight:500">${v.nombre}</div>
+                    <div class="u-row u-gap1" style="font-size:11px"><span class="dot dot--${v.estado==='activo'?'green':'mute'}"></span><span class="t-dim3">${v.estado}</span></div></div>
+                  </div></td>
+                  <td class="t-num">${fmt.n(v.total)}</td>
+                  <td class="t-num t-dim">${fmt.n(v.activos)}</td>
+                  <td class="t-num">${fmt.n(v.vendidos)}</td>
+                  <td><span class="badge badge--${v.conversion>=15?'green':v.conversion>=8?'gold':'mute'}">${v.conversion}%</span></td>
+                </tr>`).join('') || `<tr><td colspan="5" class="t-dim3" style="text-align:center;padding:var(--s4)">Sin asesores aún</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Top anuncios (F1: atribución real de campaña — de qué anuncio vienen los leads) -->
+        <div class="card rise rise-3">
+          <div class="u-between card--pad" style="padding-bottom:var(--s2)">
+            <div><div class="t-h3">Top anuncios</div><div class="t-dim3" style="font-size:12px">Qué anuncio trae más leads y cuáles venden de verdad</div></div>
+            <a class="btn btn--quiet btn--sm" href="/os/reportes.html">Ver reportes</a>
+          </div>
+          ${leadSources.campanas.length ? `
+          <table class="table">
+            <thead><tr><th>Anuncio</th><th>Leads</th><th>Vendidos</th><th>Conversión</th></tr></thead>
+            <tbody>
+              ${leadSources.campanas.slice(0, 6).map(c => `
+                <tr>
+                  <td style="font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.campaign.replace(/"/g,'&quot;')}">${c.campaign}</td>
+                  <td class="t-num">${fmt.n(c.leads)}</td>
+                  <td class="t-num t-dim">${fmt.n(c.vendidos)}</td>
+                  <td><span class="badge badge--${c.conversion_pct>=15?'green':c.conversion_pct>=5?'gold':'mute'}">${c.conversion_pct}%</span></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+          <div class="t-dim3" style="font-size:11.5px;padding:0 var(--s3) var(--s3)">${fmt.n(leadSources.pagado)} leads de campañas pagadas · ${fmt.n(leadSources.organico)} orgánicos</div>
+          ` : `<div class="t-dim3" style="font-size:13px;padding:0 var(--s3) var(--s3)">Aún no hay leads con anuncio identificado. Aparecerán aquí en cuanto lleguen clics desde Meta Ads.</div>`}
+        </div>
+      </div>
+
+      <!-- Columna derecha -->
+      <div class="u-col u-gap3">
+        <!-- Distribución del pipeline (dona) -->
+        <div class="card card--pad rise rise-1">
+          <div class="t-label" style="margin-bottom:var(--s2)">Distribución del pipeline</div>
+          <div style="margin:var(--s2) 0 var(--s3)">${donutChart(donutSegs)}</div>
+          <div class="u-col u-gap1">${donutLegend}</div>
+        </div>
+        <!-- Estado del negocio -->
+        <div class="card card--pad rise rise-2">
+          <div class="t-label" style="margin-bottom:var(--s2)">Estado del negocio</div>
+          <div class="u-col u-gap2">
+            ${statRow(stats&&m?'dot--green':'dot--gold', stats&&m?'Sistema en línea':'Conexión parcial', stats&&m?'Servidor y datos respondiendo':'Reintentando conexión')}
+            ${statRow(m.sinResponder>0?'dot--gold':'dot--green', fmt.n(m.sinResponder) + ' sin responder', m.sinResponder>0?'Requieren atención':'Bandeja al día')}
+            ${statRow('dot--green', fmt.n(stats.vendedoresActivos) + ' de ' + fmt.n(stats.totalVendedores) + ' asesores', 'Conectados ahora')}
+            ${statRow('dot--gold', fmt.n(m.mensajesEntrantes) + ' mensajes', 'Recibidos en total')}
+          </div>
+        </div>
+
+        <!-- Acciones rápidas -->
+        <div class="card card--pad rise rise-3">
+          <div class="t-label" style="margin-bottom:var(--s2)">Acciones rápidas</div>
+          <div class="u-col u-gap1">
+            ${quick('inbox', 'Abrir Inbox', '/os/inbox.html')}
+            ${quick('automations', 'Crear automatización', '/os/automatizaciones.html')}
+            ${quick('analytics', 'Ver reportes', '/os/reportes.html')}
+          </div>
+        </div>
+
+        <!-- Copiloto IA sugerencia -->
+        <div class="card card--pad rise rise-4" style="border-color:var(--gold-line);background:linear-gradient(160deg,var(--bg-2),rgba(200,164,90,.05))">
+          <div class="u-row u-gap2" style="margin-bottom:10px">
+            <div class="metric__icon">${ICONS.ai}</div>
+            <div class="t-h3">Copiloto SP</div>
+          </div>
+          <p class="t-dim" style="font-size:13px;line-height:1.55">Tienes <b class="t-gold">${fmt.n(etq.negociacion||0)}</b> leads en negociación sin actividad reciente. ¿Quieres que prepare un mensaje de seguimiento para reactivarlos?</p>
+          <button class="btn btn--ghost btn--sm btn--block" style="margin-top:var(--s2)" id="btnGenerarSeguimiento">Generar seguimiento</button>
+        </div>
+      </div>
+    </div>
+   </div>`;
+
+  document.getElementById('newLead').addEventListener('click', () => location.href = '/os/crm.html');
+
+  document.getElementById('btnGenerarSeguimiento')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnGenerarSeguimiento');
+    btn.disabled = true; btn.textContent = 'Pensando...';
+    const briefing = await api('/api/nlp/daily-briefing', { method: 'POST' });
+    btn.disabled = false; btn.textContent = 'Generar seguimiento';
+    if (briefing?.briefing) {
+      SPOS.toast('💡 ' + briefing.briefing.priorityAction, 'ok');
+    } else {
+      SPOS.toast('Configura una API Key en Ajustes → IA Copiloto', 'err');
+    }
+  });
+
+  function statRow(dot, title, sub) {
+    return `<div class="u-row u-gap2">
+      <span class="dot ${dot}" style="margin-top:6px"></span>
+      <div><div style="font-size:13px;font-weight:500">${title}</div><div class="t-dim3" style="font-size:11.5px">${sub}</div></div>
+    </div>`;
+  }
+  function quick(icon, label, href) {
+    return `<a class="os-nav__item" href="${href}" style="margin:0;padding:9px 10px">${ICONS[icon]}<span>${label}</span>
+      <span style="margin-left:auto;opacity:.3">${ICONS.up.replace('<svg ','<svg style="width:14px;height:14px" ')}</span></a>`;
+  }
+})();
+</script>
+</body>
+</html>
