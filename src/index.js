@@ -645,17 +645,17 @@ app.use('/api/meta-ads', auth.requireAdmin, require('./routes/meta-ads'));
 // campaña (sin sesión; resuelve el tenant por slug).
 app.use('/api/campana', auth.requireAuth, require('./verticales/campana/router').panel);
 app.use('/api/campana-publico', require('./verticales/campana/router').publico);
-app.get('/c/:slug', (req, res) => {
-  // Página pública de campaña (landing reutilizable por tenant):
-  res.sendFile(path.join(__dirname, '..', 'public', 'campana', 'index.html'));
-});
-// Web pública del proyecto de campaña (p. ej. C:\Sandra Suarez\web) servida por la
-// plataforma bajo /c/:slug cuando el tenant la declara (env SANDRA_WEB_DIR).
+// Archivos estáticos del proyecto de campaña (index.html, panel.html, etc.)
+// DEBE ir ANTES de la ruta /c/:slug para que archivos como panel.html se sirvan.
 const SANDRA_WEB_DIR = process.env.SANDRA_WEB_DIR;
 if (SANDRA_WEB_DIR && fs.existsSync(SANDRA_WEB_DIR)) {
   app.use('/c/sandra-concejo', express.static(SANDRA_WEB_DIR));
   console.log('[CAMPAÑA] Web pública del tenant sandra-concejo servida desde', SANDRA_WEB_DIR);
 }
+app.get('/c/:slug', (req, res) => {
+  // Página pública de campaña (landing reutilizable por tenant):
+  res.sendFile(path.join(__dirname, '..', 'public', 'campana', 'index.html'));
+});
 
 // ===================== WEBHOOKS MULTICANAL =====================
 const channels = require('./channels');
