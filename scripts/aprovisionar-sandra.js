@@ -50,25 +50,34 @@ async function main() {
     const campanaStore = require('../src/verticales/campana/store');
 
     // Config de campaña
-    campanaStore.setInfoCampana({
-      nombre: 'Sandra Suárez',
-      cargo: 'Concejal Municipal',
-      eslogan: 'Una concejal de la comunidad, para la comunidad',
-      zonas: ['Zona Norte', 'Zona Sur', 'Zona Centro'],
-    });
+    try {
+      campanaStore.setInfoCampana({
+        nombre: 'Sandra Suárez',
+        cargo: 'Concejal Municipal',
+        eslogan: 'Una concejal de la comunidad, para la comunidad',
+        zonas: ['Zona Norte', 'Zona Sur', 'Zona Centro'],
+      });
+    } catch (e) { console.log('[SANDRA] config skip:', e.message); }
 
     // Estructura de equipo (roles). El admin (gerente) ya existe del provision; se ajusta rol.
     for (const m of EQUIPO) {
-      const existente = store.getVendedorByTelefono(m.telefono);
-      if (existente) {
-        adapter.run('UPDATE vendedores SET rol = ? WHERE id = ?', [m.rol, existente.id]);
-        console.log('[SANDRA] equipo actualizado:', m.rol, m.nombre);
-      } else {
-        try {
+      try {
+        let existente = store.getVendedorByTelefono(m.telefono);
+        if (!existente && m.rol) {
+          existente = adapter.one('SELECT id FROM vendedores WHERE rol = ?', [m.rol]);
+        }
+        if (existente) {
+          adapter.run('UPDATE vendedores SET telefono = ?, rol = ? WHERE id = ?', [m.telefono, m.rol, existente.id]);
+          if (m.pin) {
+            const auth = require('../src/services/auth');
+            adapter.run('UPDATE vendedores SET pin = ? WHERE id = ?', [auth.hashPassword(String(m.pin)), existente.id]);
+          }
+          console.log('[SANDRA] equipo actualizado:', m.rol, m.nombre);
+        } else {
           campanaStore.crearMiembroEquipo(m);
           console.log('[SANDRA] equipo creado:', m.rol, m.nombre);
-        } catch (e) { console.log('[SANDRA] equipo skip:', m.nombre, e.message); }
-      }
+        }
+      } catch (e) { console.log('[SANDRA] equipo skip:', m.nombre, e.message); }
     }
 
     // Seed votantes
