@@ -126,6 +126,12 @@ spcrm.duckdns.org {
     handle /plataforma* {
         reverse_proxy localhost:3001
     }
+    handle /api/plataforma* {
+        reverse_proxy localhost:3001
+    }
+    handle /api/login {
+        reverse_proxy localhost:3001
+    }
     handle {
         reverse_proxy localhost:3000
     }

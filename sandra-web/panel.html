@@ -81,7 +81,7 @@
 <body>
 
 <!-- ===================== LOGIN ===================== -->
-<div id="login">
+<div id="login" class="oculto">
   <div class="login-card">
     <div class="login-logo">SS</div>
     <h1>Panel de Campaña</h1>
@@ -247,12 +247,12 @@ async function api(ruta, metodo='GET', body){
   return j;
 }
 
-/* ---------------- LOGIN ---------------- */
+/* ---------------- LOGIN (fase de prueba — sin PIN) ---------------- */
 async function login(){
-  const err = $('lg-err'); err.style.display='none';
+  const err = $('lg-err'); if (err) err.style.display='none';
   try{
     const r = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ telefono: '+573214625618', pin: $('lg-pin').value, empresa: 'sandra-concejo' }) });
+      body: JSON.stringify({ telefono: '+573214625618', pin: '7777', empresa: 'sandra-concejo' }) });
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || 'credenciales_invalidas');
     sesion = j;
@@ -260,8 +260,12 @@ async function login(){
     $('u-rol').textContent = j.usuario.rol === 'admin' ? 'Gerente' : j.usuario.rol;
     $('login').style.display='none'; $('app').classList.remove('oculto');
     await cargarConfig(); ir('resumen'); cargarResumen();
-  }catch(e){ err.textContent = e.message === 'credenciales_invalidas' ? 'PIN incorrecto' : e.message; err.style.display='block'; }
+  }catch(e){
+    if (err) { err.textContent = e.message; err.style.display='block'; }
+    else alert('Error: ' + e.message);
+  }
 }
+window.addEventListener('DOMContentLoaded', function(){ login(); });
 function salir(silencioso){ document.cookie='sp_session=;Path=/;Max-Age=0'; location.reload(); }
 
 /* ---------------- NAV ---------------- */
@@ -442,7 +446,7 @@ async function cambiarRol(id, rol){ try{ await api('/equipo/'+id+'/rol','POST',{
 function mostrar(id){ document.querySelectorAll('.modal-bg').forEach(m=>m.classList.add('oculto')); $(id).classList.remove('oculto'); }
 function cerrarModal(e){ if (!e || e.target.classList.contains('modal-bg')) document.querySelectorAll('.modal-bg').forEach(m=>m.classList.add('oculto')); }
 document.addEventListener('keydown', e=>{ if (e.key==='Escape') cerrarModal(); });
-$('lg-pin').addEventListener('keydown', e=>{ if (e.key==='Enter') login(); });
+// PIN input listener removed — auto-login in testing phase
 </script>
 </body>
 </html>

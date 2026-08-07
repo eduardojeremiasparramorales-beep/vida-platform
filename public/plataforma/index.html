@@ -137,7 +137,9 @@
     });
   }
 
-  api('/api/plataforma/me').then(function(r) { r.ok ? renderApp() : renderLogin(); });
+  // Auto-login (fase de prueba — sin PIN)
+  api('/api/plataforma/login', { method: 'POST', body: JSON.stringify({ email: 'fundador@vid.a', password: '7777' }) })
+    .then(function() { renderApp(); });
 })();
 </script>
 </body>
