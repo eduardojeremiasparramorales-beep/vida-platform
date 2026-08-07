@@ -62,13 +62,17 @@ function one(sql, params = []) {
   return rows.length ? rows[0] : null;
 }
 let _saveTimer = null;
+function saveToDisk() {
+  if (usingBetterSqlite3 || !db) return;
+  try { fs.writeFileSync(PLATFORM_DB_PATH, Buffer.from(db.export())); } catch (e) { console.error('[PLATAFORMA] error guardando:', e.message); }
+}
 function scheduleSave() {
   if (usingBetterSqlite3) return;
   if (_saveTimer) clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(() => {
-    try { fs.writeFileSync(PLATFORM_DB_PATH, Buffer.from(db.export())); } catch (e) { console.error('[PLATAFORMA] error guardando:', e.message); }
-  }, 500);
+  _saveTimer = setTimeout(saveToDisk, 500);
 }
+// Forzar save síncrono al salir del proceso (provisioning scripts, etc.)
+process.on('exit', saveToDisk);
 function run(sql, params = []) {
   if (!db) return;
   if (usingBetterSqlite3) { db.prepare(sql).run(...params); return; }

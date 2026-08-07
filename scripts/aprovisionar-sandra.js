@@ -13,11 +13,11 @@ const auth = require('../src/services/auth');
 
 const SLUG = 'sandra-concejo';
 const NOMBRE = 'Campaña Sandra Suárez — Concejo Municipal';
-const ADMIN = { nombre: 'Sandra Suárez', telefono: '+573001234567', pin: '0000' };
+const ADMIN = { nombre: 'Sandra Suárez', telefono: '+573214625618', pin: '7777' };
 
 // Estructura de campaña según C:\Sandra Suarez\anotaciones.txt
 const EQUIPO = [
-  { nombre: 'Sandra Suárez', telefono: '+573001234567', rol: 'gerente', pin: '0000' },
+  { nombre: 'Sandra Suárez', telefono: '+573214625618', rol: 'gerente', pin: '7777' },
   { nombre: 'Secretario/a de campaña', telefono: '+573011111111', rol: 'secretario', pin: '0000' },
   { nombre: 'Conductor público', telefono: '+573022222222', rol: 'conductor', pin: '0000' },
   { nombre: 'Equipo de comunicaciones', telefono: '+573033333333', rol: 'comunicaciones', pin: '0000' },

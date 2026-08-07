@@ -42,14 +42,12 @@ fi
 ENV_FILE="$APP_DIR/.env"
 if [ ! -f "$ENV_FILE" ]; then
   log "Creando .env..."
-  # Generar master key aleatoria
-  MASTER_KEY=$(openssl rand -hex 32)
-  cat > "$ENV_FILE" <<ENVEOF
+  cat > "$ENV_FILE" <<'ENVEOF'
 PORT=3000
 NODE_ENV=production
 
 # === VID.A PLATFORM ===
-VIDA_MASTER_KEY=${MASTER_KEY}
+VIDA_MASTER_KEY=a2fb3fc7d303ee300e997535c13200097f99936472cf162e19019528c7
 VIDA_PLATFORM_EMAIL=fundador@vid.a
 VIDA_PLATFORM_PASSWORD=Fundador-VidA-Cambia-123
 ADMIN_EMAIL=fundador@vid.a
@@ -83,7 +81,7 @@ VAPID_PUBLIC_KEY=
 VAPID_PRIVATE_KEY=
 VAPID_SUBJECT=mailto:fundador@vid.a
 ENVEOF
-  ok ".env creado (master key generada)"
+  ok ".env creado"
 else
   ok ".env ya existe"
 fi
@@ -152,7 +150,7 @@ echo "  Landing campaña: https://spcrm.duckdns.org/c/sandra-concejo"
 echo "  Panel equipo:    https://spcrm.duckdns.org/c/sandra-concejo/panel.html"
 echo "  Plataforma:      https://spcrm.duckdns.org/plataforma"
 echo ""
-echo "  Login panel: +573001234567 / PIN 0000"
+echo "  Login panel: +573214625618 / PIN 7777"
 echo "  Login plataforma: fundador@vid.a / Fundador-VidA-Cambia-123"
 echo ""
 echo "  Logs: docker compose logs -f"
