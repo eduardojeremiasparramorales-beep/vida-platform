@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sandra Suárez — Concejal Municipal</title>
+<style>
+  :root { --verde:#1b5e20; --verde-claro:#4caf50; --crema:#fbf8f1; --tinta:#22301f; --acento:#ffb300; }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif;}
+  body{background:var(--crema);color:var(--tinta);}
+  header{background:linear-gradient(160deg,#1b5e20 0%,#2e7d32 55%,#4caf50 100%);color:#fff;padding:64px 20px 56px;text-align:center;position:relative;overflow:hidden;}
+  header::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 85% 20%,rgba(255,255,255,.12),transparent 45%);}
+  .avatar{width:96px;height:96px;border-radius:50%;background:#fff;color:var(--verde);display:inline-flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:800;margin-bottom:16px;box-shadow:0 8px 24px rgba(0,0,0,.25);position:relative;z-index:1;}
+  header h1{font-size:2.4rem;letter-spacing:.5px;position:relative;z-index:1;}
+  .cargo{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);padding:7px 20px;border-radius:40px;margin-top:12px;font-size:.95rem;letter-spacing:1px;position:relative;z-index:1;}
+  .eslogan{margin-top:16px;font-size:1.15rem;font-style:italic;opacity:.95;position:relative;z-index:1;}
+  .wrap{max-width:960px;margin:0 auto;padding:28px 20px;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin:30px 0;}
+  .stat{background:#fff;border-radius:16px;padding:22px;text-align:center;box-shadow:0 3px 14px rgba(0,0,0,.06);border-top:4px solid var(--verde);}
+  .stat .num{font-size:2.1rem;font-weight:800;color:var(--verde);}
+  .stat .lbl{font-size:.85rem;color:#5c6e5a;margin-top:5px;}
+  h2{font-size:1.25rem;margin:34px 0 14px;color:var(--verde);display:flex;align-items:center;gap:8px;}
+  h2::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--acento);}
+  .fila{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:14px 18px;border-radius:12px;margin-bottom:8px;box-shadow:0 1px 5px rgba(0,0,0,.05);}
+  .fila b{color:var(--verde);}
+  .chip{font-size:.8rem;padding:3px 12px;border-radius:30px;background:#eef6ee;color:var(--verde);}
+  .funciones{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:8px;}
+  .funcion{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 5px rgba(0,0,0,.05);font-size:.92rem;border-left:4px solid var(--acento);}
+  .cta{text-align:center;margin:46px 0 10px;}
+  .btn{display:inline-block;background:var(--verde);color:#fff;padding:15px 38px;border-radius:40px;text-decoration:none;font-weight:700;font-size:1.02rem;transition:.2s;box-shadow:0 6px 18px rgba(27,94,32,.3);}
+  .btn:hover{background:var(--verde-claro);transform:translateY(-2px);}
+  footer{background:#eaf2e7;padding:26px;text-align:center;font-size:.82rem;color:#5c6e5a;margin-top:40px;}
+  .load{text-align:center;padding:70px 0;color:#5c6e5a;}
+  .offline{display:none;text-align:center;padding:70px 0;color:#8a5a00;}
+</style>
+</head>
+<body>
+<header>
+  <div class="avatar">SS</div>
+  <h1>Sandra Suárez</h1>
+  <div><span class="cargo">CONCEJAL MUNICIPAL</span></div>
+  <div class="eslogan" id="eslogan">Una concejal de la comunidad, para la comunidad</div>
+</header>
+<main class="wrap">
+  <div id="state-load" class="load">Cargando campaña…</div>
+  <div id="state-ok" style="display:none">
+    <section class="stats">
+      <div class="stat"><div class="num" id="s-total">0</div><div class="lbl">Comunidad registrada</div></div>
+      <div class="stat"><div class="num" id="s-zonas">0</div><div class="lbl">Zonas cubiertas</div></div>
+      <div class="stat"><div class="num" id="s-referidos">0</div><div class="lbl">Referidos sumados</div></div>
+    </section>
+    <section>
+      <h2>Avance del compromiso ciudadano</h2>
+      <div id="estados"></div>
+    </section>
+    <section>
+      <h2>Cobertura por zonas</h2>
+      <div id="zonas"></div>
+    </section>
+    <section>
+      <h2>¿Qué hace un concejal por ti?</h2>
+      <div class="funciones" id="funciones">
+        <div class="funcion">Control político: vigilar al Ejecutivo municipal</div>
+        <div class="funcion">Denuncias de control fiscal</div>
+        <div class="funcion">Aprobación y legislación de proyectos</div>
+        <div class="funcion">Gestión de proyectos departamentales y nacionales</div>
+      </div>
+    </section>
+    <div class="cta"><a class="btn" href="#" onclick="return false">Quiero sumarme a la campaña</a></div>
+  </div>
+  <div id="state-off" class="offline">⚠️ La campaña aún no está publicada.</div>
+</main>
+<footer>Unidad y transparencia · Campaña por el Concejo Municipal · Con el apoyo de la comunidad</footer>
+<script>
+  const API_BASE = (window.VIDA_API_BASE || '').replace(/\/$/, '');
+  const SLUG = 'sandra-concejo';
+  const endpoint = API_BASE + '/api/campana-publico/' + SLUG;
+  async function cargar(){
+    const el=(id)=>document.getElementById(id);
+    try{
+      const r=await fetch(endpoint);
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const d=await r.json();
+      if(d.info && d.info.eslogan) el('eslogan').textContent=d.info.eslogan;
+      el('s-total').textContent=(d.stats.total_votantes||0).toLocaleString('es-CO');
+      el('s-zonas').textContent=(d.stats.por_zona||[]).length;
+      el('s-referidos').textContent=(d.stats.total_referidos||0).toLocaleString('es-CO');
+      el('estados').innerHTML=(d.stats.por_estado||[]).map(e=>
+        `<div class="fila"><span><span class="chip" style="background:${e.color||'#eef6ee'}20;color:${e.color||'#1b5e20'}">●</span> ${e.label}</span><b>${Number(e.count).toLocaleString('es-CO')}</b></div>`).join('')||'<div class="fila">Sin datos</div>';
+      el('zonas').innerHTML=(d.stats.por_zona||[]).map(z=>
+        `<div class="fila"><span>${z.zona}</span><b>${Number(z.n).toLocaleString('es-CO')}</b></div>`).join('')||'<div class="fila">Sin datos</div>';
+      if(d.info && d.info.funciones) el('funciones').innerHTML=d.info.funciones.map(f=>`<div class="funcion">${f}</div>`).join('');
+      el('state-load').style.display='none';
+      el('state-ok').style.display='block';
+    }catch(e){
+      el('state-load').style.display='none';
+      el('state-off').style.display='block';
+    }
+  }
+  cargar();
+</script>
+</body>
+</html>

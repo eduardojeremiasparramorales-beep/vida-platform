@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Campaña — Sandra Suárez</title>
+<style>
+  :root{--verde:#1b5e20;--verde-claro:#4caf50;--crema:#fbf8f1;--tinta:#22301f;--linea:#e3ead f;--acento:#ffb300;--rojo:#d32f2f;--azul:#1565c0;--gris:#5c6e5a;}
+  :root{--linea:#e3eade;--fondo:#f4f7f2;}
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif;}
+  body{background:var(--fondo);color:var(--tinta);min-height:100vh;}
+  .oculto{display:none !important;}
+  button{cursor:pointer;border:none;background:var(--verde);color:#fff;padding:9px 16px;border-radius:9px;font-weight:600;font-size:.9rem;transition:.15s;}
+  button:hover{background:var(--verde-claro);}
+  button.ghost{background:transparent;color:var(--verde);border:1px solid var(--verde);}
+  button.ghost:hover{background:#eef6ee;}
+  button.tono{background:#eef6ee;color:var(--verde);}
+  button.peligro{background:var(--rojo);}
+  input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--linea);border-radius:9px;font-size:.92rem;background:#fff;color:var(--tinta);}
+  label{display:block;font-size:.78rem;font-weight:700;color:#4a5a48;margin:10px 0 4px;text-transform:uppercase;letter-spacing:.4px;}
+  /* ---------- Login ---------- */
+  #login{align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(160deg,#1b5e20,#2e7d32 55%,#4caf50);padding:20px;}
+  .login-card{background:#fff;border-radius:18px;padding:34px;width:100%;max-width:380px;box-shadow:0 18px 50px rgba(0,0,0,.25);}
+  .login-card h1{font-size:1.35rem;color:var(--verde);margin-bottom:4px;}
+  .login-card .sub{color:var(--gris);font-size:.85rem;margin-bottom:18px;}
+  .login-logo{width:56px;height:56px;border-radius:14px;background:var(--verde);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;margin-bottom:14px;}
+  .err{background:#fdecea;color:var(--rojo);border-radius:8px;padding:9px 12px;font-size:.84rem;margin-top:12px;display:none;}
+  /* ---------- App shell ---------- */
+  #app>header{background:#fff;border-bottom:1px solid var(--linea);padding:0 22px;height:60px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:20;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--verde);font-size:1.02rem;white-space:nowrap;}
+  .brand .b{width:34px;height:34px;border-radius:9px;background:var(--verde);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.95rem;}
+  nav{display:flex;gap:4px;overflow-x:auto;flex:1;}
+  nav button{background:transparent;color:#4a5a48;border-radius:9px;padding:8px 14px;font-weight:600;white-space:nowrap;}
+  nav button.act{background:var(--verde);color:#fff;}
+  .userchip{display:flex;align-items:center;gap:8px;font-size:.83rem;color:var(--gris);}
+  .userchip b{color:var(--tinta);}
+  main{padding:22px;max-width:1200px;margin:0 auto;}
+  .vistas>.vista{display:none;}
+  .vistas>.vista.act{display:block;}
+  /* ---------- Resumen ---------- */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:22px;}
+  .card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.04);border-top:4px solid var(--verde);}
+  .card .num{font-size:1.9rem;font-weight:800;color:var(--verde);}
+  .card .lbl{font-size:.8rem;color:var(--gris);margin-top:3px;}
+  .panel2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:820px){.panel2{grid-template-columns:1fr;}}
+  .bloque{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.04);}
+  .bloque h3{font-size:.95rem;color:var(--verde);margin-bottom:12px;}
+  .barra{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+  .barra .nombre{width:130px;font-size:.84rem;flex-shrink:0;}
+  .barra .track{flex:1;background:#eef2ed;border-radius:8px;height:22px;overflow:hidden;position:relative;}
+  .barra .fill{height:100%;border-radius:8px;transition:width .3s;}
+  .barra .n{width:44px;text-align:right;font-weight:700;font-size:.86rem;}
+  /* ---------- Tabla votantes ---------- */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+  .toolbar input,.toolbar select{width:auto;min-width:140px;}
+  .toolbar .grow{flex:1;min-width:200px;}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.04);}
+  th,td{padding:11px 13px;text-align:left;font-size:.87rem;border-bottom:1px solid #eef2ed;}
+  th{background:#f7faf6;color:#4a5a48;font-size:.76rem;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;user-select:none;}
+  tr:hover td{background:#fbfdf9;}
+  .estado-chip{display:inline-block;padding:3px 11px;border-radius:30px;font-size:.76rem;font-weight:700;}
+  .fila{display:flex;gap:8px;flex-wrap:wrap;}
+  .fila button{padding:5px 11px;font-size:.78rem;border-radius:7px;}
+  .count{background:#eef6ee;color:var(--verde);border-radius:30px;padding:2px 10px;font-size:.8rem;font-weight:700;}
+  /* ---------- Modal ---------- */
+  .modal-bg{position:fixed;inset:0;background:rgba(20,30,22,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:50;overflow:auto;}
+  .modal{background:#fff;border-radius:16px;width:100%;max-width:520px;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.3);}
+  .modal h2{font-size:1.1rem;color:var(--verde);margin-bottom:6px;}
+  .modal .cerrar{float:right;background:transparent;color:var(--gris);font-size:1.2rem;padding:2px 8px;}
+  .modal .acciones{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;}
+  .detalle{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
+  .detalle .full{grid-column:1/-1;}
+  .referidos li{list-style:none;background:#f7faf6;border-radius:9px;padding:9px 12px;margin-bottom:6px;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--verde);color:#fff;padding:12px 20px;border-radius:12px;font-size:.88rem;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:100;animation:subir .25s;}
+  @keyframes subir{from{transform:translateY(20px);opacity:0;}to{transform:none;opacity:1;}}
+  .vac{text-align:center;padding:40px;color:var(--gris);font-size:.9rem;}
+  .paginacion{display:flex;gap:8px;justify-content:center;margin-top:16px;align-items:center;font-size:.86rem;color:var(--gris);}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login">
+  <div class="login-card">
+    <div class="login-logo">SS</div>
+    <h1>Panel de Campaña</h1>
+    <div class="sub">Sandra Suárez — Concejo Municipal</div>
+    <label>Teléfono (WhatsApp)</label>
+    <input id="lg-tel" placeholder="+573001234567" inputmode="tel">
+    <label>PIN (4 dígitos)</label>
+    <input id="lg-pin" type="password" maxlength="4" inputmode="numeric" placeholder="••••">
+    <label>Negocio / Empresa</label>
+    <input id="lg-emp" value="sandra-concejo">
+    <div class="err" id="lg-err"></div>
+    <div style="margin-top:18px"><button style="width:100%;padding:12px" onclick="login()">Entrar al panel</button></div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app" class="oculto">
+  <header>
+    <div class="brand"><div class="b">SS</div><span>Sandra Suárez · Concejo</span></div>
+    <nav>
+      <button class="act" data-v="resumen" onclick="ir('resumen')">Resumen</button>
+      <button data-v="votantes" onclick="ir('votantes')">Votantes</button>
+      <button data-v="equipo" onclick="ir('equipo')">Equipo</button>
+      <button data-v="config" onclick="ir('config')">Config</button>
+    </nav>
+    <div class="userchip"><span>👤 <b id="u-nombre"></b> · <span id="u-rol"></span></span>
+      <button class="ghost" style="padding:6px 12px" onclick="salir()">Salir</button>
+    </div>
+  </header>
+  <main>
+    <div class="vistas">
+
+      <!-- ============ RESUMEN ============ -->
+      <div class="vista act" id="v-resumen">
+        <div class="cards">
+          <div class="card"><div class="num" id="s-total">0</div><div class="lbl">Comunidad registrada</div></div>
+          <div class="card"><div class="num" id="s-comprometidos">0</div><div class="lbl">Comprometidos</div></div>
+          <div class="card"><div class="num" id="s-votaran">0</div><div class="lbl">Votará / ya votó</div></div>
+          <div class="card"><div class="num" id="s-referidos">0</div><div class="lbl">Referidos</div></div>
+          <div class="card"><div class="num" id="s-zonas">0</div><div class="lbl">Zonas cubiertas</div></div>
+        </div>
+        <div class="panel2">
+          <div class="bloque"><h3>Estados de voto</h3><div id="bl-estados"></div></div>
+          <div class="bloque"><h3>Por zona</h3><div id="bl-zonas"></div></div>
+        </div>
+      </div>
+
+      <!-- ============ VOTANTES ============ -->
+      <div class="vista" id="v-votantes">
+        <div class="toolbar">
+          <input class="grow" id="f-q" placeholder="Buscar nombre, teléfono o cédula…" oninput="debounce(cargarVotantes,300)">
+          <select id="f-zona" onchange="cargarVotantes()"><option value="">Todas las zonas</option></select>
+          <select id="f-barrio" onchange="cargarVotantes()"><option value="">Todos los barrios</option></select>
+          <select id="f-estado" onchange="cargarVotantes()"><option value="">Todos los estados</option></select>
+          <select id="f-ocupacion" onchange="cargarVotantes()"><option value="">Todas las ocupaciones</option></select>
+          <button onclick="abrirNuevo()">+ Votante</button>
+        </div>
+        <div id="tabla-wrap"></div>
+        <div class="paginacion" id="paginacion"></div>
+      </div>
+
+      <!-- ============ EQUIPO ============ -->
+      <div class="vista" id="v-equipo">
+        <div class="toolbar">
+          <div><b>Equipo de campaña</b> <span style="color:var(--gris);font-size:.85rem">gerente → secretario → conductor → comunicaciones → voluntariado</span></div>
+          <button onclick="abrirMiembro()">+ Miembro</button>
+        </div>
+        <div id="equipo-wrap"></div>
+      </div>
+
+      <!-- ============ CONFIG ============ -->
+      <div class="vista" id="v-config">
+        <div class="bloque" style="max-width:640px">
+          <h3>Información pública de la campaña</h3>
+          <label>Candidata</label><input id="c-nombre">
+          <label>Cargo</label><input id="c-cargo">
+          <label>Eslogan</label><input id="c-eslogan">
+          <label>Zonas (separadas por coma)</label><input id="c-zonas">
+          <div class="acciones"><button onclick="guardarInfo()">Guardar</button></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ===================== MODAL VOTANTE ===================== -->
+<div id="m-votante" class="modal-bg oculto" onclick="cerrarModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="cerrar" onclick="cerrarModal()">✕</button>
+    <h2 id="mv-titulo">Nuevo votante</h2>
+    <input type="hidden" id="mv-id">
+    <div class="detalle">
+      <div><label>Nombre</label><input id="mv-nombre"></div>
+      <div><label>Teléfono</label><input id="mv-telefono" placeholder="+57…"></div>
+      <div><label>Cédula</label><input id="mv-cedula"></div>
+      <div><label>Fecha de nacimiento</label><input id="mv-nacimiento" type="date"></div>
+      <div><label>Zona</label><input id="mv-zona" list="dl-zonas"></div>
+      <div><label>Barrio</label><input id="mv-barrio"></div>
+      <div><label>Ocupación</label><input id="mv-ocupacion" list="dl-ocupaciones"></div>
+      <div><label>Estado de voto</label><select id="mv-estado"></select></div>
+      <div class="full"><label>Nota de compromiso</label><textarea id="mv-nota" rows="2"></textarea></div>
+    </div>
+    <div class="acciones"><button class="ghost" onclick="cerrarModal()">Cancelar</button><button onclick="guardarVotante()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- ===================== MODAL DETALLE ===================== -->
+<div id="m-detalle" class="modal-bg oculto" onclick="cerrarModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="cerrar" onclick="cerrarModal()">✕</button>
+    <h2 id="md-nombre">—</h2>
+    <div style="font-size:.85rem;color:var(--gris);margin-bottom:12px"><span id="md-meta"></span></div>
+    <div class="fila" style="margin-bottom:14px"><button class="tono" onclick="editarDesdeDetalle()">Editar perfil</button>
+      <select id="md-estado" style="width:auto" onchange="cambiarEstadoDetalle()"></select>
+      <a class="ghost" style="display:inline-block;padding:8px 14px;border-radius:9px;text-decoration:none;font-size:.84rem;border:1px solid var(--verde);color:var(--verde)" target="_blank" id="md-wa">💬 WhatsApp</a>
+    </div>
+    <h3 style="font-size:.9rem;color:var(--verde);margin:14px 0 8px">Referidos de este votante</h3>
+    <ul class="referidos" id="md-referidos"></ul>
+    <div style="background:#f7faf6;border-radius:10px;padding:14px;margin-top:10px">
+      <div style="font-size:.85rem;font-weight:700;margin-bottom:6px">+ Registrar referido</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="md-ref-nombre" placeholder="Nombre" style="flex:1;min-width:130px">
+        <input id="md-ref-tel" placeholder="Teléfono" style="flex:1;min-width:130px">
+        <input id="md-ref-zona" placeholder="Zona" style="width:110px">
+        <button onclick="agregarReferido()">Agregar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL MIEMBRO ===================== -->
+<div id="m-miembro" class="modal-bg oculto" onclick="cerrarModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="cerrar" onclick="cerrarModal()">✕</button>
+    <h2>Nuevo miembro del equipo</h2>
+    <label>Nombre</label><input id="mm-nombre">
+    <label>Teléfono</label><input id="mm-telefono" placeholder="+573…">
+    <label>Rol</label><select id="mm-rol"></select>
+    <label>PIN inicial (4 dígitos)</label><input id="mm-pin" maxlength="4" inputmode="numeric">
+    <div class="acciones"><button class="ghost" onclick="cerrarModal()">Cancelar</button><button onclick="guardarMiembro()">Crear</button></div>
+  </div>
+</div>
+
+<datalist id="dl-zonas"></datalist>
+<datalist id="dl-ocupaciones"></datalist>
+
+<script>
+'use strict';
+let cfg = { estados_voto: [], roles_equipo: [], info: {} };
+let estadoColor = {};
+let sesion = null;
+let pagina = 1;
+const PAGINA = 50;
+const $ = id => document.getElementById(id);
+let debounceTimer;
+
+function debounce(fn, ms){ clearTimeout(debounceTimer); debounceTimer = setTimeout(fn, ms); }
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2600); }
+async function api(ruta, metodo='GET', body){
+  const opt = { method: metodo, headers: {} };
+  if (body) { opt.headers['Content-Type']='application/json'; opt.body = JSON.stringify(body); }
+  const r = await fetch('/api/campana' + ruta, opt);
+  const j = await r.json().catch(()=>({}));
+  if (r.status === 401 || r.status === 403) { salir(true); throw new Error('sesión_expirada'); }
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+/* ---------------- LOGIN ---------------- */
+async function login(){
+  const err = $('lg-err'); err.style.display='none';
+  try{
+    const r = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ telefono: $('lg-tel').value.trim(), pin: $('lg-pin').value, empresa: $('lg-emp').value.trim() }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'credenciales_invalidas');
+    sesion = j;
+    $('u-nombre').textContent = j.usuario.nombre;
+    $('u-rol').textContent = j.usuario.rol === 'admin' ? 'Gerente' : j.usuario.rol;
+    if (j.must_change) {
+      const nuevo = prompt('Cambia tu PIN de fábrica (0000) por uno de 4 dígitos:');
+      if (nuevo && /^\d{4}$/.test(nuevo)) { await fetch('/api/mi-pin', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({pin:nuevo}) }); }
+    }
+    $('login').style.display='none'; $('app').classList.remove('oculto');
+    await cargarConfig(); ir('resumen'); cargarResumen();
+  }catch(e){ err.textContent = e.message === 'credenciales_invalidas' ? 'Teléfono o PIN incorrectos' : e.message; err.style.display='block'; }
+}
+function salir(silencioso){ document.cookie='sp_session=;Path=/;Max-Age=0'; location.reload(); }
+
+/* ---------------- NAV ---------------- */
+function ir(v){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('act', b.dataset.v===v));
+  document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('act', x.id==='v-'+v));
+  if (v==='resumen') cargarResumen();
+  if (v==='votantes') { pagina=1; cargarVotantes(); }
+  if (v==='equipo') cargarEquipo();
+  if (v==='config') cargarInfo();
+}
+
+/* ---------------- CONFIG ---------------- */
+async function cargarConfig(){
+  const j = await api('/config');
+  cfg = j;
+  estadoColor = {}; j.estados_voto.forEach(e=>estadoColor[e.id]=e.color||'#9ca3af');
+  const sel=$('mv-estado'); sel.innerHTML=j.estados_voto.map(e=>`<option value="${e.id}">${e.label}</option>`).join('');
+  const sel2=$('md-estado'); sel2.innerHTML=j.estados_voto.map(e=>`<option value="${e.id}">${e.label}</option>`).join('');
+  $('f-estado').innerHTML='<option value="">Todos los estados</option>'+j.estados_voto.map(e=>`<option value="${e.id}">${e.label}</option>`).join('');
+  $('mm-rol').innerHTML=j.roles_equipo.map(r=>`<option value="${r.id}">${r.label}</option>`).join('');
+  $('dl-zonas').innerHTML=(j.info.zonas||[]).map(z=>`<option value="${z}">`).join('');
+}
+function cargarInfo(){ const i=cfg.info||{}; $('c-nombre').value=i.nombre||''; $('c-cargo').value=i.cargo||''; $('c-eslogan').value=i.eslogan||''; $('c-zonas').value=(i.zonas||[]).join(', '); }
+async function guardarInfo(){
+  try{
+    await api('/config','PUT',{ info:{ ...cfg.info, nombre:$('c-nombre').value, cargo:$('c-cargo').value, eslogan:$('c-eslogan').value, zonas:$('c-zonas').value.split(',').map(s=>s.trim()).filter(Boolean) } });
+    toast('Configuración guardada'); cargarConfig();
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+/* ---------------- RESUMEN ---------------- */
+async function cargarResumen(){
+  try{
+    const s = await api('/stats');
+    $('s-total').textContent = s.total.toLocaleString('es-CO');
+    $('s-comprometidos').textContent = (s.por_estado.find(e=>e.estado==='comprometido')||{count:0}).count.toLocaleString('es-CO');
+    const v = (s.por_estado.find(e=>e.estado==='votara')||{count:0}).count + (s.por_estado.find(e=>e.estado==='ya_voto')||{count:0}).count;
+    $('s-votaran').textContent = v.toLocaleString('es-CO');
+    $('s-referidos').textContent = s.total_referidos.toLocaleString('es-CO');
+    $('s-zonas').textContent = s.por_zona.length;
+    const max = Math.max(1, ...s.por_estado.map(e=>e.count));
+    $('bl-estados').innerHTML = s.por_estado.map(e=>`
+      <div class="barra"><div class="nombre">${e.label}</div>
+        <div class="track"><div class="fill" style="width:${(e.count/max*100).toFixed(1)}%;background:${e.color||'#4caf50'}"></div></div>
+        <div class="n">${e.count.toLocaleString('es-CO')}</div></div>`).join('');
+    const maxZ = Math.max(1, ...s.por_zona.map(z=>Number(z.n)));
+    $('bl-zonas').innerHTML = s.por_zona.length ? s.por_zona.map(z=>`
+      <div class="barra"><div class="nombre">${z.zona}</div>
+        <div class="track"><div class="fill" style="width:${(Number(z.n)/maxZ*100).toFixed(1)}%;background:#1b5e20"></div></div>
+        <div class="n">${Number(z.n).toLocaleString('es-CO')}</div></div>`).join('')
+      : '<div class="vac">Sin datos todavía</div>';
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+/* ---------------- VOTANTES ---------------- */
+async function cargarVotantes(){
+  const q = new URLSearchParams();
+  if ($('f-q').value) q.set('q', $('f-q').value);
+  if ($('f-zona').value) q.set('zona', $('f-zona').value);
+  if ($('f-barrio').value) q.set('barrio', $('f-barrio').value);
+  if ($('f-estado').value) q.set('estado_voto', $('f-estado').value);
+  if ($('f-ocupacion').value) q.set('ocupacion', $('f-ocupacion').value);
+  q.set('limite', PAGINA); q.set('offset', (pagina-1)*PAGINA);
+  try{
+    const j = await api('/votantes?'+q);
+    const f = j.filtros;
+    const zSel=$('f-zona'), bSel=$('f-barrio'), oSel=$('f-ocupacion');
+    zSel.innerHTML='<option value="">Todas las zonas</option>'+f.zonas.map(x=>`<option ${x===$('f-zona').value?'selected':''}>${x}</option>`).join('');
+    bSel.innerHTML='<option value="">Todos los barrios</option>'+f.barrios.map(x=>`<option ${x===$('f-barrio').value?'selected':''}>${x}</option>`).join('');
+    oSel.innerHTML='<option value="">Todas las ocupaciones</option>'+f.ocupaciones.map(x=>`<option ${x===$('f-ocupacion').value?'selected':''}>${x}</option>`).join('');
+    const paginas = Math.max(1, Math.ceil(j.total/PAGINA));
+    $('tabla-wrap').innerHTML = j.votantes.length ? `
+      <table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Zona</th><th>Barrio</th><th>Ocupación</th><th>Estado</th><th>Refs</th><th></th></tr></thead><tbody>
+      ${j.votantes.map(v=>{
+        const ec = cfg.estados_voto.find(e=>e.id===v.estado_voto) || {};
+        return `<tr>
+          <td><b>${esc(v.customer_name||'—')}</b>${v.cedula?'<br><span style="color:#9aa79a;font-size:.75rem">CC '+esc(v.cedula)+'</span>':''}</td>
+          <td>${esc(v.customer_phone||'')}</td>
+          <td>${esc(v.zona||'')}</td>
+          <td>${esc(v.barrio||'')}</td>
+          <td>${esc(v.ocupacion||'')}</td>
+          <td><span class="estado-chip" style="background:${(ec.color||'#eef2ed')}22;color:${ec.color||'#4a5a48'}">${esc(ec.label||v.estado_voto||'—')}</span></td>
+          <td>${v.n_referidos||0}</td>
+          <td><div class="fila"><button class="tono" onclick="abrirDetalle(${v.id})">Ver</button></div></td>
+        </tr>`;}).join('')}
+      </tbody></table>` : '<div class="vac">No hay votantes con esos filtros. ¡Agrega el primero!</div>';
+    $('paginacion').innerHTML = paginas>1 ? `
+      <button class="ghost" ${pagina<=1?'disabled':''} onclick="pagina--;cargarVotantes()">←</button>
+      <span>Página ${pagina} de ${paginas} · ${j.total.toLocaleString('es-CO')} votantes</span>
+      <button class="ghost" ${pagina>=paginas?'disabled':''} onclick="pagina++;cargarVotantes()">→</button>` : '';
+  }catch(e){ toast('Error: '+e.message); }
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function abrirNuevo(){
+  $('mv-titulo').textContent='Nuevo votante'; $('mv-id').value='';
+  ['mv-nombre','mv-telefono','mv-cedula','mv-nacimiento','mv-zona','mv-barrio','mv-ocupacion','mv-nota'].forEach(i=>$(i).value='');
+  $('mv-estado').value='lista';
+  mostrar('m-votante');
+}
+function abrirVotante(v){
+  $('mv-titulo').textContent='Editar votante'; $('mv-id').value=v.id;
+  $('mv-nombre').value=v.customer_name||''; $('mv-telefono').value=v.customer_phone||''; $('mv-cedula').value=v.cedula||'';
+  $('mv-nacimiento').value=v.fecha_nacimiento||''; $('mv-zona').value=v.zona||''; $('mv-barrio').value=v.barrio||'';
+  $('mv-ocupacion').value=v.ocupacion||''; $('mv-estado').value=v.estado_voto||'lista'; $('mv-nota').value=v.compromiso_nota||'';
+  mostrar('m-votante');
+}
+async function guardarVotante(){
+  const id = $('mv-id').value;
+  const body = {
+    nombre: $('mv-nombre').value, telefono: $('mv-telefono').value, cedula: $('mv-cedula').value,
+    fecha_nacimiento: $('mv-nacimiento').value, zona: $('mv-zona').value, barrio: $('mv-barrio').value,
+    ocupacion: $('mv-ocupacion').value, estado_voto: $('mv-estado').value, compromiso_nota: $('mv-nota').value,
+  };
+  try{
+    if (id) await api('/votantes/'+id,'PUT',body); else await api('/votantes','POST',body);
+    toast(id?'Votante actualizado':'Votante creado'); cerrarModal(); cargarVotantes();
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+/* ---------------- DETALLE + REFERIDOS ---------------- */
+async function abrirDetalle(id){
+  try{
+    const j = await api('/votantes/'+id);
+    const v = j.votante;
+    $('md-nombre').textContent = v.customer_name||'—';
+    $('md-meta').textContent = [v.zona, v.barrio, v.ocupacion].filter(Boolean).join(' · ') || 'Sin datos de perfil';
+    $('md-estado').value = v.estado_voto||'lista';
+    $('md-ref-nombre').value=''; $('md-ref-tel').value=''; $('md-ref-zona').value='';
+    $('md-referidos').innerHTML = j.referidos.length ? j.referidos.map(r=>`
+      <li><span>${esc(r.ref_nombre||'—')} <span style="color:#9aa79a">${esc(r.ref_telefono||'')}${r.ref_zona?' · '+esc(r.ref_zona):''}</span></span>
+      <span style="display:flex;gap:6px"><span class="count">${esc(r.estado||'registrado')}</span></span></li>`).join('')
+      : '<li style="color:#9aa79a">Sin referidos aún</li>';
+    $('md-wa').href = 'https://wa.me/'+String(v.customer_phone||'').replace(/\D/g,'');
+    window.votanteActual = v;
+    mostrar('m-detalle');
+  }catch(e){ toast('Error: '+e.message); }
+}
+function editarDesdeDetalle(){ cerrarModal(); abrirVotante(window.votanteActual); }
+async function cambiarEstadoDetalle(){
+  try{ await api('/votantes/'+window.votanteActual.id+'/estado','POST',{ estado_voto: $('md-estado').value }); toast('Estado actualizado'); abrirDetalle(window.votanteActual.id); }
+  catch(e){ toast('Error: '+e.message); }
+}
+async function agregarReferido(){
+  const id = window.votanteActual.id;
+  const body = { ref_nombre: $('md-ref-nombre').value, ref_telefono: $('md-ref-tel').value, ref_zona: $('md-ref-zona').value };
+  if (!body.ref_nombre) { toast('El nombre es obligatorio'); return; }
+  try{ await api('/votantes/'+id+'/referidos','POST',body); toast('Referido registrado'); abrirDetalle(id); }
+  catch(e){ toast('Error: '+e.message); }
+}
+
+/* ---------------- EQUIPO ---------------- */
+async function cargarEquipo(){
+  try{
+    const j = await api('/equipo');
+    $('equipo-wrap').innerHTML = `
+      <table><thead><tr><th>Miembro</th><th>Teléfono</th><th>Rol</th><th>Votantes</th><th>Votará</th><th></th></tr></thead><tbody>
+      ${j.equipo.map(m=>`
+        <tr><td><b>${esc(m.nombre)}</b></td><td>${esc(m.telefono)}</td>
+        <td><span class="estado-chip" style="background:#eef6ee;color:#1b5e20">${esc((j.roles.find(r=>r.id===m.rol)||{}).label||m.rol)}</span></td>
+        <td>${m.total_leads||0}</td><td>${m.total_votara||0}</td>
+        <td>${['gerente','admin'].includes(sesion.usuario.rol)?`<div class="fila"><select style="width:auto" onchange="cambiarRol(${m.id},this.value)">${j.roles.map(r=>`<option value="${r.id}" ${r.id===m.rol?'selected':''}>${r.label}</option>`).join('')}</select></div>`:''}</td>
+      </tr>`).join('')}
+      </tbody></table>`;
+  }catch(e){ toast('Error: '+e.message); }
+}
+function abrirMiembro(){ mostrar('m-miembro'); }
+async function guardarMiembro(){
+  const body = { nombre:$('mm-nombre').value, telefono:$('mm-telefono').value, rol:$('mm-rol').value, pin:$('mm-pin').value||'0000' };
+  if (!body.nombre || !body.telefono){ toast('Nombre y teléfono obligatorios'); return; }
+  try{ await api('/equipo','POST',body); toast('Miembro creado'); cerrarModal(); cargarEquipo(); }
+  catch(e){ toast('Error: '+e.message); }
+}
+async function cambiarRol(id, rol){ try{ await api('/equipo/'+id+'/rol','POST',{rol}); toast('Rol actualizado'); cargarEquipo(); }catch(e){ toast('Error: '+e.message); } }
+
+/* ---------------- MODALES ---------------- */
+function mostrar(id){ document.querySelectorAll('.modal-bg').forEach(m=>m.classList.add('oculto')); $(id).classList.remove('oculto'); }
+function cerrarModal(e){ if (!e || e.target.classList.contains('modal-bg')) document.querySelectorAll('.modal-bg').forEach(m=>m.classList.add('oculto')); }
+document.addEventListener('keydown', e=>{ if (e.key==='Escape') cerrarModal(); });
+$('lg-pin').addEventListener('keydown', e=>{ if (e.key==='Enter') login(); });
+</script>
+</body>
+</html>
