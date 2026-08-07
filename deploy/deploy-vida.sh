@@ -6,7 +6,7 @@
 # ==============================================================
 set -euo pipefail
 
-APP_DIR="/home/ubuntu/vida-app"
+APP_DIR="$HOME/vida-app"
 REPO="https://github.com/eduardojeremiasparramorales-beep/vida-platform.git"
 CADDYFILE="/etc/caddy/Caddyfile"
 
