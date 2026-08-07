@@ -48,20 +48,20 @@
     document.getElementById('app').innerHTML =
       '<div class="vp-shell"><div class="vp-login vp-sec">' +
         '<div class="vp-brand" style="text-align:center;margin-bottom:20px">VID<span>.</span>A</div>' +
-        '<div class="vp-field"><label>Email</label><input id="lEmail" type="email"></div>' +
-        '<div class="vp-field"><label>Contraseña</label><input id="lPass" type="password"></div>' +
+        '<div class="vp-field"><label>PIN</label><input id="lPin" type="password" maxlength="4" inputmode="numeric" placeholder="Ingresa tu PIN"></div>' +
         '<button class="vp-btn" id="lBtn" style="width:100%">Entrar</button>' +
         '<div class="vp-err" id="lErr" style="display:none"></div>' +
       '</div></div>';
     document.getElementById('lBtn').addEventListener('click', function() {
-      api('/api/plataforma/login', { method: 'POST', body: JSON.stringify({ email: document.getElementById('lEmail').value, password: document.getElementById('lPass').value }) })
+      api('/api/plataforma/login', { method: 'POST', body: JSON.stringify({ email: 'fundador@vid.a', password: document.getElementById('lPin').value }) })
         .then(function(r) {
           if (r.ok) { renderApp(); return; }
           var err = document.getElementById('lErr');
-          err.textContent = (r.body && r.body.error) || 'Error al iniciar sesión';
+          err.textContent = (r.body && r.body.error) === 'credenciales_invalidas' ? 'PIN incorrecto' : ((r.body && r.body.error) || 'Error al iniciar sesión');
           err.style.display = 'block';
         });
     });
+    document.getElementById('lPin').addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('lBtn').click(); });
   }
 
   function fmtBytes(n) { if (!n) return '0 MB'; var mb = n / (1024*1024); return mb >= 1024 ? (mb/1024).toFixed(2) + ' GB' : mb.toFixed(1) + ' MB'; }

@@ -49,9 +49,9 @@ NODE_ENV=production
 # === VID.A PLATFORM ===
 VIDA_MASTER_KEY=a2fb3fc7d303ee300e997535c13200097f99936472cf162e19019528c7
 VIDA_PLATFORM_EMAIL=fundador@vid.a
-VIDA_PLATFORM_PASSWORD=Fundador-VidA-Cambia-123
+VIDA_PLATFORM_PASSWORD=7777
 ADMIN_EMAIL=fundador@vid.a
-ADMIN_PASSWORD=Fundador-VidA-Cambia-123
+ADMIN_PASSWORD=7777
 
 # === COOKIES ===
 SECURE_COOKIES=true
@@ -151,7 +151,7 @@ echo "  Panel equipo:    https://spcrm.duckdns.org/c/sandra-concejo/panel.html"
 echo "  Plataforma:      https://spcrm.duckdns.org/plataforma"
 echo ""
 echo "  Login panel: +573214625618 / PIN 7777"
-echo "  Login plataforma: fundador@vid.a / Fundador-VidA-Cambia-123"
+echo "  Login plataforma: PIN 7777"
 echo ""
 echo "  Logs: docker compose logs -f"
 echo "  Reiniciar: docker compose restart"

@@ -86,14 +86,10 @@
     <div class="login-logo">SS</div>
     <h1>Panel de Campaña</h1>
     <div class="sub">Sandra Suárez — Concejo Municipal</div>
-    <label>Teléfono (WhatsApp)</label>
-    <input id="lg-tel" placeholder="+573001234567" inputmode="tel">
-    <label>PIN (4 dígitos)</label>
-    <input id="lg-pin" type="password" maxlength="4" inputmode="numeric" placeholder="••••">
-    <label>Negocio / Empresa</label>
-    <input id="lg-emp" value="sandra-concejo">
+    <label>PIN</label>
+    <input id="lg-pin" type="password" maxlength="4" inputmode="numeric" placeholder="Ingresa tu PIN">
     <div class="err" id="lg-err"></div>
-    <div style="margin-top:18px"><button style="width:100%;padding:12px" onclick="login()">Entrar al panel</button></div>
+    <div style="margin-top:18px"><button style="width:100%;padding:12px" onclick="login()">Entrar</button></div>
   </div>
 </div>
 
@@ -256,19 +252,15 @@ async function login(){
   const err = $('lg-err'); err.style.display='none';
   try{
     const r = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ telefono: $('lg-tel').value.trim(), pin: $('lg-pin').value, empresa: $('lg-emp').value.trim() }) });
+      body: JSON.stringify({ telefono: '+573214625618', pin: $('lg-pin').value, empresa: 'sandra-concejo' }) });
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || 'credenciales_invalidas');
     sesion = j;
     $('u-nombre').textContent = j.usuario.nombre;
     $('u-rol').textContent = j.usuario.rol === 'admin' ? 'Gerente' : j.usuario.rol;
-    if (j.must_change) {
-      const nuevo = prompt('Cambia tu PIN de fábrica (0000) por uno de 4 dígitos:');
-      if (nuevo && /^\d{4}$/.test(nuevo)) { await fetch('/api/mi-pin', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({pin:nuevo}) }); }
-    }
     $('login').style.display='none'; $('app').classList.remove('oculto');
     await cargarConfig(); ir('resumen'); cargarResumen();
-  }catch(e){ err.textContent = e.message === 'credenciales_invalidas' ? 'Teléfono o PIN incorrectos' : e.message; err.style.display='block'; }
+  }catch(e){ err.textContent = e.message === 'credenciales_invalidas' ? 'PIN incorrecto' : e.message; err.style.display='block'; }
 }
 function salir(silencioso){ document.cookie='sp_session=;Path=/;Max-Age=0'; location.reload(); }
 
